@@ -452,6 +452,16 @@ var LOOKALIKE={"jack-o-lantern":["chanterelle","honey-fungus"],"chanterelle":["j
 var SEASONS=["Spring","Summer","Autumn","Winter"], WICON={sun:"☀",rain:"🌧",fog:"🌫",snow:"❄"};
 var SEASONAL={"morel":[0],"chanterelle":[1,2],"porcini":[1,2],"hedgehog":[1,2,3],"maitake":[1,2],"button":[0,1,2],"death-cap":[0,1,2],"fly-agaric":[0,1,2],"shaggy-mane":[0,2,3],"sculptured-puffball":[1,2],"cordyceps":[0,1,2]};
 function seasonOf(day){return Math.floor((day-1)/7)%4;}
+/* 0 spring, 1 summer, 2 autumn, 3 winter. "all" = perennial brackets and the like */
+var MSEASON={"button":[0,1,2],"oyster":"all","chanterelle":[1,2],"porcini":[1,2],"hedgehog":[1,2,3],"maitake":[2],"morel":[0],"turkey-tail":"all","chaga":"all","birch-polypore":"all",
+  "lions-mane":[1,2],"reishi":[0,1,2],"cordyceps":[0,1],"agarikon":"all","death-cap":[1,2],"fly-agaric":[1,2],"honey-fungus":"all","jack-o-lantern":"all","lobster":[1,2],"dryads-saddle":[0,1],
+  "shaggy-mane":[0,2],"matsutake":[1,2],"sculptured-puffball":[1,2],"gypsy":[1,2]};
+var MPEAK={"oyster":[2,3],"chanterelle":[1],"porcini":[2],"hedgehog":[2],"lions-mane":[2],"death-cap":[2],"fly-agaric":[2],"matsutake":[2],"turkey-tail":[2,3],"shaggy-mane":[2],"morel":[0]};
+/* quest mushrooms can still turn up, rarely, out of season, so a story never stalls for a month */
+var MQUEST={"lions-mane":1,"reishi":1,"lobster":1,"matsutake":1};
+var HAB={"button":"meadow","death-cap":"oak","lions-mane":"oak","maitake":"oak","oyster":"log","turkey-tail":"log","reishi":"log","dryads-saddle":"log","chaga":"birch","birch-polypore":"birch","fly-agaric":"birch",
+  "chanterelle":"pine","porcini":"pine","hedgehog":"pine","cordyceps":"pine","agarikon":"pine","matsutake":"pine","gypsy":"pine","morel":"clearing","honey-fungus":"wall","jack-o-lantern":"wall","lobster":"willow","shaggy-mane":"open","sculptured-puffball":"open"};
+function seasonsText(k){var s=MSEASON[k];if(!s||s==="all")return "All year";return s.map(function(i){return SEASONS[i];}).join(", ");}
 var PAGES_TEXT=[
  "A single honey fungus colony in Oregon's Malheur National Forest covers about 2,200 acres and may be over 2,400 years old.",
  "Mushrooms make vitamin D when exposed to UV light, even after they've been picked.",
@@ -1065,6 +1075,7 @@ function wfCreate(root){
     Object.keys(ZONES).forEach(function(z){if(!st.zones[z])st.zones[z]={spawns:JSON.parse(JSON.stringify(ZD[z].spawns))};});
     if(!st.skills)st.skills={forage:0,wc:0,fish:0};
     if(!st.bank)st.bank={items:{},cap:0};
+    if(!st.spawnV){st.spawnV=1;rollSpawns(false,true);}
     Object.keys(MATN).forEach(function(k){if(st.mat[k]==null)st.mat[k]=0;});
   }
 
@@ -1095,9 +1106,26 @@ function wfCreate(root){
   function isFish(k){return !!FISH[k];}
   function darkZone(z){return !!ZONES[z||st.zone].dark;}
   function spawnsHere(){return st.zones[st.zone].spawns;}
+  /* which species can grow in each habitat of each area, weighted by how common they were there */
+  var ZSP=ZSP||{};
+  function zonePool(z,hab){if(!ZSP)ZSP={};if(!ZSP[z]){var m={};ZD[z].spawns.forEach(function(s){var hb=HAB[s.sp]||"floor";(m[hb]=m[hb]||{})[s.sp]=((m[hb]||{})[s.sp]||0)+1;});ZSP[z]=m;}return ZSP[z][hab]||{};}
+  /* pick what sprouts in a spot; share = how much of that habitat's usual crop is in season right now */
+  function pickSpecies(z,hab,season){var pool=zonePool(z,hab),noSeason=!!ZONES[z].dark||z==="tarn",tot=0,base=0,list=[];
+    Object.keys(pool).forEach(function(sp){base+=pool[sp];var ss=MSEASON[sp],ok=noSeason||!ss||ss==="all"||ss.indexOf(season)>=0,w=pool[sp]*(ok?((MPEAK[sp]||[]).indexOf(season)>=0&&!noSeason?2:1):(MQUEST[sp]?0.2:0));if(w>0){list.push([sp,w]);tot+=w;}});
+    if(!tot)return null;var r=Math.random()*tot,pick=list[list.length-1][0];for(var i=0;i<list.length;i++){r-=list[i][1];if(r<=0){pick=list[i][0];break;}}return [pick,Math.min(1,tot/base)];}
+  /* every morning some finds rot away and empty spots may sprout; the two balance out at a level set by the season */
+  function rollSpawns(wet,reseason){var season=seasonOf(st.day),ROT=0.25;
+    Object.keys(st.zones).forEach(function(z){if(!ZD[z])return;var dark=!!ZONES[z].dark,dens=dark?0.8:[0.72,0.78,0.88,0.45][season];
+      st.zones[z].spawns.forEach(function(s){if(!s.hab)s.hab=HAB[s.sp0||s.sp]||"floor";if(!s.sp0)s.sp0=s.sp;
+        if(!reseason){
+          if(s.up&&s.sp){if(Math.random()<ROT){s.up=0;s.back=st.day;}return;}
+          if(s.back>st.day&&!wet)return;}
+        var pk=pickSpecies(z,s.hab,season);if(!pk){s.up=0;s.back=st.day+1;return;}
+        var f=Math.min(0.97,pk[1]*dens),q=reseason?f:Math.min(1,ROT*f/(1-f))*(wet?2:1);
+        if(Math.random()<q){s.sp=pk[0];s.up=1;delete s.n;s.idDay=-1;}else{s.up=0;s.back=st.day;}});});}
   function allSpawns(){var a=[];Object.keys(st.zones).forEach(function(z){a=a.concat(st.zones[z].spawns);});return a;}
   function inSeason(sp){if(darkZone()||st.zone==="tarn")return true;var a=SEASONAL[sp];return !a||a.indexOf(seasonOf(st.day))>=0;}
-  function visible(s){return s.up&&inSeason(s.sp);}
+  function visible(s){return !!(s.up&&s.sp);}
   function npcOn(n){return !n.cond||st.flags[n.cond];}
   function tileAt(x,y){if(x<0||y<0||x>=WW||y>=WH)return darkZone()?T.CWALL:T.OAK;var t=map[y][x];
     if((TREES[t]||t===T.LOG)&&st.felled[st.zone+":"+x+","+y])return t===T.LOG?T.GRASS:T.STUMP;
@@ -2508,7 +2536,7 @@ function wfCreate(root){
     st.day++;st.min=6*60;
     st.energy=fainted?45:out?(st.tools.trailtent?90:70)-(darkZone()?10:0):(st.shelter==="tent"?80:100);if(!out)st.pitch=null;
     st.weather=rollWeather();
-    allSpawns().forEach(function(s){if(!s.up&&(s.back<=st.day||wasWet))s.up=1;});
+    rollSpawns(wasWet,seasonOf(st.day)!==oldSeason);
     Object.keys(st.felled).forEach(function(k){if(st.felled[k]<=st.day){delete st.felled[k];dirty=true;}});
     var notes=[];
     var shipped=0,earned=0;Object.keys(st.crate).forEach(function(k){var n=st.crate[k];if(n>0){shipped+=n;earned+=n*priceOf(k);}});
@@ -2719,10 +2747,10 @@ function wfCreate(root){
     open(html,function(b){b.querySelectorAll('[data-a^="sk:"]').forEach(function(e){e.onclick=function(){skillsMenu(e.dataset.a.slice(3));};});});}
   function journalMenu(){
     var found=WILD.filter(function(k){return st.journal[k];}).length;
-    open('<span class="kicker">Field journal</span><h3>'+found+' of '+WILD.length+' species identified</h3><p class="muted">Identify a species correctly twice and you\'ll recognise it on sight.</p><div class="wf-jgrid">'
+    open('<span class="kicker">Field journal</span><h3>'+found+' of '+WILD.length+' species identified</h3><p class="muted">Identify a species correctly twice and you\'ll recognise it on sight. It\'s '+SEASONS[seasonOf(st.day)].toLowerCase()+' now: what grows changes with the seasons, and rain brings more up. Caves don\'t follow the seasons.</p><div class="wf-jgrid">'
       +WILD.map(function(k){var sp=WSP[k],n=st.journal[k]||0,tr=WTRAIT[k];
-        if(!n)return '<div class="wf-j unk"><b>??? Unknown</b><span>Look '+esc(sp.where)+'.</span></div>';
-        return '<div class="wf-j"><div class="wf-jh">'+icon(k)+'<b>'+esc(sp.n)+'</b></div><span class="chip '+(sp.cat==="toxic"?"amber":sp.cat==="medicinal"?"gold":"moss")+'">'+sp.cat+'</span><span><b>Cap:</b> '+esc(tr.cap)+'</span><span><b>Underneath:</b> '+esc(tr.under)+'</span><span><b>Stem:</b> '+esc(tr.stem)+'</span><span><b>Smell:</b> '+esc(tr.smell)+'</span>'+(n>=2?'<span class="muted">✓ Known on sight</span>':'<span class="muted">Seen once</span>')+'</div>';}).join('')+'</div>'
+        if(!n)return '<div class="wf-j unk"><b>??? Unknown</b><span>Look '+esc(sp.where)+'.</span><span class="muted">'+seasonsText(k)+'</span></div>';
+        return '<div class="wf-j"><div class="wf-jh">'+icon(k)+'<b>'+esc(sp.n)+'</b></div><span class="chip '+(sp.cat==="toxic"?"amber":sp.cat==="medicinal"?"gold":"moss")+'">'+sp.cat+'</span><span><b>Cap:</b> '+esc(tr.cap)+'</span><span><b>Underneath:</b> '+esc(tr.under)+'</span><span><b>Stem:</b> '+esc(tr.stem)+'</span><span><b>Smell:</b> '+esc(tr.smell)+'</span>'+'<span><b>Season:</b> '+seasonsText(k)+'</span>'+(n>=2?'<span class="muted">✓ Known on sight</span>':'<span class="muted">Seen once</span>')+'</div>';}).join('')+'</div>'
       +'<div class="wf-sub">Fish ('+Object.keys(st.caught).length+' of '+Object.keys(FISH).length+')</div><div class="wf-jgrid">'+Object.keys(FISH).map(function(k){var f=FISH[k],n=st.caught[k]||0;
         if(!n)return '<div class="wf-j unk"><b>??? Unknown fish</b><span>Fishing '+f.lv+' · '+f.where.map(function(z){return ZONES[z].n;}).join(", ")+'</span></div>';
         return '<div class="wf-j"><div class="wf-jh">'+icon(k)+'<b>'+esc(f.n)+'</b></div><span>'+esc(f.key)+'</span><span class="muted">Caught '+n+' · '+f.where.map(function(z){return ZONES[z].n;}).join(", ")+'</span></div>';}).join('')+'</div>');
