@@ -510,6 +510,7 @@ var SHOP=[
  {id:"knife",n:"Foraging knife",p:15,req:{forage:1},kind:"tool",d:"Cut brackets and conks (turkey tail, chaga, reishi…) from wood."},
  {id:"guide",n:"Field guide",p:15,req:{forage:1},kind:"tool",d:"Shows each mushroom's key identifying feature when you inspect it."},
  {id:"axe",n:"Axe",p:30,req:{wc:1},kind:"tool",d:"Chop fallen logs and standing birch. Better trees need a higher Woodcutting level."},
+ {id:"bedroll",n:"Camping kit",p:20,req:{forage:2},kind:"tool",d:"A bedroll and a little tarp tent. After 6 pm (or when you're worn out) pitch camp and sleep wherever you are. Restores 70 energy."},
  {id:"tinder",n:"Tinderbox",p:10,req:{forage:1},kind:"tool",d:"Flint, steel and dry tinder. Light the stone fire rings you find around the world with 2 logs, then cook there."},
  {id:"rod",n:"Fishing rod",p:20,req:{fish:1},kind:"tool",d:"Cast into any water. Needs worms for bait."},
  {id:"worms",n:"Worms ×10",p:4,req:{fish:1},kind:"mat",qty:10,d:"Bait. One is used up for every fish you land."},
@@ -540,11 +541,12 @@ var BRAM_SHOP=[
  {id:"explorer",n:"Explorer's pack",p:200,req:{forage:15},kind:"cap",cap:30,d:"Carry 30 items."},
  {id:"expedition",n:"Expedition frame pack",p:450,req:{forage:22},kind:"cap",cap:45,d:"A steel-framed pack for long trips. Carry 45 items."},
  {id:"copperpot",n:"Copper pot",p:120,req:{forage:12},kind:"tool",d:"Meals and teas give 60% more energy."},
+ {id:"trailtent",n:"Trail tent",p:140,req:{forage:10},kind:"tool",d:"A light, warm two-skin tent for long trips. Sleeping out restores 90 energy."},
  {id:"boots",n:"Trail boots",p:150,req:{forage:10},kind:"tool",d:"Walking tires you half as much."},
  {id:"worms",n:"Worms ×10",p:4,req:{fish:1},kind:"mat",qty:10,d:"Bait for the tarn."}
 ];
 var MATN={deadwood:"Deadwood",birch:"Birch logs",oak:"Oak logs",pine:"Pine logs",willow:"Willow logs",mpine:"Mountain pine logs",planks:"Planks",nails:"Nails",straw:"Straw bales",oyster_spawn:"Oyster spawn",shiitake_dowels:"Shiitake dowels",worms:"Worms"};
-var TOOLN={tinder:"Tinderbox",knife:"Foraging knife",guide:"Field guide",axe:"Axe",steelaxe:"Steel axe",mtnaxe:"Mountain axe",rod:"Fishing rod",flyrod:"Fly rod",deeprod:"Deep-water rod",tacklebox:"Tackle box",pot:"Cooking pot",copperpot:"Copper pot",mister:"Spray mister",drill:"Drill & wax kit",lantern:"Lantern",waders:"Waders",rope:"Climbing rope",boots:"Trail boots"};
+var TOOLN={bedroll:"Camping kit",trailtent:"Trail tent",tinder:"Tinderbox",knife:"Foraging knife",guide:"Field guide",axe:"Axe",steelaxe:"Steel axe",mtnaxe:"Mountain axe",rod:"Fishing rod",flyrod:"Fly rod",deeprod:"Deep-water rod",tacklebox:"Tackle box",pot:"Cooking pot",copperpot:"Copper pot",mister:"Spray mister",drill:"Drill & wax kit",lantern:"Lantern",waders:"Waders",rope:"Climbing rope",boots:"Trail boots"};
 var BUILDS={
  leanto:{n:"Lean-to",need:{wood:6,nails:1},lv:2,d:"A sturdier shelter. Sleeping restores all your energy."},
  oyster_bed:{n:"Oyster straw bed",need:{straw:1,oyster_spawn:1},tools:["pot"],lv:4,d:"Pasteurised straw packed with spawn. Mist daily; up to 3 flushes."},
@@ -1778,6 +1780,15 @@ function wfCreate(root){
   function resize(){var r=stage.getBoundingClientRect();cw=Math.max(240,Math.round(r.width));ch=Math.max(220,Math.round(r.height));
     SC=cw>=620?3:2;lw=Math.ceil(cw/SC);lh=Math.ceil(ch/SC);low.width=lw*Q;low.height=lh*Q;nlow.width=lw;nlow.height=lh;
     DPR=Math.min(3,window.devicePixelRatio||1);can.width=Math.round(lw*SC*DPR);can.height=Math.round(lh*SC*DPR);can.style.width=(lw*SC)+"px";can.style.height=(lh*SC)+"px";}
+  /* finds on the ground: drawn small, with a soft glow and twinkling glints so you notice something's there */
+  function drawSmall(img,cx,top,s,rot){var w=img.width/Q*s,hh=img.height/Q*s;
+    if(rot){lctx.save();lctx.translate(cx,top+hh/2);lctx.rotate(rot);lctx.drawImage(img,-w/2,-hh/2,w,hh);lctx.restore();return;}
+    lctx.drawImage(img,Math.round((cx-w/2)*Q)/Q,Math.round(top*Q)/Q,Math.round(w*Q)/Q,Math.round(hh*Q)/Q);}
+  function shimmer(cx,cy,seed,t,r){var a=0.10+0.07*Math.sin(t/520+seed*1.7);lctx.save();lctx.globalCompositeOperation="lighter";var g=lctx.createRadialGradient(cx,cy,0,cx,cy,r);
+    g.addColorStop(0,"rgba(255,250,210,"+a.toFixed(3)+")");g.addColorStop(1,"rgba(255,250,210,0)");lctx.fillStyle=g;lctx.beginPath();lctx.ellipse(cx,cy,r,r*0.6,0,0,7);lctx.fill();lctx.restore();}
+  function glints(cx,cy,seed,t,r){for(var i=0;i<3;i++){var ph=((t/1100)+i*0.37+seed*0.23)%1;if(ph>0.3)continue;var b=Math.sin(ph/0.3*Math.PI),
+      gx=cx+Math.sin(seed*3.1+i*2.4+Math.floor(t/1100+i*0.37+seed*0.23)*1.9)*r,gy=cy+Math.cos(seed*1.7+i*1.3+Math.floor(t/1100+i*0.37+seed*0.23)*2.3)*r*0.6,arm=0.5+b*1.2;
+      lctx.fillStyle="rgba(255,255,255,"+(0.9*b).toFixed(3)+")";lctx.fillRect(gx-0.5,gy-arm,1,arm*2);lctx.fillRect(gx-arm,gy-0.5,arm*2,1);lctx.fillStyle="rgba(255,248,170,"+b.toFixed(3)+")";lctx.fillRect(gx-0.5,gy-0.5,1,1);}}
   function shadow(X,Y,w){lctx.fillStyle="rgba(14,30,16,.30)";lctx.beginPath();lctx.ellipse(X+8,Y+15,w/2+0.5,1.8,0,0,7);lctx.fill();lctx.fillStyle="rgba(14,30,16,.18)";lctx.beginPath();lctx.ellipse(X+8,Y+15,w/2+1.8,2.6,0,0,7);lctx.fill();}
   var VIG=null,DPR=1,hiQ=[];
   /* trees vary from about 86% to 114% of full size, always the same for a given spot */
@@ -1864,9 +1875,9 @@ function wfCreate(root){
   /* words drawn at screen resolution, in the same font and style as the menus */
   function rr(g,x,y,w,hh,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+hh,r);g.arcTo(x+w,y+hh,x,y+hh,r);g.arcTo(x,y+hh,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
   function drawHi(){var g=ctx,S=SC,W=lw*SC,F="Geist, 'Segoe UI', system-ui, sans-serif";g.save();g.setTransform(DPR,0,0,DPR,0,0);g.textBaseline="middle";g.lineJoin="round";
-    hiQ.forEach(function(q){
+    var hl=document.querySelector(".wf-hl"),hudB=hl?hl.getBoundingClientRect().bottom-can.getBoundingClientRect().top+6:58;hiQ.forEach(function(q){
       if(q.k==="tag"){g.font="700 13px "+F;var pre=q.lock?"🔒 ":"▶ ",pw=g.measureText(pre).width,tw=Math.ceil(pw+g.measureText(q.name).width)+22,th=26,cx=q.x*S;
-        var top=(q.y-6)*S-th;if(top<58)top=(q.dy+12)*S;var left=Math.round(Math.max(4,Math.min(W-tw-4,cx-tw/2)));top=Math.round(top);
+        var top=(q.y-6)*S-th;if(top<hudB)top=Math.max(hudB,(q.dy+12)*S);var left=Math.round(Math.max(4,Math.min(W-tw-4,cx-tw/2)));top=Math.round(top);
         g.fillStyle="rgba(0,0,0,.15)";rr(g,left,top+3,tw,th,9);g.fill();
         g.fillStyle=q.lock?"rgba(255,240,236,.86)":"rgba(248,248,240,.8)";rr(g,left,top,tw,th,9);g.fill();g.lineWidth=3;g.strokeStyle=q.lock?"#a02818":"#384878";g.stroke();
         g.lineWidth=1.5;g.strokeStyle=q.lock?"rgba(232,160,140,.9)":"#a8b8e0";rr(g,left+3.5,top+3.5,tw-7,th-7,6);g.stroke();
@@ -1906,10 +1917,8 @@ function wfCreate(root){
     var E=[],glows=[];
     for(var oyy=Math.max(0,y0);oyy<=Math.min(WH-1,y1+1);oyy++)for(var oxx=Math.max(0,x0);oxx<=Math.min(WW-1,x1);oxx++){var os=objSpr(tileAt(oxx,oyy));
       if(os)(function(o,xx,yy){var ts=treeScale(xx,yy);E.push([yy-0.02,function(){var sh=shakeAt(xx,yy,t);drawObj(o,xx*PX-ox+sh,yy*PX-oy,ts);}]);})(os,oxx,oyy);}
-    spawnsHere().forEach(function(s){if(visible(s)&&inView(s.x,s.y)){if(WSP[s.sp].glow)glows.push(s);E.push([s.y,function(){var X=s.x*PX-ox,Y=s.y*PX-oy;shadow(X,Y,10);D(mush(s.sp),X,Y+mushDrop(s.sp));
-      if((Math.floor(t/350)+s.id)%6===0){var sx=X+12,sy=Y+2;P(lctx,sx,sy-1,"#ffffff");P(lctx,sx-1,sy,"#ffffff");P(lctx,sx+1,sy,"#ffffff");P(lctx,sx,sy+1,"#ffffff");P(lctx,sx,sy,"#fff8a0");}}]);}});
-    st.pageSpots.forEach(function(p){if(p.zone===Z&&st.pages.indexOf(p.id)<0&&inView(p.x,p.y))E.push([p.y,function(){var X=p.x*PX-ox,Y=p.y*PX-oy,bob=Math.floor(t/400)%2;shadow(X,Y,8);D(BLD.page,X+3,Y+4-bob*0.5);
-      if(Math.floor(t/300)%4===0){P(lctx,X+13,Y+2,"#ffffff");P(lctx,X+12,Y+3,"#fff8a0");}}]);});
+    spawnsHere().forEach(function(s){if(visible(s)&&inView(s.x,s.y)){if(WSP[s.sp].glow)glows.push(s);E.push([s.y,function(){var X=s.x*PX-ox,Y=s.y*PX-oy;shimmer(X+8,Y+12,s.id,t,6);shadow(X+2.5,Y,5);drawSmall(mush(s.sp),X+8,Y+15.5-(15.5-mushDrop(s.sp))*0.6,0.6);glints(X+8,Y+10,s.id,t,5);}]);}});
+    st.pageSpots.forEach(function(p){if(p.zone===Z&&st.pages.indexOf(p.id)<0&&inView(p.x,p.y))E.push([p.y,function(){var X=p.x*PX-ox,Y=p.y*PX-oy,fl=Math.sin(t/500+p.id)*0.6;shimmer(X+8,Y+12,p.id+40,t,5);shadow(X+3,Y,4);drawSmall(BLD.page,X+8,Y+6.5+fl,0.65,(Math.sin(t/700+p.id)*0.12));glints(X+8,Y+9,p.id+40,t,4);}]);});
     st.chestSpots.forEach(function(c){if(c.zone===Z&&inView(c.x,c.y))E.push([c.y,function(){var X=c.x*PX-ox,Y=c.y*PX-oy;shadow(X,Y,14);D(st.chests.indexOf(c.id)>=0?BLD.chestOpen:BLD.chest,X,Y);}]);});
     WARPS[Z].forEach(function(w){if(!inView(w.x,w.y))return;E.push([w.y-0.5,function(){var X=w.x*PX-ox,Y=w.y*PX-oy,img=doorImg(Z,w);D(img,X,Y);}]);});
     NPCS.forEach(function(n){if(n.zone!==Z||!npcOn(n)||!inView(n.x,n.y))return;E.push([n.y,function(){var X=n.x*PX-ox,Y=n.y*PX-oy-2,bob=Math.floor(t/600+n.x)%2;shadow(X,Y+2,11);D(NPCSPR[n.id],X,Y-4-bob*0.5);}]);});
@@ -1936,6 +1945,7 @@ function wfCreate(root){
       if(fishing&&st.dir!=="up")drawRod(X,Y,t);
       if(chopping&&!axB)drawAxe(LX,LY);}]);
     spotsHere().forEach(function(s){E.push([s.y+0.3,function(){drawSpot(s,t,ox,oy);}]);});
+    var pt=st.pitch;if(pt&&pt.zone===Z&&inView(pt.x,pt.y))E.push([pt.y-0.05,function(){var X=pt.x*PX-ox,Y=pt.y*PX-oy;shadow(X,Y,14);D(BLD.tent,X,Y-3);}]);
     faunaHere().forEach(function(a){if(inView(Math.round(a.x),Math.round(a.y)))E.push([a.y+0.05,function(){drawCritter(a,t,ox,oy);}]);});
     fallers=fallers.filter(function(f){return t-f.t0<1400;});
     fallers.forEach(function(f){E.push([f.y-0.02,function(){var k=(t-f.t0)/1000,u=Math.min(1,k/0.75),ang=f.dir*u*u*Math.PI/2*0.92,al=k<0.9?1:Math.max(0,1-(k-0.9)/0.5);
@@ -2030,15 +2040,16 @@ function wfCreate(root){
     var fx=pl.tx+(st.dir==="left"?-1:st.dir==="right"?1:0),fy=pl.ty+(st.dir==="up"?-1:st.dir==="down"?1:0);
     var near=[];for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++)if(dx||dy)near.push([pl.tx+dx,pl.ty+dy]);
     /* what you're facing wins, then what you're standing on, then anything next to you */
-    return cellTarget(fx,fy,true)||cellTarget(pl.tx,pl.ty,true)||near.reduce(function(a,c){return a||cellTarget(c[0],c[1],false);},null)||bedSlot();
+    return cellTarget(fx,fy,true)||cellTarget(pl.tx,pl.ty,true)||near.reduce(function(a,c){return a||cellTarget(c[0],c[1],false);},null)||bedSlot()||campTarget();
   }
   function targets(){
     var fx=pl.tx+(st.dir==="left"?-1:st.dir==="right"?1:0),fy=pl.ty+(st.dir==="up"?-1:st.dir==="down"?1:0);
     var cells=[[fx,fy,true],[pl.tx,pl.ty,true]];for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++)if(dx||dy)cells.push([pl.tx+dx,pl.ty+dy,false]);
     var out=[],seen={};cells.forEach(function(c){var t=cellTarget(c[0],c[1],c[2]);if(!t)return;var k=t.kind+":"+(t.n?t.n.id:t.x+","+t.y);if(t.kind==="wren")k="wren";if(seen[k])return;seen[k]=1;out.push(t);});
     var b=bedSlot();if(b&&!seen.sign)out.push(b);
+    var cp=campTarget();if(cp&&out.length<3)out.push(cp);
     return out.slice(0,3);}
-  var ACTI={pit:"🔥",wren:"💬",npc:"💬",shelter:"🛏",fire:"🔥",well:"💧",sign:"🔨",crate:"📦",store:"🗄",chest:"🗝",lookout:"🔭",bed:"🌱",spawn:"🔍",page:"📄",door:"🚪",block:"🪵",tree:"🪓",water:"🎣",house:"🚪"};
+  var ACTI={pit:"🔥",wren:"💬",npc:"💬",shelter:"🛏",fire:"🔥",well:"💧",sign:"🔨",crate:"📦",store:"🗄",camp:"⛺",chest:"🗝",lookout:"🔭",bed:"🌱",spawn:"🔍",page:"📄",door:"🚪",block:"🪵",tree:"🪓",water:"🎣",house:"🚪"};
   function actIcon(t){if(!t)return "✋";if(t.kind==="water")return t.spot&&rodTier()?"🎣":"💧";return ACTI[t.kind]||"✋";}
   function cleanLabel(l){return String(l||"").replace(/^E · /,"").replace(/^▶ /,"Go to ");}
   function bedSlot(){if(st.zone!=="woods")return null;for(var j=0;j<SLOTS.length;j++){var sl=SLOTS[j];if(!st.beds[j]&&Math.abs(sl[0]-pl.tx)<=1&&Math.abs(sl[1]-pl.ty)<=1)return{kind:"sign",x:sl[0],y:sl[1],label:"E · Build here"};}return null;}
@@ -2077,7 +2088,15 @@ function wfCreate(root){
     if(chopping)return;
     doAct(target());
   }
-    var waterHint=0,collectCool=0;
+    /* sleeping out: a camping kit (or Bram's trail tent) lets you pitch camp anywhere once it's late */
+  function campGear(){return st.tools.trailtent?"trail tent":st.tools.bedroll?"camping kit":null;}
+  function sleepyTime(){var hr=st.min/60;return hr>=18||hr<6||st.energy<35;}
+  function campTarget(){if(!campGear()||!sleepyTime())return null;if(st.zone==="woods"&&wfInHome(pl.tx,pl.ty))return null;
+    return {kind:"camp",x:pl.tx,y:pl.ty,label:"E · Pitch camp and sleep"};}
+  function campMenu(){var g=campGear(),cave=darkZone(),gain=(st.tools.trailtent?90:70)-(cave?10:0);
+    ask("",null,(cave?"The ground's cold and damp down here, but it'll do. ":"")+"Roll out your "+g+" right here and sleep until morning? (+"+gain+" energy)",
+      [{t:"Pitch camp and sleep",f:function(){st.pitch={zone:st.zone,x:pl.tx,y:pl.ty};newDay(false,true);}},{t:"Not yet"}]);}
+  var waterHint=0,collectCool=0;
   function collectWater(tg){var now=performance.now();if(now<collectCool)return;collectCool=now+300;
     if(invCount(st)>=st.cap){toast("Your basket is full.","bad");return;}
     st.inv["raw-water"]=(st.inv["raw-water"]||0)+1;flyItem(waterSpr("raw-water"),tg.x,tg.y);snd.sfx("splash");floatText(tg.x,tg.y,"+1 raw water","#bfe8ff");
@@ -2101,6 +2120,7 @@ function wfCreate(root){
     else if(tg.kind==="pit"){if(tg.lit)fireMenu(tg);else lightFire(tg.x,tg.y);}
     else if(tg.kind==="sign")buildMenu();
     else if(tg.kind==="crate")crateMenu();
+    else if(tg.kind==="camp")campMenu();
     else if(tg.kind==="store")bankMenu();
     else if(tg.kind==="bed")bedMenu(tg.i);
     else if(tg.kind==="chest")openChest(tg.c);
@@ -2137,7 +2157,7 @@ function wfCreate(root){
     doWarp(w);return true;}
   function warpOk(w){return !doorLock(w);}
   function banner(text){var b=document.getElementById("wfZoneBan");b.textContent=text;b.hidden=false;b.classList.remove("show");void b.offsetWidth;b.classList.add("show");clearTimeout(b._t);b._t=setTimeout(function(){b.hidden=true;},2600);}
-  function loadZone(){var z=ZONES[st.zone];WW=z.w;WH=z.h;map=ZD[st.zone].map;[groundA,groundB,objs].forEach(function(c){c.width=WW*PX*Q;c.height=WH*PX*Q;});dirty=true;fishing=null;chopping=null;fallers=[];parts=[];flyers=[];}
+  function loadZone(){var z=ZONES[st.zone];WW=z.w;WH=z.h;map=ZD[st.zone].map;[groundA,groundB,objs].forEach(function(c){c.width=WW*PX*Q;c.height=WH*PX*Q;});dirty=true;fishing=null;chopping=null;fallers=[];parts=[];flyers=[];if(st.pitch&&st.pitch.zone!==st.zone)st.pitch=null;}
   var ZINTRO={cave:["Your lantern throws long shadows across the walls. Water drips somewhere in the dark.","On the roots ahead, a faint green glow. Foxfire."],
     depths:["You climb down and down. The air turns warm and wet, and everything glows faint green.","Somewhere ahead, someone is humming to keep their spirits up."],
     marsh:["The boardwalk creaks underfoot. Frogs go quiet, then start up again.","Willows trail their branches in the shallows, and reeds rustle all around."],
@@ -2477,10 +2497,10 @@ function wfCreate(root){
     ask("",null,"Crawl into "+where+" and sleep until morning?",[{t:"Sleep",f:function(){newDay(false);}},{t:"Not yet"}]);
   }
   function rollWeather(){var s=seasonOf(st.day),v=Math.random();if(v<0.28)return s===3?"snow":"rain";if(v<0.42)return"fog";return"sun";}
-  function newDay(fainted){
+  function newDay(fainted,out){
     var wasWet=st.weather==="rain"||st.weather==="snow",oldSeason=seasonOf(st.day);
     st.day++;st.min=6*60;
-    st.energy=fainted?45:(st.shelter==="tent"?80:100);
+    st.energy=fainted?45:out?(st.tools.trailtent?90:70)-(darkZone()?10:0):(st.shelter==="tent"?80:100);if(!out)st.pitch=null;
     st.weather=rollWeather();
     allSpawns().forEach(function(s){if(!s.up&&(s.back<=st.day||wasWet))s.up=1;});
     Object.keys(st.felled).forEach(function(k){if(st.felled[k]<=st.day){delete st.felled[k];dirty=true;}});
@@ -2494,6 +2514,7 @@ function wfCreate(root){
       if(st.zone!=="woods"){st.zone="woods";loadZone();}
       pl.tx=SHELTER.x+1;pl.ty=SHELTER.y+1;pl.px=pl.tx*TS;pl.py=pl.ty*TS;pl.moving=false;}
     var morning=[];
+    if(out)morning.push(darkZone()?"You wake on the cave floor, wrapped in your bedroll. Stiff, but rested enough.":["You wake to birdsong and dew on the tarp. Not bad at all.","You crawl out of your little tent and stretch. The fire's ash is still warm.","A cold night, but your bedroll kept you snug."][st.day%3]);
     if(fainted)morning.push("Everything goes dark... You wake up at camp, stiff and sore."+(lost?" You lost "+lost+" items from your basket along the way.":""));
     morning.push("Day "+st.day+". "+(seasonOf(st.day)!==oldSeason?{0:"Spring has come. The first morels may be pushing up in the clearings.",1:"Summer. Chanterelles and porcini season is starting under the pines.",2:"Autumn! The oaks are turning, and it's the best season for mushrooms.",3:"Winter. Snow on the ground. Most mushrooms are gone, but brackets and oysters still grow on the logs."}[seasonOf(st.day)]+" ":"")
       +{sun:"A clear, bright morning.",rain:"Rain is drumming on the roof. It'll water your beds for you, and tomorrow the mushrooms will be up everywhere.",fog:"Thick fog hangs between the trees.",snow:"Fresh snow fell overnight. It'll keep your beds damp."}[st.weather]
@@ -2734,7 +2755,7 @@ function wfCreate(root){
       +'<div class="wf-sub">Controls</div><ul class="list"><li><b>Move:</b> arrow keys or WASD (on a phone, drag the joystick)</li><li><b>Interact / continue talking:</b> E, Space or Enter. Use the arrow keys to pick a choice.</li><li><b>Basket</b> I · <b>Journal</b> J · <b>Quests</b> Q · <b>Map</b> M · <b>Close</b> Esc</li></ul>'
       +'<div class="wf-sub">Three skills</div><ul class="list"><li><b>🍄 Foraging:</b> examine a mushroom (cap, underneath, stem, smell), then name it. Get it right to pick it.</li><li><b>🪓 Woodcutting:</b> face a tree with an axe and press E once. You keep chopping by yourself until it comes down (2 to 10 logs a tree). Walk away any time to stop. Birch at level 1, oak at 5, willow at 12, pine at 16, mountain pine at 24.</li><li><b>🎣 Fishing:</b> fish only bite at <b>fishing spots</b>, where the water ripples and fish jump. They move every minute or two, like real shoals. Stand next to one with a rod and worms and press E. Each spot holds different fish: shallows, trout riffles, weed beds, drop-offs, deep holes and more. Once you start, you fish by yourself, hooking bites and recasting, until the spot moves, your basket fills, you run out of worms or you walk away. Better fish need higher levels and better rods.</li></ul>'
       +'<div class="wf-sub">Getting around</div><ul class="list"><li>Ways out of each area glow gold and show their name. Red means something is still needed: a tool, a skill level, or a favour for someone.</li><li>The story is told through the people you meet. Press Q to see what to do next, and the map (M) to see the ways out.</li></ul>'
-      +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Get it back by eating (cook mushrooms and fish at your campfire or a fire ring) and drinking. Collect raw water from streams and ponds, boil it at a fire to make fresh water, then drink it from your basket any time. The village well is clean enough to drink straight away. Sleeping restores energy overnight.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Basket full? Build a <b>storage chest</b> from the sign at camp and keep extra mushrooms, fish and water there. Old Wren and Bram can open it for you too. Upgrade it to an iron-bound chest (100 items) and then a root cellar (250). Bigger bags are sold at the shops as you level up.</li><li>Tap the skill levels at the top right (or <b>📈 All levels and unlocks</b> in your Basket) to see every level up to '+MAXL+' and what each one unlocks.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
+      +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Get it back by eating (cook mushrooms and fish at your campfire or a fire ring) and drinking. Collect raw water from streams and ponds, boil it at a fire to make fresh water, then drink it from your basket any time. The village well is clean enough to drink straight away. Sleeping restores energy overnight.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Basket full? Build a <b>storage chest</b> from the sign at camp and keep extra mushrooms, fish and water there. Old Wren and Bram can open it for you too. Upgrade it to an iron-bound chest (100 items) and then a root cellar (250). Bigger bags are sold at the shops as you level up.</li><li>Tap the skill levels at the top right (or <b>📈 All levels and unlocks</b> in your Basket) to see every level up to '+MAXL+' and what each one unlocks.</li><li>Far from home? Buy a <b>camping kit</b> from Wren (Foraging 2) and you can pitch camp and sleep anywhere after 6 pm. Bram\'s <b>trail tent</b> lets you rest better.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
       +'<div class="wf-acts">'+btn("go",first?"Start exploring":"Got it","primary")+'</div>',
       function(b){b.querySelector('[data-a="go"]').onclick=function(){st.intro=0;close();flashQuest();};});
   }
@@ -2788,7 +2809,7 @@ function wfCreate(root){
     document.getElementById("wfCoins").textContent="🪙 "+st.coins;
     var ls=lastSkill,l=sk(ls),lo=xpAt(l),hi=xpAt(l+1);document.getElementById("wfLv").innerHTML=Object.keys(SKILLN).map(function(k){return '<span class="'+(k===ls?"on":"")+'">'+SKILLI[k]+' '+sk(k)+'</span>';}).join(" ");
     document.getElementById("wfXp").style.width=(l>=MAXL?100:Math.min(100,((st.skills[ls]||0)-lo)/(hi-lo)*100))+"%";
-    var hr=st.min/60;if(hr>=21&&nightWarned!==st.day&&!dlg.open){nightWarned=st.day;toast("🌙 It's getting late. Head back to your shelter and sleep.","bad");}
+    var hr=st.min/60;if(hr>=21&&nightWarned!==st.day&&!dlg.open){nightWarned=st.day;toast(campGear()?"🌙 It's getting late. Head home, or pitch camp right where you are.":"🌙 It's getting late. Head back to your shelter and sleep. (A camping kit from Wren lets you sleep anywhere.)","bad");}
   }
   function frame(t){
     if(!running)return;
