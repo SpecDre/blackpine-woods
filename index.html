@@ -1329,10 +1329,12 @@ function wfCreate(root){
   function sprSeason(s){if(!SEASPR[s])SEASPR[s]={oak:sOak(s),pine:sPine(s),birch:sBirch(s),willow:sWillow(s),reeds:sReeds(s)};return SEASPR[s];}
 
   /* ---------------- props ---------------- */
+  /* fallen log: about two-thirds of a square long, so it reads as a trunk next to the trees */
   function sLog(){var c=mkc(32,32),x=c.getContext("2d");
-    for(var y=13;y<28;y++)for(var i=2;i<26;i++){var v=(y-13)/15;var t=0.25+(1-Math.abs(v-0.3)*1.6)*0.65;if(Math.abs(Math.sin(i*0.9+y*1.7))>0.92)t-=0.25;P(x,i,y,tone(RP.bark,t));}
-    ball(x,26,20.5,4.2,7.6,ramp("#6a4020","#d8b080","#fff0d0"),{});for(var r=1;r<4;r++)for(var a=0;a<12;a++){P(x,Math.round(26+Math.cos(a/12*6.28)*r*1.1),Math.round(20.5+Math.sin(a/12*6.28)*r*2),"#b88850");}
-    [[6,13],[9,12],[14,13],[19,12],[11,27]].forEach(function(p){P(x,p[0],p[1],"#5aa040");P(x,p[0]+1,p[1],"#3a8030");P(x,p[0],p[1]-1,"#8cd060");});
+    for(var y=19;y<28;y++)for(var i=7;i<24;i++){var v=(y-19)/9;var t=0.25+(1-Math.abs(v-0.3)*1.6)*0.65;if(Math.abs(Math.sin(i*1.1+y*1.7))>0.92)t-=0.25;P(x,i,y,tone(RP.bark,t));}
+    ball(x,24,23.5,2.6,4.6,ramp("#6a4020","#d8b080","#fff0d0"),{});for(var r=1;r<3;r++)for(var a=0;a<12;a++){P(x,Math.round(24+Math.cos(a/12*6.28)*r*0.8),Math.round(23.5+Math.sin(a/12*6.28)*r*1.4),"#b88850");}
+    for(var k=0;k<3;k++){var bx=9+k*5;line(x,bx,19,bx-1,17,tone(RP.bark,0.35),1);}
+    [[8,19],[11,18],[15,19],[19,18]].forEach(function(p){P(x,p[0],p[1],"#5aa040");P(x,p[0]+1,p[1],"#3a8030");P(x,p[0],p[1]-1,"#8cd060");});
     return outline(c,0.42);}
   function sStump(){var c=mkc(32,32),x=c.getContext("2d");trunk(x,16,18,29,7,RP.bark,true);
     ball(x,16,18,8,3.6,ramp("#6a4020","#d8b080","#fff0d0"),{});for(var r=1;r<4;r++)for(var a=0;a<16;a++)P(x,Math.round(16+Math.cos(a/16*6.28)*r*2),Math.round(18+Math.sin(a/16*6.28)*r*0.9),"#b88850");
@@ -1731,7 +1733,7 @@ function wfCreate(root){
         if(meadow&&!winter&&noise(x*11,y*13)<(gp.season===2?0.15:0.4)){for(var f=0;f<2;f++){var fx=X+5+Math.floor(noise(x+f*3,y*7)*21),fy=Y+5+Math.floor(noise(x*7,y+f*5)*21),fc=[["#f85858","#c82828"],["#ffffff","#d8d8e8"],["#f8d040","#d8a020"],["#f890c8","#d060a0"],["#a8a0f8","#7068d0"]][Math.floor(noise(x*2+f,y*2)*5)];
           P(g,fx,fy+2,"#3a7a28");P(g,fx,fy+3,"#3a7a28");P(g,fx,fy-1,fc[0]);P(g,fx-1,fy,fc[0]);P(g,fx+1,fy,fc[1]);P(g,fx,fy+1,fc[1]);P(g,fx,fy,"#f8e060");}}
         if(t===T.MARSH&&!winter&&noise(x*5,y*9)<0.35){var lx=X+8+Math.floor(noise(x,y*3)*14),ly=Y+8+Math.floor(noise(y,x*3)*14);ball(g,lx,ly,4.5,3,ramp("#103a14","#3a8a34","#a8e080",6),{});P(g,lx,ly,"#1e5a28");P(g,lx+1,ly-1,"#2a7030");if(noise(x*3,y)<0.3){P(g,lx-1,ly-2,"#f8f0f8");P(g,lx,ly-2,"#f8c8e0");P(g,lx-2,ly-1,"#ffffff");}}
-        var shw=(t===T.OAK||t===T.WILLOW)?15:(t===T.PINE||t===T.BIRCH)?12:(t===T.LOG)?14:(t===T.STUMP||t===T.ROCK)?11:0;
+        var shw=(t===T.OAK||t===T.WILLOW)?15:(t===T.PINE||t===T.BIRCH)?12:(t===T.LOG)?9:(t===T.STUMP||t===T.ROCK)?11:0;
         if(shw)softShade(g,X+17,Y+30,shw,5,shadeCol,cz?0.4:0.32);}if(reg)g.restore();});
     if(reg){oc.save();oc.beginPath();oc.rect(CX0,CY0-16,CW,CH+16);oc.clip();oc.clearRect(CX0,CY0-16,CW,CH+16);}else oc.clearRect(0,0,objs.width,objs.height);
     for(var oy2=0;oy2<WH;oy2++)for(var ox2=0;ox2<WW;ox2++){if(reg&&!inR(ox2,oy2))continue;var t2=TT[oy2][ox2],X2=ox2*S,Y2=oy2*S;
