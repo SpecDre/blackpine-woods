@@ -458,11 +458,11 @@ var SEASONAL={"morel":[0],"chanterelle":[1,2],"porcini":[1,2],"hedgehog":[1,2,3]
 function seasonOf(day){return Math.floor((day-1)/7)%4;}
 /* 0 spring, 1 summer, 2 autumn, 3 winter. "all" = perennial brackets and the like */
 var MSEASON={"button":[0,1,2],"oyster":"all","chanterelle":[1,2],"porcini":[1,2],"hedgehog":[1,2,3],"maitake":[2],"morel":[0],"turkey-tail":"all","chaga":"all","birch-polypore":"all",
-  "lions-mane":[1,2],"reishi":[0,1,2],"cordyceps":[0,1],"agarikon":"all","death-cap":[1,2],"fly-agaric":[1,2],"honey-fungus":"all","jack-o-lantern":"all","lobster":[1,2],"dryads-saddle":[0,1],
+  "lions-mane":[1,2],"reishi":[0,1,2],"cordyceps":[0,1],"agarikon":"all","death-cap":[0,1,2],"fly-agaric":[1,2],"honey-fungus":"all","jack-o-lantern":"all","lobster":[1,2],"dryads-saddle":[0,1],
   "shaggy-mane":[0,2],"matsutake":[1,2],"sculptured-puffball":[1,2],"gypsy":[1,2]};
 var MPEAK={"oyster":[2,3],"chanterelle":[1],"porcini":[2],"hedgehog":[2],"lions-mane":[2],"death-cap":[2],"fly-agaric":[2],"matsutake":[2],"turkey-tail":[2,3],"shaggy-mane":[2],"morel":[0]};
 /* quest mushrooms can still turn up, rarely, out of season, so a story never stalls for a month */
-var MQUEST={"lions-mane":1,"reishi":1,"lobster":1,"matsutake":1};
+var MQUEST={"lions-mane":1,"reishi":1,"lobster":1,"matsutake":1,"death-cap":1};
 var HAB={"button":"meadow","death-cap":"oak","lions-mane":"oak","maitake":"oak","oyster":"log","turkey-tail":"log","reishi":"log","dryads-saddle":"log","chaga":"birch","birch-polypore":"birch","fly-agaric":"birch",
   "chanterelle":"pine","porcini":"pine","hedgehog":"pine","cordyceps":"pine","agarikon":"pine","matsutake":"pine","gypsy":"pine","morel":"clearing","honey-fungus":"wall","jack-o-lantern":"wall","lobster":"willow","shaggy-mane":"open","sculptured-puffball":"open"};
 function seasonsText(k){var s=MSEASON[k];if(!s||s==="all")return "All year";return s.map(function(i){return SEASONS[i];}).join(", ");}
@@ -486,7 +486,7 @@ var CHEST_LOOT=[{coins:25,mat:{nails:2}},{coins:45,mat:{planks:4}},{coins:30,ite
 var FISH={
  "minnow":{n:"Minnow",lv:1,rod:1,val:1,food:4,xp:10,where:["woods"],col:"#a8b8a0",key:"A tiny silver fish. Good bait, poor supper."},
  "perch":{n:"Yellow perch",lv:3,rod:1,val:3,food:8,xp:16,where:["lake","woods"],col:"#d8c048",key:"Yellow-green with dark bars and a spiny back fin."},
- "brook-trout":{n:"Brook trout",lv:5,rod:1,val:5,food:10,xp:22,where:["woods","lake"],col:"#6a8a58",key:"Olive back with pale worm-like marks and red spots ringed in blue."},
+ "brook-trout":{n:"Brook trout",lv:5,rod:1,val:5,food:10,xp:22,where:["woods"],col:"#6a8a58",key:"Olive back with pale worm-like marks and red spots ringed in blue."},
  "cavefish":{n:"Blind cavefish",lv:8,rod:1,val:9,food:10,xp:32,where:["cave","depths"],col:"#f0d8d0",key:"Pale pink and eyeless. It finds its way by feel."},
  "rainbow-trout":{n:"Rainbow trout",lv:10,rod:1,val:8,food:14,xp:36,where:["lake"],col:"#c8a0b0",key:"A pink stripe down a silvery, speckled side."},
  "bass":{n:"Largemouth bass",lv:14,rod:2,val:12,food:18,xp:50,where:["lake"],col:"#5a7a3a",key:"Green with a dark side stripe and a jaw that hinges past its eye."},
@@ -541,18 +541,18 @@ var SHOP=[
  {id:"mister",n:"Spray mister",p:35,req:{forage:4},kind:"tool",d:"Beds need misting every day to stay humid."},
  {id:"straw",n:"Straw bale",p:10,req:{forage:4},kind:"mat",d:"The classic beginner substrate for oysters."},
  {id:"oyster_spawn",n:"Oyster spawn",p:25,req:{forage:4},kind:"mat",d:"Grain spawn grown through with oyster mycelium."},
- {id:"lantern",n:"Lantern",p:110,req:{forage:3},kind:"tool",d:"Light for Foxfire Cave (north edge, past the birches), and a bigger glow at night."},
+ {id:"lantern",n:"Lantern",p:70,req:{forage:3},kind:"tool",d:"Light for Foxfire Cave (north edge, past the birches), and a bigger glow at night."},
  {id:"drill",n:"Drill & wax kit",p:90,req:{forage:6},kind:"tool",d:"Drill a diamond pattern, plug the dowels, seal with wax."},
  {id:"shiitake_dowels",n:"Shiitake dowels",p:35,req:{forage:6},kind:"mat",d:"Spawn plugs for fresh oak logs."},
  {id:"planks",n:"Planks",p:10,req:{forage:6},kind:"mat",d:"Sawn boards for a proper cabin."},
- {id:"waders",n:"Waders",p:160,req:{forage:6},kind:"tool",d:"Wade the shallows of Willow Marsh (boardwalk at the south edge)."},
+ {id:"waders",n:"Waders",p:120,req:{forage:6},kind:"tool",d:"Wade the shallows of Willow Marsh (boardwalk at the south edge)."},
  {id:"steelaxe",n:"Steel axe",p:420,req:{wc:10},kind:"tool",d:"Bites deeper. Every swing is far more likely to land a log."},
  {id:"backpack",n:"Forager's backpack",p:260,req:{forage:8},kind:"cap",cap:20,d:"Carry 20 items."},
- {id:"rope",n:"Climbing rope",p:220,req:{forage:8},kind:"tool",d:"Climb the rock face up to Highpine Ridge (north-east edge)."}
+ {id:"rope",n:"Climbing rope",p:160,req:{forage:8},kind:"tool",d:"Climb the rock face up to Highpine Ridge (north-east edge)."}
 ];
 var RUE_SHOP=[
  {id:"worms",n:"Worms ×10",p:6,req:{fish:1},kind:"mat",qty:10,d:"Bait. One is used up for every fish you land."},
- {id:"flyrod",n:"Fly rod",p:380,req:{fish:12},kind:"tool",d:"Light and quick. Lets you hook bass, catfish and pike, and gives you longer to react."},
+ {id:"flyrod",n:"Fly rod",p:300,req:{fish:12},kind:"tool",d:"Light and quick. Lets you hook bass, catfish and pike, and gives you longer to react."},
  {id:"tacklebox",n:"Tackle box",p:180,req:{fish:6},kind:"tool",d:"A good knot and a sharp hook: fish slip off far less often."}
 ];
 var BRAM_SHOP=[
@@ -583,18 +583,18 @@ var QUESTS=[
  {n:"Meet Old Wren",giver:"wren",d:"Follow the path east over the bridge to the trading post and sell 3 mushrooms to Wren.",goal:"sold",need:3,rw:{xp:{forage:30},coins:10},hint:"That's me! Bring me anything you've picked and I'll pay you fair."},
  {n:"Know your killers",giver:"wren",d:"Find a death cap under the oaks at the meadow's edge (south-east) and identify it correctly. Leave it where it grows.",goal:"idToxic",need:1,rw:{xp:{forage:50},tool:"guide"},hint:"Death caps hide under the oaks along the meadow's edge. Plain-looking things. Look for the cup at the base."},
  {n:"Timber!",giver:"wren",d:"Buy an axe from Wren and chop 3 birch logs from the white-barked birches in the north-west. Woodcutting levels unlock oak, willow, pine and mountain pine.",goal:"chop_birch",need:3,rw:{xp:{wc:60},coins:10},hint:"Axes are on my shelf. Birches are the easy ones, up north-west. Oak needs Woodcutting 5."},
- {n:"Gone fishing",giver:"wren",d:"Buy a fishing rod and worms from Wren, then catch 3 fish. The pond south of camp and the stream both have fish. Press E facing the water, wait for the splash, then press E again.",goal:"catch",need:3,rw:{xp:{fish:60},coins:10},hint:"Rod and worms from me. When the float dips and you see the splash, reel in quick."},
+ {n:"Gone fishing",giver:"wren",d:"Buy a fishing rod and worms from Wren, then catch 3 fish. Look for rippling fishing spots in the pond south of camp and along the stream (the shallows are easiest at first). Stand next to one and press E. You keep fishing by yourself until you walk away.",goal:"catch",need:3,rw:{xp:{fish:60},coins:10},hint:"Rod and worms from me. Fish only bite where the water ripples. The shallows suit a beginner; trout riffles need Fishing 5."},
  {n:"A roof over your head",giver:"wren",d:"Build a lean-to at the sign in your camp: 6 wood (any logs) and 1 nail bundle.",goal:"build_leanto",need:1,rw:{xp:{forage:40,wc:40},coins:10},hint:"Any logs will do for a lean-to. Nails are on my shelf."},
  {n:"The scattered club",giver:"wren",d:"Wren tells you the Blackpine Foragers' Club was scattered by last autumn's storm. Pip went into Foxfire Cave. Buy a lantern and find Pip (north edge of the woods).",goal:"talk_pip",need:1,rw:{xp:{forage:80},coins:20},hint:"Pip always loved that cave. Lantern from me, then head north past the birches."},
  {n:"Light for the deep",giver:"pip",d:"Pip wants to follow her brother Tam down into Glowroot Depths. Bring her 4 honey fungus (for foxfire torches) and 6 birch logs (for a ladder).",goal:"deliver_pip",need:1,items:{"honey-fungus":4,birch:6},rw:{xp:{forage:120,wc:60},coins:40},hint:"Honey fungus glows along the cave walls. Birch is up in the north-west of the woods."},
  {n:"Into the Depths",giver:"pip",d:"Climb down Pip's ladder in the far north-west of Foxfire Cave and find Tam in Glowroot Depths. You'll need Foraging 10.",goal:"talk_tam",need:1,rw:{xp:{forage:120},coins:30},hint:"The ladder's at the far end of the cave. Mind your footing down there."},
- {n:"Tam's supper",giver:"tam",d:"Tam has been lost down here for weeks. Bring him 2 blind cavefish (Fishing 8) and a lion's mane so he has the strength to climb out.",goal:"deliver_tam",need:1,items:{cavefish:2,"lions-mane":1},rw:{xp:{fish:120,forage:80},coins:50},hint:"Cavefish live in the dark pools, here and in Foxfire Cave. Lion's mane grows on the oaks."},
+ {n:"Tam's supper",giver:"tam",d:"Tam has been lost down here for weeks. Bring him 2 blind cavefish (Fishing 8) and a lion's mane so he has the strength to climb out.",goal:"deliver_tam",need:1,items:{cavefish:2,"lions-mane":1},rw:{xp:{fish:120,forage:80},coins:50},hint:"Cavefish bite at the rippling pools, here and in Foxfire Cave. Lion's mane grows on the oaks in the woods, best in summer and autumn."},
  {n:"Wet feet",giver:"tam",d:"Tam says Moss went looking for Finn in Willow Marsh. Buy waders and find Moss (south edge of the woods).",goal:"talk_moss",need:1,rw:{xp:{forage:100},coins:30},hint:"Waders from Wren, then follow the boardwalk south."},
  {n:"A raft for Finn",giver:"moss",d:"Moss saw Finn's camp smoke out on the island in Silverrun Lake. Bring 6 willow logs (Woodcutting 12) and a lobster mushroom so Moss can lash a raft together.",goal:"deliver_moss",need:1,items:{willow:6,lobster:1},rw:{xp:{wc:200,forage:80},coins:60},hint:"Willows grow all over the marsh. Lobster mushrooms hide under them."},
  {n:"Finn on the island",giver:"moss",d:"Moss has moored a raft at the end of the dock on Silverrun Lake (east edge of the woods). Cross over and find Finn.",goal:"talk_finn",need:1,rw:{xp:{fish:100},coins:30},hint:"The lake's through the arch on the east edge of the woods."},
- {n:"Finn's catch",giver:"finn",d:"Finn has run out of food on the island. Bring 3 rainbow trout and a largemouth bass (Fishing 14, needs a fly rod from Rue).",goal:"deliver_finn",need:1,items:{"rainbow-trout":3,bass:1},rw:{xp:{fish:250},coins:80,tool:"tacklebox"},hint:"Rue sells fly rods at her shack by the lake."},
+ {n:"Finn's catch",giver:"finn",d:"Finn has run out of food on the island. Bring 3 rainbow trout and a largemouth bass (Fishing 14, needs a fly rod from Rue). Rainbow trout bite at the lake's drop-off spots, bass in the weed beds.",goal:"deliver_finn",need:1,items:{"rainbow-trout":3,bass:1},rw:{xp:{fish:250},coins:80,tool:"tacklebox"},hint:"Rue sells fly rods at her shack by the lake. Each fishing spot says what kind it is when you stand by it."},
  {n:"The high country",giver:"finn",d:"Finn says Old Hal last saw Bram heading up the mountain. Buy a climbing rope and find Hal on Highpine Ridge (north-east edge of the woods).",goal:"talk_hal",need:1,rw:{xp:{forage:150},coins:40},hint:"A rope from Wren, then the rock face in the far north-east."},
- {n:"Clear the pass",giver:"hal",d:"A giant mountain pine has fallen across the pass to Cloudpeak. Bring Hal 3 matsutake and 4 pine logs (Woodcutting 16) so he can help you cut it away.",goal:"deliver_hal",need:1,items:{matsutake:3,pine:4},rw:{xp:{wc:250,forage:120},coins:80},hint:"Matsutake grow under the ridge pines. Pine logs come from the pines in the south-west of the woods."},
+ {n:"Clear the pass",giver:"hal",d:"A giant mountain pine has fallen across the pass to Cloudpeak. Bring Hal 3 matsutake and 4 pine logs so he can lever it aside. Ordinary pine from the woods or the lake (Woodcutting 16). The ridge pines are mountain pine and won't do.",goal:"deliver_hal",need:1,items:{matsutake:3,pine:4},rw:{xp:{wc:250,forage:120},coins:80},hint:"Matsutake grow under the ridge pines. Pine logs come from the pines in the south-west of the woods, not the mountain pines up here."},
  {n:"Cloudpeak",giver:"hal",d:"The pass is open. Climb to Cloudpeak village at the top of the ridge and find Bram.",goal:"talk_bram",need:1,rw:{xp:{forage:150},coins:50},hint:"Follow the path to the top of the ridge."},
  {n:"Bram's last wish",giver:"bram",d:"Bram promised Wren he'd come home with the finest catch in the mountains. Bring him 2 arctic char from Frostfall Tarn (Fishing 18 to enter, 24 to catch, deep-water rod) and an agarikon.",goal:"deliver_bram",need:1,items:{char:2,agarikon:1},rw:{xp:{fish:400,forage:200},coins:150},hint:"The tarn's through the north gate. Agarikon grows on the ancient pines here and in the woods' far south-west."},
  {n:"Reunion",giver:"bram",d:"Bram is heading down the mountain. Go back to Wren's trading post and tell her.",goal:"talk_wren",need:1,rw:{xp:{forage:300,wc:200,fish:200},coins:300},hint:"Go on, tell Wren."}
@@ -1221,7 +1221,7 @@ function wfCreate(root){
     snd.sfx("quest");toast("📜 <b>Quest complete:</b> "+q.n,"lvl");
     st.quest++;st.qp=0;reward(q.rw,"quest reward");
     var nq=quest();if(nq){toast("New quest: <b>"+nq.n+"</b>","");
-      if(nq.goal==="build_leanto"&&st.shelter!=="tent")qComplete();else if((nq.goal==="talk_hal"||nq.goal==="deliver_hal")&&st.flags.pass)qComplete();}
+      if(nq.goal==="build_leanto"&&st.shelter!=="tent")qComplete();else{var gm=/^(talk|deliver)_(pip|moss|hal|bram)$/.exec(nq.goal);if(gm&&st.flags[STORYFLAG["deliver_"+gm[2]]])qComplete();}}
     flashQuest();save();}
   var qFlashT=0;
   function renderQuest(){var q=quest(),el=document.getElementById("wfQuest");if(!el)return;
@@ -2166,7 +2166,7 @@ function wfCreate(root){
     else if(tg.kind==="lookout")lookout();
     else if(tg.kind==="door")tryDoor(tg.w);
     else if(tg.kind==="tree")chopTree(tg.x,tg.y,tg.tk);
-    else if(tg.kind==="block")say("",null,["A giant mountain pine has come down across the pass, roots and all. It's far too big to cut alone.","Old Hal, up by the old telescope, can shift it with 4 pine logs and 3 matsutake."]);
+    else if(tg.kind==="block")say("",null,["A giant mountain pine has come down across the pass, roots and all. It's far too big to cut alone.","Old Hal, up by the old telescope, can shift it with 4 pine logs (from the woods, not mountain pine) and 3 matsutake."]);
     else if(tg.kind==="house")say("",null,[["Nobody answers. A cat watches you from the window.","Someone inside calls out: \"Bram's at the outfitter's, if you're looking for him!\"","You hear a kettle whistling inside, but no one comes to the door."][(tg.x+tg.y)%3]]);
     else if(tg.kind==="water"){if(rodTier()&&tg.spot)startFishing(tg.spot);else collectWater(tg);}
     else if(tg.kind==="well")wellMenu();
@@ -2190,7 +2190,7 @@ function wfCreate(root){
   function tryDoor(w){
     if(w.need&&!st.tools[w.need]){say("","door",[DOOR_LOCKED[w.to],"Old Wren sells "+NEEDN[w.need]+"."]);return false;}
     if(w.flag==="ladder"&&!st.flags.ladder){say("","door",["A shaft drops away into the dark. The rungs of an old ladder hang snapped and rotten.","Pip might know a way down."]);return false;}
-    if(w.flag==="pass"&&!st.flags.pass){say("","door",["A giant fallen pine blocks the trail to Cloudpeak.","Old Hal, by the telescope, can shift it if you bring him 4 pine logs and 3 matsutake."]);return false;}
+    if(w.flag==="pass"&&!st.flags.pass){say("","door",["A giant fallen pine blocks the trail to Cloudpeak.","Old Hal, by the telescope, can shift it if you bring him 4 pine logs (from the woods, not mountain pine) and 3 matsutake."]);return false;}
     if(w.skill&&!reqOk(w.skill)){say("","door",[w.to==="tarn"?"The gatekeeper shakes her head. \"The ice up there is no place for beginners. Come back with "+reqText(w.skill)+".\"":"You peer down. It's a long, slippery climb. You'll need "+reqText(w.skill)+" before you're ready for what's down there."]);return false;}
     doWarp(w);return true;}
   function warpOk(w){return !doorLock(w);}
@@ -2471,12 +2471,17 @@ function wfCreate(root){
         takeItems(q.items);var fl=STORYFLAG["deliver_"+id];if(fl){st.flags[fl]=1;if(fl==="pass"||fl==="raft")dirty=true;}
         say(NPC_INFO[id].name,por,STORY["deliver_"+id],function(){qEvent("deliver_"+id);if(done)done();});}};}
     return null;}
-  /* the fallen pine can be cleared whenever you bring Hal the gear, even before the story reaches him */
-  function passOpt(back){var need={matsutake:3,pine:4};
-    if(hasItems(need))return {t:"★ Let's shift that fallen pine",f:function(){takeItems(need);st.flags.pass=1;dirty=true;snd.sfx("timber");
-      say("Old Hal","npc:hal",["Pine wedges and matsutake for the climb. You came prepared.","Right. Put your shoulder to it. On three... one, two, THREE!","...There. The pass is open. Cloudpeak's at the top of the trail."],function(){toast("🏔 The pass to Cloudpeak is open!","lvl");save();});}};
-    return {t:"How do we move that fallen pine?",f:function(){say("Old Hal","npc:hal",["It's too big to cut, but we can lever it aside. Bring me 4 pine logs for wedges and 3 matsutake to keep us going on the climb.",
-      "Ordinary pine, mind, from the ridge pines (Woodcutting 16). Not the big mountain pines. And the matsutake need to be in your basket, not in storage.","You have: "+itemsText(need)+"."],back);}};}
+  /* Pip's ladder, Moss's raft, Hal's pass and Bram's trip home can be sorted whenever you bring the items,
+     even before the story reaches them; the story then skips those steps */
+  var GATE={pip:{ask:"What would you need for a new ladder?",go:"★ Here's what you need for the ladder",note:"The honey fungus needs to be in your basket. Birch grows up in the north-west of the woods."},
+    moss:{ask:"What would it take to reach Finn?",go:"★ Here's everything for the raft",note:"Willows need Woodcutting 12. Lobster mushrooms hide under the willows, mostly in summer and autumn."},
+    hal:{ask:"How do we move that fallen pine?",go:"★ Let's shift that fallen pine",note:"Ordinary pine, mind, from the woods or down by the lake (Woodcutting 16). These ridge pines are mountain pine, no good for wedges. And the matsutake need to be in your basket, not in storage."},
+    bram:{ask:"What would bring you home?",go:"★ Hand over the char and agarikon",note:"Char only live in Frostfall Tarn, through the north gate (Fishing 18 to enter, 24 and a deep-water rod to catch)."}};
+  function gateOpt(id,back){var g=GATE[id],q=null;QUESTS.forEach(function(x){if(x.goal==="deliver_"+id)q=x;});var fl=STORYFLAG["deliver_"+id];
+    if(!g||!q||!fl||st.flags[fl])return null;var cur=quest();if(cur&&cur.goal==="deliver_"+id)return null;var need=q.items,nm=NPC_INFO[id].name,por="npc:"+id;
+    if(hasItems(need))return {t:g.go,f:function(){takeItems(need);st.flags[fl]=1;if(fl==="pass"||fl==="raft")dirty=true;snd.sfx(id==="hal"?"timber":"quest");
+      say(nm,por,STORY["deliver_"+id],function(){toast("⭐ "+{ladder:"Pip's ladder is down into Glowroot Depths.",raft:"The raft to Finn's island is ready.",pass:"The pass to Cloudpeak is open!",bramHome:"Bram is heading home to Wren."}[fl],"lvl");save();});}};
+    return {t:g.ask,f:function(){say(nm,por,[q.d,g.note,"You have: "+itemsText(need)+"."],back);}};}
   function hintOpt(id,back){var q=quest();if(!q||q.giver!==id)return null;return {t:"About my task…",f:function(){say(NPC_INFO[id].name,"npc:"+id,[q.hint||q.d],back);}};}
   function talkNpc(n){
     var id=n.id,info=NPC_INFO[id],tk=NPC_TALK[id],por="npc:"+id,met=st.met[id];st.met[id]=1;
@@ -2485,7 +2490,7 @@ function wfCreate(root){
       if(id==="rue")o.push({t:"Buy tackle and bait",f:function(){shopMenu(RUE_SHOP,"Rue sells","Rue's bait shack",function(){talkNpc(n);});}},{t:"Sell fish",f:function(){sellMenu("rue",function(){talkNpc(n);});}});
       if(id==="bram"&&st.bank.cap)o.push({t:"Open my storage",f:function(){bankMenu(function(){talkNpc(n);});}});
       if(id==="bram")o.push({t:"Buy gear",f:function(){shopMenu(BRAM_SHOP,"Bram sells","Mountain outfitters",function(){talkNpc(n);});}},{t:"Sell your goods",f:function(){sellMenu("bram",function(){talkNpc(n);});}});
-      if(id==="hal"&&!st.flags.pass){var hq=quest();if(!hq||hq.goal!=="deliver_hal")o.push(passOpt(topics));}
+      o.push(gateOpt(id,topics));
       o.push(hintOpt(id,topics));
       tk.topics.forEach(function(tp){o.push({t:tp.t,f:function(){say(info.name,por,tp.lines,topics);}});});
       o.push({t:"See you around",f:function(){say(info.name,por,[tk.bye]);}});
