@@ -1221,7 +1221,7 @@ function wfCreate(root){
     snd.sfx("quest");toast("📜 <b>Quest complete:</b> "+q.n,"lvl");
     st.quest++;st.qp=0;reward(q.rw,"quest reward");
     var nq=quest();if(nq){toast("New quest: <b>"+nq.n+"</b>","");
-      if(nq.goal==="build_leanto"&&st.shelter!=="tent")qComplete();}
+      if(nq.goal==="build_leanto"&&st.shelter!=="tent")qComplete();else if((nq.goal==="talk_hal"||nq.goal==="deliver_hal")&&st.flags.pass)qComplete();}
     flashQuest();save();}
   var qFlashT=0;
   function renderQuest(){var q=quest(),el=document.getElementById("wfQuest");if(!el)return;
@@ -2166,7 +2166,7 @@ function wfCreate(root){
     else if(tg.kind==="lookout")lookout();
     else if(tg.kind==="door")tryDoor(tg.w);
     else if(tg.kind==="tree")chopTree(tg.x,tg.y,tg.tk);
-    else if(tg.kind==="block")say("",null,["A giant mountain pine has come down across the pass, roots and all. It's far too big to cut alone.","Old Hal might know how to shift it."]);
+    else if(tg.kind==="block")say("",null,["A giant mountain pine has come down across the pass, roots and all. It's far too big to cut alone.","Old Hal, up by the old telescope, can shift it with 4 pine logs and 3 matsutake."]);
     else if(tg.kind==="house")say("",null,[["Nobody answers. A cat watches you from the window.","Someone inside calls out: \"Bram's at the outfitter's, if you're looking for him!\"","You hear a kettle whistling inside, but no one comes to the door."][(tg.x+tg.y)%3]]);
     else if(tg.kind==="water"){if(rodTier()&&tg.spot)startFishing(tg.spot);else collectWater(tg);}
     else if(tg.kind==="well")wellMenu();
@@ -2190,7 +2190,7 @@ function wfCreate(root){
   function tryDoor(w){
     if(w.need&&!st.tools[w.need]){say("","door",[DOOR_LOCKED[w.to],"Old Wren sells "+NEEDN[w.need]+"."]);return false;}
     if(w.flag==="ladder"&&!st.flags.ladder){say("","door",["A shaft drops away into the dark. The rungs of an old ladder hang snapped and rotten.","Pip might know a way down."]);return false;}
-    if(w.flag==="pass"&&!st.flags.pass){say("","door",["The fallen pine blocks the way."]);return false;}
+    if(w.flag==="pass"&&!st.flags.pass){say("","door",["A giant fallen pine blocks the trail to Cloudpeak.","Old Hal, by the telescope, can shift it if you bring him 4 pine logs and 3 matsutake."]);return false;}
     if(w.skill&&!reqOk(w.skill)){say("","door",[w.to==="tarn"?"The gatekeeper shakes her head. \"The ice up there is no place for beginners. Come back with "+reqText(w.skill)+".\"":"You peer down. It's a long, slippery climb. You'll need "+reqText(w.skill)+" before you're ready for what's down there."]);return false;}
     doWarp(w);return true;}
   function warpOk(w){return !doorLock(w);}
@@ -2471,6 +2471,12 @@ function wfCreate(root){
         takeItems(q.items);var fl=STORYFLAG["deliver_"+id];if(fl){st.flags[fl]=1;if(fl==="pass"||fl==="raft")dirty=true;}
         say(NPC_INFO[id].name,por,STORY["deliver_"+id],function(){qEvent("deliver_"+id);if(done)done();});}};}
     return null;}
+  /* the fallen pine can be cleared whenever you bring Hal the gear, even before the story reaches him */
+  function passOpt(back){var need={matsutake:3,pine:4};
+    if(hasItems(need))return {t:"★ Let's shift that fallen pine",f:function(){takeItems(need);st.flags.pass=1;dirty=true;snd.sfx("timber");
+      say("Old Hal","npc:hal",["Pine wedges and matsutake for the climb. You came prepared.","Right. Put your shoulder to it. On three... one, two, THREE!","...There. The pass is open. Cloudpeak's at the top of the trail."],function(){toast("🏔 The pass to Cloudpeak is open!","lvl");save();});}};
+    return {t:"How do we move that fallen pine?",f:function(){say("Old Hal","npc:hal",["It's too big to cut, but we can lever it aside. Bring me 4 pine logs for wedges and 3 matsutake to keep us going on the climb.",
+      "Ordinary pine, mind, from the ridge pines (Woodcutting 16). Not the big mountain pines. And the matsutake need to be in your basket, not in storage.","You have: "+itemsText(need)+"."],back);}};}
   function hintOpt(id,back){var q=quest();if(!q||q.giver!==id)return null;return {t:"About my task…",f:function(){say(NPC_INFO[id].name,"npc:"+id,[q.hint||q.d],back);}};}
   function talkNpc(n){
     var id=n.id,info=NPC_INFO[id],tk=NPC_TALK[id],por="npc:"+id,met=st.met[id];st.met[id]=1;
@@ -2479,6 +2485,7 @@ function wfCreate(root){
       if(id==="rue")o.push({t:"Buy tackle and bait",f:function(){shopMenu(RUE_SHOP,"Rue sells","Rue's bait shack",function(){talkNpc(n);});}},{t:"Sell fish",f:function(){sellMenu("rue",function(){talkNpc(n);});}});
       if(id==="bram"&&st.bank.cap)o.push({t:"Open my storage",f:function(){bankMenu(function(){talkNpc(n);});}});
       if(id==="bram")o.push({t:"Buy gear",f:function(){shopMenu(BRAM_SHOP,"Bram sells","Mountain outfitters",function(){talkNpc(n);});}},{t:"Sell your goods",f:function(){sellMenu("bram",function(){talkNpc(n);});}});
+      if(id==="hal"&&!st.flags.pass){var hq=quest();if(!hq||hq.goal!=="deliver_hal")o.push(passOpt(topics));}
       o.push(hintOpt(id,topics));
       tk.topics.forEach(function(tp){o.push({t:tp.t,f:function(){say(info.name,por,tp.lines,topics);}});});
       o.push({t:"See you around",f:function(){say(info.name,por,[tk.bye]);}});
