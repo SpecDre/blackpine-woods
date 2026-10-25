@@ -1,0 +1,1793 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Blackpine Woods</title>
+<meta name="description" content="A pixel-art mushroom foraging adventure. Examine and identify wild mushrooms, trade with Old Wren, build a cabin, grow your own, and explore a glowing cave, a misty marsh and a high mountain ridge.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&family=Pixelify+Sans:wght@400..700&display=swap">
+<style>
+/* Layout: app shell — sticky sidebar nav (top pill bar on phones), bento home, card decks, slide-over detail drawer */
+:root{
+  --bg:#f5f4ef;
+  --panel:#ffffff;
+  --panel-2:#eeede6;
+  --ink:#141715;
+  --ink-2:#464c48;
+  --muted:#7a807b;
+  --line:#e2e0d7;
+  --accent:#b8580a;      /* chanterelle amber */
+  --accent-ink:#ffffff;
+  --moss:#47663a;
+  --gold:#9a6f0c;
+  --danger:#bf3529;
+  --glow:rgba(184,88,10,.10);
+  --paper:#ffffff;       /* backing for printed diagrams */
+  --shadow:0 1px 0 rgba(20,23,21,.04),0 12px 32px -12px rgba(20,23,21,.12);
+  --r-lg:22px; --r-md:16px; --r-sm:10px;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Geist","Segoe UI",system-ui,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,"Cascadia Mono",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d110f; --panel:#141a16; --panel-2:#1b221d; --ink:#ebefe9; --ink-2:#b6beb7; --muted:#7d8880;
+  --line:#252d28; --accent:#f39a3d; --accent-ink:#1b1106; --moss:#9dc281; --gold:#e2b64a; --danger:#f07a6d;
+  --glow:rgba(243,154,61,.12); --paper:#ecebe5; --shadow:0 1px 0 rgba(0,0,0,.4),0 16px 40px -16px rgba(0,0,0,.6); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d110f; --panel:#141a16; --panel-2:#1b221d; --ink:#ebefe9; --ink-2:#b6beb7; --muted:#7d8880;
+  --line:#252d28; --accent:#f39a3d; --accent-ink:#1b1106; --moss:#9dc281; --gold:#e2b64a; --danger:#f07a6d;
+  --glow:rgba(243,154,61,.12); --paper:#ecebe5; --shadow:0 1px 0 rgba(0,0,0,.4),0 16px 40px -16px rgba(0,0,0,.6); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;line-height:1.08;text-wrap:balance;letter-spacing:-.02em;font-weight:650}
+p{margin:0 0 .8em}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.mono{font-family:var(--f-mono)}
+em{font-style:italic}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100%;
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+.side{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;height:100dvh;display:flex;flex-direction:column;gap:22px;
+  padding:22px 14px 18px max(16px,env(safe-area-inset-left,0px));border-right:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px;font-family:var(--f-display);font-weight:700;font-size:1.08rem;letter-spacing:-.02em}
+.brand-mark{width:32px;height:32px;border-radius:10px;background:var(--accent);display:grid;place-items:center;flex:0 0 auto}
+.brand small{display:block;font-family:var(--f-mono);font-weight:400;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:0;border-radius:11px;padding:9px 10px;
+  font-size:.92rem;font-weight:500;color:var(--ink-2);cursor:pointer;transition:background .15s,color .15s}
+.nav button svg{width:18px;height:18px;flex:0 0 auto;opacity:.8}
+.nav button:hover{background:var(--panel-2);color:var(--ink)}
+.nav button[aria-current="true"]{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.nav button[aria-current="true"] svg{color:var(--accent);opacity:1}
+.nav .sep{height:1px;background:var(--line);margin:8px 10px}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.theme{display:flex;background:var(--panel-2);border-radius:12px;padding:3px;gap:2px}
+.theme button{flex:1;border:0;background:none;border-radius:9px;padding:6px 0;font-size:.78rem;color:var(--muted);cursor:pointer}
+.theme button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.side-note{font-size:.72rem;color:var(--muted);line-height:1.45;padding:0 6px}
+
+.main{min-width:0;padding:28px max(16px,env(safe-area-inset-right,0px)) 80px clamp(16px,4vw,48px)}
+.view{max-width:1040px;margin-inline:auto;animation:in .35s ease both}
+@keyframes in{from{transform:translateY(6px)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.view{animation:none}}
+
+/* ---------- headings ---------- */
+.kicker{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.kicker::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.page-head{margin:6px 0 28px}
+.page-head h2{font-size:clamp(2rem,4.6vw,3.1rem);font-weight:700}
+.page-head p{color:var(--ink-2);max-width:62ch;margin-top:12px;font-size:1.04rem}
+.h3{font-size:1.3rem;margin:38px 0 14px;font-weight:650}
+
+/* ---------- hero / bento ---------- */
+.hero{position:relative;overflow:hidden;border-radius:var(--r-lg);background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);
+  padding:clamp(26px,5vw,52px);min-height:330px;display:flex;flex-direction:column;justify-content:flex-end}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero-fade{position:absolute;inset:0;background:linear-gradient(180deg,transparent 15%,var(--panel) 92%)}
+.hero-inner{position:relative;max-width:640px}
+.hero h1{font-size:clamp(2.4rem,6.4vw,4.4rem);font-weight:750;letter-spacing:-.035em;line-height:.98}
+.hero h1 span{color:var(--accent)}
+.hero p{color:var(--ink-2);font-size:1.06rem;margin:16px 0 0;max-width:54ch}
+.bento{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px}
+.stat b{display:block;font-family:var(--f-display);font-size:1.7rem;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem;color:var(--muted)}
+.tile{grid-column:span 2;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:20px;cursor:pointer;
+  display:flex;flex-direction:column;gap:8px;min-height:150px;transition:transform .18s ease,border-color .18s,box-shadow .18s;position:relative;overflow:hidden}
+.tile:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:var(--shadow)}
+.tile .ico{width:38px;height:38px;border-radius:11px;background:var(--glow);color:var(--accent);display:grid;place-items:center}
+.tile .ico svg{width:20px;height:20px}
+.tile h3{font-size:1.2rem;margin-top:auto}
+.tile p{margin:0;color:var(--muted);font-size:.87rem}
+.tile .arrow{position:absolute;top:18px;right:18px;color:var(--muted);transition:transform .18s,color .18s}
+.tile:hover .arrow{transform:translate(3px,-3px);color:var(--accent)}
+.tile.wide{grid-column:span 4}
+@media (prefers-reduced-motion:reduce){.tile,.tile .arrow{transition:none}}
+
+/* ---------- generic ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.grid > *{min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:20px}
+.card h3{font-size:1.08rem;margin-bottom:8px}
+.card p,.card li{color:var(--ink-2);font-size:.92rem}
+.card p:last-child{margin-bottom:0}
+.list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.list li{position:relative;padding-left:18px;color:var(--ink-2);font-size:.92rem}
+.list li::before{content:"";position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:2px;background:var(--accent);opacity:.75}
+.term{font-family:var(--f-mono);font-size:.8rem;color:var(--ink);background:var(--panel-2);padding:1px 6px;border-radius:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.02em;padding:3px 9px;border-radius:999px;
+  background:var(--panel-2);color:var(--ink-2);white-space:nowrap}
+.chip.moss{background:color-mix(in srgb,var(--moss) 14%,transparent);color:var(--moss)}
+.chip.gold{background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold)}
+.chip.amber{background:var(--glow);color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.note{display:flex;gap:14px;align-items:flex-start;border-radius:var(--r-md);padding:16px 18px;background:var(--panel);border:1px solid var(--line);margin:18px 0}
+.note .dot{flex:0 0 auto;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--glow);color:var(--accent)}
+.note .dot svg{width:16px;height:16px}
+.note h4{font-size:.98rem;margin-bottom:4px;font-weight:650}
+.note p{margin:0;color:var(--ink-2);font-size:.92rem}
+.note.warn{background:color-mix(in srgb,var(--danger) 7%,var(--panel));border-color:color-mix(in srgb,var(--danger) 25%,var(--line))}
+.note.warn .dot{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+.note.law{background:color-mix(in srgb,var(--gold) 8%,var(--panel));border-color:color-mix(in srgb,var(--gold) 28%,var(--line))}
+.note.law .dot{background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold)}
+
+/* ---------- toolbar (search + filters) ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px}
+.search{position:relative;flex:1 1 260px;max-width:380px}
+.search input{width:100%;font:inherit;font-size:.92rem;padding:11px 14px 11px 40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.search input::placeholder{color:var(--muted)}
+.search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--glow)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--muted)}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 13px;font-size:.82rem;cursor:pointer;color:var(--ink-2)}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.count{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);margin-left:auto}
+.empty{color:var(--muted);padding:28px 0;text-align:center}
+
+/* species cards */
+.deck{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.deck > *{min-width:0}
+.sp{display:flex;flex-direction:column;gap:10px}
+.sp-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.sp h3{font-size:1.14rem;margin:0}
+.latin{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);margin-top:3px;display:block;font-style:italic}
+.monogram{flex:0 0 auto;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1rem;
+  background:var(--panel-2);color:var(--ink-2)}
+.aka{font-size:.8rem;color:var(--muted);margin:0}
+.sp p.desc{margin:0;font-size:.9rem;color:var(--ink-2)}
+
+/* medicinal tiles */
+.med{cursor:pointer;text-align:left;width:100%;display:flex;flex-direction:column;gap:12px;transition:transform .18s,border-color .18s,box-shadow .18s}
+.med:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:var(--shadow)}
+.med .open{margin-top:auto;font-family:var(--f-mono);font-size:.72rem;color:var(--accent);display:flex;align-items:center;gap:6px}
+@media (prefers-reduced-motion:reduce){.med{transition:none}}
+
+/* accordion */
+.acc{border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel);margin-bottom:10px;overflow:hidden}
+.acc summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;align-items:center;gap:14px;font-family:var(--f-display);font-weight:600;font-size:1.04rem;letter-spacing:-.01em}
+.acc summary::-webkit-details-marker{display:none}
+.acc .num{font-family:var(--f-mono);font-size:.72rem;color:var(--accent);background:var(--glow);border-radius:8px;padding:3px 8px;font-weight:500;letter-spacing:0}
+.acc summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px);transition:transform .2s}
+.acc[open] summary::after{transform:rotate(225deg) translate(-2px,-2px)}
+.acc .body{padding:0 18px 18px;color:var(--ink-2);font-size:.93rem}
+.acc .body p:last-child{margin-bottom:0}
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin:10px 0 14px}
+.gloss div{background:var(--panel-2);border-radius:10px;padding:9px 12px}
+.gloss b{display:block;font-size:.86rem;color:var(--ink)}
+.gloss span{font-size:.8rem;color:var(--muted)}
+.sub{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px}
+
+/* steps timeline */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.steps li::before{counter-increment:s;content:counter(s,decimal-leading-zero);font-family:var(--f-mono);font-size:.78rem;font-weight:600;color:var(--accent);
+  background:var(--glow);border-radius:9px;height:30px;display:grid;place-items:center}
+.steps h4{font-size:.98rem;font-weight:650;margin:4px 0 2px;letter-spacing:-.01em}
+.steps p{margin:0;font-size:.9rem;color:var(--ink-2)}
+
+/* split two-col section */
+.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:14px;align-items:start}
+figure.diag{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:18px}
+figure.diag svg{width:100%;height:auto;display:block}
+figure.diag figcaption{font-family:var(--f-mono);font-size:.7rem;color:var(--muted);text-align:center;margin-top:6px;letter-spacing:.04em}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(8,10,9,.42);backdrop-filter:blur(3px);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(540px,100%);z-index:41;background:var(--bg);border-left:1px solid var(--line);
+  transform:translateX(102%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow-y:auto;
+  padding:calc(22px + env(safe-area-inset-top,0px)) max(22px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) 26px}
+.drawer.on{transform:none}
+@media (prefers-reduced-motion:reduce){.drawer,.scrim{transition:none}}
+.drawer .x{position:sticky;top:0;float:right;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:1.1rem;line-height:1}
+.drawer h2{font-size:2rem;font-weight:700;margin:6px 0 2px;letter-spacing:-.03em}
+.drawer .block{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:18px;margin-top:14px}
+.drawer .block h4{font-size:.74rem;font-family:var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:10px}
+.drawer .block p{color:var(--ink-2);font-size:.93rem;margin:0}
+.drawer ol{margin:0;padding-left:1.2em;color:var(--ink-2);font-size:.92rem;display:flex;flex-direction:column;gap:6px}
+.ingr{display:flex;flex-wrap:wrap;gap:6px}
+.ingr span{background:var(--panel-2);border-radius:8px;padding:4px 9px;font-size:.84rem;color:var(--ink-2)}
+.nut{width:100%;border-collapse:collapse;font-size:.88rem}
+.nut td{padding:7px 0;border-bottom:1px solid var(--line);color:var(--ink-2)}
+.nut td:last-child{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.nut tr:last-child td{border-bottom:0}
+
+/* ---------- photos ---------- */
+.thumb{margin:-20px -20px 6px;aspect-ratio:16/10;max-width:calc(100% + 40px);overflow:hidden;background:var(--panel-2);border-radius:var(--r-md) var(--r-md) 0 0;position:relative}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
+.card:hover .thumb img{transform:scale(1.05)}
+.thumb .badge{position:absolute;left:12px;bottom:10px;font-family:var(--f-mono);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(12,14,13,.62);color:#f4f2ec;backdrop-filter:blur(6px);padding:4px 8px;border-radius:7px}
+@media (prefers-reduced-motion:reduce){.thumb img{transition:none}}
+figure.ph{margin:0;border-radius:var(--r-md);overflow:hidden;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+figure.ph img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;max-width:100%}
+figure.ph.chart img{object-fit:contain;background:var(--paper);aspect-ratio:auto;padding:10px}
+figure.ph.tall img{aspect-ratio:3/4}
+figure.ph figcaption{font-size:.8rem;color:var(--muted);padding:10px 14px 12px;line-height:1.4}
+figure.ph figcaption b{color:var(--ink);font-weight:600}
+.acc .body figure.ph{margin:12px 0 4px;max-width:520px}
+.media{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:14px;align-items:start;margin:18px 0}
+.media > .note{margin:0}
+.shots{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.shot{position:relative;border-radius:var(--r-md);overflow:hidden;aspect-ratio:1/1;background:var(--panel-2);border:1px solid var(--line);cursor:pointer;padding:0}
+.shot img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease}
+.shot:hover img{transform:scale(1.06)}
+.shot span{position:absolute;left:10px;bottom:10px;right:10px;text-align:left;font-family:var(--f-display);font-weight:600;font-size:1rem;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.55)}
+.shot::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.55));pointer-events:none}
+.shot span{z-index:1}
+@media (prefers-reduced-motion:reduce){.shot img{transition:none}}
+.d-hero{margin:14px 0 0;border-radius:var(--r-md);overflow:hidden;aspect-ratio:16/9;background:var(--panel-2)}
+.d-hero img{width:100%;height:100%;object-fit:cover;display:block}
+@media (max-width:720px){.media{grid-template-columns:minmax(0,1fr)}.shots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------- game: Blackpine Woods ---------- */
+.wf-view{max-width:1180px}
+.wf{display:flex;flex-direction:column;gap:10px}
+.wf-stage{position:relative;width:100%;height:min(68vh,640px);min-height:340px;border-radius:var(--r-lg);overflow:hidden;background:#244b33;border:1px solid var(--line);box-shadow:var(--shadow);touch-action:none;outline:none;user-select:none;-webkit-user-select:none}
+.wf-stage:focus-visible{box-shadow:0 0 0 3px var(--accent)}
+.wf-stage canvas{display:block;image-rendering:auto}
+.wf-hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;color:#f6f3ea;font-family:var(--f-mono);font-size:.78rem}
+.wf-hl,.wf-hr{display:flex;flex-direction:column;gap:6px;background:rgba(12,16,13,.62);backdrop-filter:blur(6px);border-radius:12px;padding:8px 11px;min-width:0}
+.wf-hr{align-items:flex-end}
+.wf-clock{font-weight:600;font-size:.84rem}
+.wf-bar{position:relative;width:150px;max-width:38vw;height:14px;border-radius:7px;background:rgba(255,255,255,.15);overflow:hidden}
+.wf-bar span{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#6fbf55,#a7d86a);transition:width .3s}
+.wf-bar span.low{background:linear-gradient(90deg,#d9452f,#f08a4a)}
+.wf-bar b{position:relative;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding-left:6px;line-height:14px;font-weight:600;color:#10140f}
+.wf-coins{font-weight:600;font-size:.9rem}
+.wf-lv{display:flex;align-items:center;gap:8px}
+.wf-xp{width:90px;height:6px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden}
+.wf-xp span{display:block;height:100%;background:#f3b54a}
+.wf-quest{position:absolute;left:10px;bottom:10px;max-width:min(360px,60%);background:rgba(12,16,13,.66);backdrop-filter:blur(6px);color:#f6f3ea;border-radius:12px;padding:9px 12px;font-size:.78rem;line-height:1.4;pointer-events:none;display:flex;flex-direction:column;gap:3px}
+.wf-quest b{font-family:var(--f-display);font-size:.9rem;color:#ffd789}
+.wf-quest span{opacity:.9}
+.wf-quest i{font-style:normal;font-family:var(--f-mono);color:#a7d86a}
+.wf-prompt{position:absolute;background:#f6f3ea;color:#151815;font-family:var(--f-mono);font-size:.72rem;font-weight:600;padding:4px 8px;border-radius:7px;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.wf-toasts{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:min(340px,70%);pointer-events:none}
+.wf-toast{background:rgba(12,16,13,.82);color:#f6f3ea;font-size:.8rem;padding:8px 11px;border-radius:10px;line-height:1.35;animation:wfin .25s ease both;transition:opacity .4s,transform .4s}
+.wf-toast.out{opacity:0;transform:translateY(6px)}
+.wf-toast.xp{color:#ffd789}.wf-toast.coin{color:#f3d36a}.wf-toast.bad{background:rgba(120,30,20,.88)}.wf-toast.lvl{background:rgba(150,90,10,.92);color:#fff}
+@keyframes wfin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.wf-modal{position:absolute;inset:0;background:rgba(6,8,7,.5);display:flex;align-items:center;justify-content:center;padding:14px;z-index:5}
+.wf-box{position:relative;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:18px;width:min(560px,100%);max-height:100%;overflow-y:auto;padding:20px 20px 18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.wf-box h3{font-size:1.4rem;font-weight:700;margin:2px 0 8px;padding-right:34px}
+.wf-box p{color:var(--ink-2);font-size:.92rem}
+.wf-box .muted,.wf-box span.muted{color:var(--muted)}
+.wf-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel);cursor:pointer}
+.wf-photo{margin:-20px -20px 14px;aspect-ratio:16/9;overflow:hidden;background:var(--panel-2);border-radius:18px 18px 0 0}
+.wf-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.wf-photo.nophoto{display:grid;place-items:center;background:linear-gradient(135deg,#2b2420,#4a3b30);color:#f1ece2;text-align:center;padding:20px}
+.wf-photo.nophoto div{display:flex;flex-direction:column;gap:6px;max-width:34ch}
+.wf-photo.nophoto span{font-size:.9rem;opacity:.9}
+.wf-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.wf-opts .opt,.opt{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:11px 12px;text-align:left;font-size:.9rem;cursor:pointer;color:var(--ink)}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{border-color:var(--moss);background:color-mix(in srgb,var(--moss) 16%,var(--panel))}
+.opt.wrong{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 14%,var(--panel))}
+.opt:disabled{cursor:default}
+.qfb{border-radius:12px;padding:11px 13px;font-size:.88rem;line-height:1.5;margin:6px 0 10px}
+.qfb.good{background:color-mix(in srgb,var(--moss) 14%,var(--panel));color:var(--ink)}
+.qfb.bad{background:color-mix(in srgb,var(--danger) 12%,var(--panel));color:var(--ink)}
+.wf-acts{display:flex;gap:8px;margin-top:12px}
+.wf-acts.wrap{flex-wrap:wrap}
+.wf-acts .btn:disabled,.wf-row .btn:disabled{opacity:.45;cursor:not-allowed}
+.wf-list{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.wf-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 11px;font-size:.88rem}
+.wf-row > span:first-child{flex:1;min-width:0}
+.wf-row .btn{padding:6px 11px;font-size:.8rem;white-space:nowrap}
+.wf-row.col{flex-direction:column;align-items:stretch;gap:6px}
+.wf-row.col .btn{align-self:flex-start}
+.wf-reqs{display:flex;flex-wrap:wrap;gap:5px}
+.wf-reqs span{font-family:var(--f-mono);font-size:.7rem;padding:2px 7px;border-radius:999px}
+.wf-reqs .ok{background:color-mix(in srgb,var(--moss) 16%,transparent);color:var(--moss)}
+.wf-reqs .no{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger)}
+.wf-say{font-style:italic}
+.wf-warn{color:var(--danger)!important;font-weight:600}
+.wf-sub{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+.wf-chips{display:flex;flex-wrap:wrap;gap:6px}
+.wf-jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:10px}
+.wf-j{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;font-size:.76rem;color:var(--ink-2);min-width:0}
+.wf-j img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;display:block}
+.wf-j b{color:var(--ink);font-size:.86rem}
+.wf-j .chip{align-self:flex-start}
+.wf-j.unk{opacity:.7}
+.wf-jimg{aspect-ratio:4/3;border-radius:8px;background:var(--panel-2);display:grid;place-items:center;font-family:var(--f-display);font-size:1.6rem;color:var(--muted)}
+.wf-pad{position:absolute;inset:auto 0 0 0;display:none;justify-content:space-between;align-items:flex-end;padding:0 14px 14px;pointer-events:none}
+.wf-dpad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);pointer-events:auto}
+.wf-dpad button,.wf-a{border:0;border-radius:12px;background:rgba(246,243,234,.82);color:#151815;font-size:1.1rem;pointer-events:auto;touch-action:none}
+.wf-dpad [data-k=up]{grid-column:2;grid-row:1}.wf-dpad [data-k=left]{grid-column:1;grid-row:2}.wf-dpad [data-k=right]{grid-column:3;grid-row:2}.wf-dpad [data-k=down]{grid-column:2;grid-row:3}
+.wf-a{width:68px;height:68px;border-radius:50%;font-family:var(--f-display);font-weight:700;font-size:1.3rem;background:rgba(243,181,74,.92)}
+.wf-toasts{max-width:min(340px,38%)}
+@media (pointer:coarse),(max-width:720px){.wf-pad{display:flex}.wf-quest{bottom:auto;top:84px;max-width:52%;font-size:.72rem}.wf-toasts{bottom:auto;top:84px;right:10px;max-width:44%}.wf-quest span{display:none}}
+.wf-bar2{display:flex;flex-wrap:wrap;gap:8px}
+.wf-bar2 kbd{font-family:var(--f-mono);font-size:.68rem;background:var(--panel-2);border-radius:5px;padding:1px 5px;margin-left:4px;color:var(--muted)}
+@media (pointer:coarse){.wf-bar2 kbd{display:none}}
+
+/* ---------- game: handheld pixel style (a deliberate single look, same in light and dark) ---------- */
+.wf-stage canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+.wf-stage{--gb-ink:#283048;--gb-line:#384878;--gb-soft:#a8b8e0;--gb-paper:#f8f8f0;--gb-pix:"Pixelify Sans","Geist Mono",ui-monospace,monospace;border:4px solid #283048;border-radius:14px}
+.wf-hud{font-family:var(--gb-pix);font-size:.86rem}
+.wf-hl,.wf-hr,.wf-quest,.wf-toast,.wf-prompt{background:var(--gb-paper);color:var(--gb-ink);backdrop-filter:none;border:3px solid var(--gb-line);box-shadow:inset 0 0 0 2px var(--gb-soft),0 3px 0 rgba(0,0,0,.25);border-radius:10px}
+.wf-clock{font-size:.92rem;font-weight:600;letter-spacing:.02em}
+.wf-bar{background:#384048;border:2px solid var(--gb-ink);height:12px;border-radius:6px;width:150px}
+.wf-bar span{background:#58d080}
+.wf-bar span.low{background:#f85838}
+.wf-bar b{color:#fff;font-family:var(--gb-pix);font-size:.6rem;line-height:9px;padding-left:4px;text-shadow:1px 1px 0 #283048}
+.wf-coins{font-weight:700}
+.wf-xp{background:#384048;border:2px solid var(--gb-ink);height:8px;border-radius:4px}
+.wf-xp span{background:#58b8f8}
+.wf-quest{font-family:var(--gb-pix)}
+.wf-quest b{color:#c83828;font-family:var(--gb-pix);font-weight:700}
+.wf-quest span{opacity:1;color:#485070}
+.wf-quest i{color:#2f8a4a;font-family:var(--gb-pix)}
+.wf-prompt{font-family:var(--gb-pix);font-size:.8rem;padding:4px 9px}
+.wf-prompt::before{content:"▶ ";color:#c83828}
+.wf-toast{font-family:var(--gb-pix);font-size:.82rem}
+.wf-toast.xp{color:#2f6ab0}.wf-toast.coin{color:#a87810}
+.wf-toast.bad{background:#fff0ec;color:#a02818;border-color:#a02818}
+.wf-toast.lvl{background:#fff6d8;color:#7a4a00;border-color:#c89010}
+.wf-modal{background:rgba(16,20,40,.45)}
+.wf-box{background:var(--gb-paper);color:var(--gb-ink);border:4px solid var(--gb-line);box-shadow:inset 0 0 0 3px var(--gb-soft),0 12px 40px rgba(0,0,0,.4);border-radius:14px}
+.wf-box h3{font-family:var(--gb-pix);font-weight:700;letter-spacing:0;color:var(--gb-ink)}
+.wf-box .kicker{color:#c83828;font-family:var(--gb-pix);letter-spacing:.06em}
+.wf-box p,.wf-box li,.wf-box .list li{color:#485070}
+.wf-box .muted,.wf-box span.muted{color:#7a82a0}
+.wf-box b,.wf-box strong{color:var(--gb-ink)}
+.wf-box .list li::before{background:#c83828}
+.wf-box .btn{background:#ffffff;color:var(--gb-ink);border:2px solid var(--gb-line);font-family:var(--gb-pix);font-weight:600;border-radius:9px;box-shadow:0 2px 0 var(--gb-line)}
+.wf-box .btn:hover:not(:disabled){background:#eef2fc}
+.wf-box .btn.primary{background:#f8d048;color:#283048;border-color:#283048}
+.wf-box .btn.danger{background:#fff;color:#c02818;border-color:#c02818;box-shadow:0 2px 0 #c02818}
+.wf-x{background:#fff;border:2px solid var(--gb-line);color:var(--gb-ink);font-family:var(--gb-pix)}
+.wf-box .opt{background:#fff;color:var(--gb-ink);border:2px solid var(--gb-line);font-family:var(--gb-pix);font-size:.92rem;box-shadow:0 2px 0 var(--gb-line)}
+.wf-box .opt:hover:not(:disabled){background:#eef2fc;border-color:var(--gb-line)}
+.wf-box .opt::before{content:"▶ ";color:transparent}
+.wf-box .opt:hover:not(:disabled)::before,.wf-box .opt:focus-visible::before{color:#c83828}
+.wf-box .opt.right{background:#dcf4e0;border-color:#2f8a4a;color:#1d5a30}
+.wf-box .opt.wrong{background:#fde4de;border-color:#c02818;color:#8a1c10}
+.wf-box .qfb.good{background:#e4f6e8;color:#1d4a2a}
+.wf-box .qfb.bad{background:#fde8e2;color:#6a1c10}
+.wf-box .wf-row{background:#fff;border:2px solid #c8d0e8}
+.wf-box .wf-reqs .ok{background:#dcf4e0;color:#1d6a34}
+.wf-box .wf-reqs .no{background:#fde4de;color:#a02818}
+.wf-box .wf-sub{color:#c83828;font-family:var(--gb-pix);letter-spacing:.06em}
+.wf-box .chip{background:#e8ecf8;color:#384878}
+.wf-box .chip.moss{background:#dcf4e0;color:#1d6a34}
+.wf-box .chip.gold{background:#fbf0cc;color:#8a6200}
+.wf-box .chip.amber{background:#fde4de;color:#a02818}
+.wf-box .wf-j{background:#fff;border:2px solid #c8d0e8;color:#485070}
+.wf-box .wf-j b{color:var(--gb-ink)}
+.wf-box .wf-jimg{background:#e8ecf8;color:#7a82a0}
+.wf-box .wf-warn{color:#c02818!important}
+.wf-photo{border-bottom:3px solid var(--gb-line)}
+.wf-dpad button,.wf-a{border:3px solid #283048;box-shadow:0 3px 0 #283048;font-family:var(--gb-pix)}
+.wf-a{background:#f85838;color:#fff}
+
+/* ---------- game: dialogue box, area banner, fade, map ---------- */
+.wf-dlg{position:absolute;left:10px;right:10px;bottom:10px;z-index:6;display:flex;gap:12px;align-items:flex-start;background:var(--gb-paper);color:var(--gb-ink);border:4px solid var(--gb-line);border-radius:14px;box-shadow:inset 0 0 0 3px var(--gb-soft),0 6px 0 rgba(0,0,0,.25);padding:12px 14px 14px;font-family:var(--gb-pix);cursor:pointer;max-height:62%;overflow-y:auto}
+.wf-dpor{flex:0 0 auto;width:56px;height:56px;image-rendering:pixelated;background:#e8ecf8;border:3px solid var(--gb-line);border-radius:10px;padding:2px}
+.wf-dmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.wf-dname{align-self:flex-start;font-weight:700;font-size:.82rem;color:#fff;background:#c83828;border-radius:6px;padding:2px 9px;letter-spacing:.04em}
+.wf-dtext{font-size:1.02rem;line-height:1.45;min-height:2.9em;color:var(--gb-ink);white-space:pre-wrap}
+.wf-dopts{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}
+.wf-dopts:empty{display:none}
+.wf-dopt{text-align:left;font-family:var(--gb-pix);font-size:.92rem;font-weight:600;color:var(--gb-ink);background:#fff;border:2px solid var(--gb-line);border-radius:9px;padding:7px 10px;cursor:pointer;box-shadow:0 2px 0 var(--gb-line)}
+.wf-dopt::before{content:"▶ ";color:transparent}
+.wf-dopt.on,.wf-dopt:hover{background:#fff6d0;border-color:#283048}
+.wf-dopt.on::before,.wf-dopt:hover::before{color:#c83828}
+.wf-dnext{position:absolute;right:14px;bottom:8px;color:#c83828;font-size:.8rem;animation:wfbob .7s ease-in-out infinite alternate}
+@keyframes wfbob{from{transform:translateY(0)}to{transform:translateY(3px)}}
+@media (prefers-reduced-motion:reduce){.wf-dnext{animation:none}}
+.wf-stage.talking .wf-quest,.wf-stage.talking .wf-prompt{display:none}
+.wf-zone{position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:4;background:var(--gb-paper);color:var(--gb-ink);border:4px solid var(--gb-line);box-shadow:inset 0 0 0 3px var(--gb-soft);border-radius:12px;padding:8px 20px;font-family:var(--gb-pix);font-weight:700;font-size:1.15rem;white-space:nowrap;pointer-events:none}
+.wf-zone.show{animation:wfzone 2.6s ease both}
+@keyframes wfzone{0%{opacity:0;transform:translate(-50%,-12px)}12%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.wf-zone.show{animation:none}}
+.wf-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:7}
+.wf-mapwrap{overflow:auto;max-width:100%;border:3px solid var(--gb-line);border-radius:10px;background:#1c1824;margin:8px 0}
+.wf-map{display:block;image-rendering:pixelated;max-width:none}
+.wf-pix{width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;margin-right:4px}
+.wf-box .wf-jh{display:flex;align-items:center;gap:4px}
+.wf-box .wf-jh .wf-pix{width:24px;height:24px}
+.wf-box .wf-j span{font-size:.74rem;line-height:1.35}
+.wf-jgrid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+@media (pointer:coarse),(max-width:720px){.wf-dlg{top:74px;bottom:auto;max-height:55%}.wf-dpor{width:44px;height:44px}.wf-dtext{font-size:.95rem}.wf-dopts{grid-template-columns:1fr}}
+
+/* ---------- my notes ---------- */
+.nbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 14px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 14px;font-size:.88rem;cursor:pointer;color:var(--ink)}
+.btn:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--line))}
+.nwrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px;align-items:start}
+.nlist{display:flex;flex-direction:column;gap:6px;min-width:0}
+.nitem{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 12px;cursor:pointer;width:100%;min-width:0}
+.nitem[aria-current="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+.nitem b{display:block;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nitem span{display:block;font-size:.76rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.neditor{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.neditor input{font:inherit;font-family:var(--f-display);font-size:1.4rem;font-weight:650;letter-spacing:-.02em;border:0;background:none;color:var(--ink);padding:4px 2px;width:100%}
+.neditor input:focus{outline:none}
+.neditor input::placeholder,.neditor textarea::placeholder{color:var(--muted)}
+.neditor textarea{font:inherit;font-size:.95rem;line-height:1.65;min-height:52vh;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--bg);color:var(--ink);width:100%}
+.neditor textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--glow)}
+.nfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
+@media (max-width:720px){.nwrap{grid-template-columns:minmax(0,1fr)}.nlist{flex-direction:row;overflow-x:auto;padding-bottom:4px}.nitem{min-width:170px;width:auto}}
+
+footer.foot{max-width:1040px;margin:56px auto 0;padding-top:20px;border-top:1px solid var(--line);font-size:.8rem;color:var(--muted)}
+footer.foot p{max-width:80ch}
+
+/* ---------- responsive ---------- */
+@media (max-width:980px){
+  .bento{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tile.wide{grid-column:span 2}
+  .split{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr);padding-left:0;padding-right:0}
+  .side{position:sticky;top:env(safe-area-inset-top,0px);height:auto;z-index:30;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px;
+    padding:12px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-right:0;border-bottom:1px solid var(--line);
+    background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(14px)}
+  .brand small{display:none}
+  .side-foot{margin:0 0 0 auto;flex-direction:row}
+  .side-note{display:none}
+  .theme button{padding:5px 10px}
+  .nav{order:3;width:100%;flex-direction:row;overflow-x:auto;scrollbar-width:none;gap:4px;margin:0 -2px}
+  .nav::-webkit-scrollbar{display:none}
+  .nav button{width:auto;white-space:nowrap;padding:7px 12px;font-size:.85rem}
+  .nav button svg{display:none}
+  .nav .sep{display:none}
+  .main{padding:22px max(16px,env(safe-area-inset-right,0px)) 64px max(16px,env(safe-area-inset-left,0px))}
+}
+@media (max-width:520px){
+  .bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .tile,.tile.wide{grid-column:span 2;min-height:0}
+  .count{margin-left:0;width:100%}
+}
+
+
+/* ---------- standalone page ---------- */
+html,body{background:var(--bg)}
+body{margin:0}
+.bp-page{max-width:1180px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+.bp-head h1{font-family:"Pixelify Sans",var(--f-display);font-size:clamp(2.2rem,6vw,3.4rem);font-weight:700;letter-spacing:-.01em;margin:4px 0 6px}
+.bp-head p{color:var(--ink-2);max-width:68ch;margin:0;font-size:1.02rem}
+.bp-foot{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem;max-width:80ch}
+.bp-foot p{margin:0 0 .5em}
+
+</style>
+</head>
+<body>
+<main class="bp-page">
+  <header class="bp-head">
+    <div class="kicker">A mushroom foraging adventure</div>
+    <h1>Blackpine Woods</h1>
+    <p>Start as a backpacker with 5 coins. Examine and identify wild mushrooms, trade with Old Wren, build a home, grow your own, then explore a glowing cave, a misty marsh and a high mountain ridge.</p>
+  </header>
+  <div id="wfRoot" class="wf"></div>
+  <footer class="bp-foot">
+    <p><strong>A game, not a field guide.</strong> Never eat a wild mushroom based on a description, a picture or a game. Many deadly species look like edible ones. Identification needs an expert.</p>
+    <p>Mushroom facts are drawn from <em>The Mushroom Bible</em> by Richard Korman, rewritten for the game. Your progress saves in this browser.</p>
+  </footer>
+</main>
+<script>
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+/* ================= PLAY: Blackpine Woods (survival foraging RPG) ================= */
+var WF=null;
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function playStop(){if(WF){WF.stop();WF=null;}}
+
+/* ---------- world constants ---------- */
+var WW=60, WH=44, TS=32;   /* WW/WH always hold the size of the zone you're in */
+var T={GRASS:0,OAK:1,PINE:2,BIRCH:3,WATER:4,PATH:5,MEADOW:6,LOG:7,ROCK:8,BRIDGE:9,PLOT:10,STUMP:11,CFLOOR:12,CWALL:13,POOL:14,MARSH:15,WILLOW:16,REEDS:17,MUD:18,STONE:19,DOOR:20};
+var SOLID={1:1,2:1,3:1,4:1,7:1,8:1,13:1,14:1,16:1};
+var PATHY=22;
+var HOME={x0:3,x1:14,y0:16,y1:28};
+var START={x:8,y:23};
+var SHELTER={x:5,y:18}, FIRE={x:8,y:20}, SIGN={x:4,y:23}, CRATE={x:11,y:21};
+var SLOTS=[[9,25],[11,25],[13,25],[9,27],[11,27],[13,27]];
+var HUT=[[54,19],[55,19],[54,20],[55,20]];
+var WREN={x:54,y:22};
+var ZONES={woods:{n:"Blackpine Woods",w:60,h:44},cave:{n:"Foxfire Cave",w:36,h:28},marsh:{n:"Willow Marsh",w:46,h:32},ridge:{n:"Highpine Ridge",w:46,h:32}};
+var WARPS={
+ woods:[{x:18,y:2,to:"cave",dx:18,dy:25,dir:"up",need:"lantern"},{x:24,y:42,to:"marsh",dx:23,dy:2,dir:"down",need:"waders"},{x:46,y:2,to:"ridge",dx:4,dy:29,dir:"up",need:"rope"}],
+ cave:[{x:18,y:26,to:"woods",dx:18,dy:3,dir:"down"}],
+ marsh:[{x:23,y:1,to:"woods",dx:24,dy:41,dir:"up"}],
+ ridge:[{x:4,y:30,to:"woods",dx:46,dy:3,dir:"down"}]
+};
+var NEEDN={lantern:"a lantern",waders:"waders",rope:"a climbing rope"};
+function asWoods(fn){var a=WW,b=WH;WW=60;WH=44;try{return fn();}finally{WW=a;WH=b;}}
+
+/* ---------- species (habitats follow the books) ---------- */
+var WSP={
+ "button":{n:"White button",cat:"edible",val:3,food:10,cap:"#f1ece2",where:"in open meadow grass",key:"Smooth white cap, pinkish-brown gills, growing in the open."},
+ "oyster":{n:"Oyster",cat:"edible",val:5,food:12,cap:"#cfc6b8",where:"shelving out of a fallen log",key:"Fan-shaped grey shelves growing straight out of dead wood."},
+ "chanterelle":{n:"Chanterelle",cat:"edible",val:8,food:15,cap:"#f0a531",where:"on the pine-forest floor",key:"Golden trumpet with blunt ridges (false gills) running down the stem."},
+ "porcini":{n:"Porcini",cat:"edible",val:10,food:18,cap:"#8a5a34",where:"under a pine",key:"Fat brown cap with a sponge of pores underneath, not gills."},
+ "hedgehog":{n:"Hedgehog",cat:"edible",val:7,food:14,cap:"#e8c79a",where:"on the pine-forest floor",key:"Pale cap with soft spines underneath instead of gills."},
+ "maitake":{n:"Maitake",cat:"edible",val:12,food:20,cap:"#8c7f6f",where:"at the base of an oak",key:"A big cluster of grey-brown overlapping fronds at an oak's base."},
+ "morel":{n:"Morel",cat:"edible",val:15,food:20,cap:"#b08a5a",where:"in a woodland clearing (spring only)",key:"Honeycomb-pitted cap. Always cook it, and beware false morels."},
+ "turkey-tail":{n:"Turkey tail",cat:"medicinal",val:6,food:8,cap:"#7d8fa3",where:"on a fallen log",key:"Thin bracket with concentric coloured bands.",knife:1},
+ "chaga":{n:"Chaga",cat:"medicinal",val:14,food:10,cap:"#2b2420",where:"on a birch trunk",key:"Black, cracked, charcoal-like mass on birch.",knife:1,nophoto:1},
+ "birch-polypore":{n:"Birch polypore",cat:"medicinal",val:4,food:6,cap:"#e9e2d3",where:"on a birch trunk",key:"Smooth, kidney-shaped white bracket with a rolled edge.",knife:1},
+ "lions-mane":{n:"Lion's mane",cat:"medicinal",val:12,food:15,cap:"#f5efe3",where:"on an oak",key:"A white ball of cascading icicle-like spines.",knife:1},
+ "reishi":{n:"Reishi",cat:"medicinal",val:20,food:12,cap:"#9a2f1f",where:"on a fallen log",key:"Glossy, woody, red-brown bracket.",knife:1},
+ "cordyceps":{n:"Cordyceps",cat:"medicinal",val:25,food:15,cap:"#f07a1a",where:"at the pine-forest edge",key:"A slim orange club rising from the soil."},
+ "agarikon":{n:"Agarikon",cat:"medicinal",val:30,food:12,cap:"#efe8d8",where:"on an ancient pine",key:"A tall, chalky, column-shaped conk.",knife:1},
+ "death-cap":{n:"Death cap",cat:"toxic",val:0,food:0,cap:"#cfd8a8",where:"under an oak at the meadow's edge",key:"Pale greenish cap, white gills, and a cup-like volva at the base."},
+ "fly-agaric":{n:"Fly agaric",cat:"toxic",val:0,food:0,cap:"#d8261c",where:"under a birch or pine",key:"Bright red cap dotted with white warts."},
+ "honey-fungus":{n:"Honey fungus",cat:"edible",val:9,food:14,cap:"#c8902a",where:"in the roots along Foxfire Cave's walls",key:"Honey-coloured clustered caps with a ring on the stem. Its mycelium glows faintly in the dark: foxfire. Must be cooked.",nophoto:1,glow:"rgba(140,248,160,"},
+ "jack-o-lantern":{n:"Jack-o'-lantern",cat:"toxic",val:0,food:0,cap:"#f07818",where:"on buried wood along Foxfire Cave's walls",key:"Bright orange clusters with sharp true gills running down the stem (genus Omphalotus). It glows in the dark. A toxic chanterelle look-alike.",nophoto:1,glow:"rgba(248,184,88,"},
+ "lobster":{n:"Lobster mushroom",cat:"edible",val:16,food:18,cap:"#e04828",where:"in the damp woods of Willow Marsh",key:"Misshapen, hard and cooked-lobster red: a Russula or Lactarius taken over by the parasite Hypomyces lactifluorum."},
+ "dryads-saddle":{n:"Dryad's saddle",cat:"edible",val:7,food:12,cap:"#c8a070",where:"on a willow or fallen log in the marsh",key:"A large, scaly, fan-shaped bracket that smells mealy, like watermelon rind (Polyporus squamosus).",nophoto:1,knife:1},
+ "shaggy-mane":{n:"Shaggy mane",cat:"edible",val:8,food:13,cap:"#f4f0e8",where:"on open ground in the marsh",key:"A tall, white, cylindrical cap covered in shaggy scales. It dissolves into black ink as it ages.",nophoto:1},
+ "matsutake":{n:"Matsutake",cat:"edible",val:28,food:20,cap:"#b08860",where:"under the pines of Highpine Ridge",key:"Thick white-to-brown cap with a spicy, cinnamon-like scent. Highly prized in Japanese cuisine.",nophoto:1},
+ "sculptured-puffball":{n:"Sculptured puffball",cat:"edible",val:10,food:16,cap:"#f0ece0",where:"in high alpine clearings",key:"A round white puffball up to 15 cm, covered in shallow pyramid-shaped plates (Calbovista subsculpta). Edible while white inside.",nophoto:1},
+ "gypsy":{n:"Gypsy mushroom",cat:"edible",val:9,food:14,cap:"#c8a868",where:"near the ridge pines",key:"Tan, wrinkled cap with a ring on the stem (Cortinarius caperatus).",nophoto:1},
+ "shiitake":{n:"Shiitake",cat:"edible",val:8,food:15,cap:"#7a4e2d",where:"on your log stack",key:"Brown cap with pale flecks, grown on oak logs.",farm:1}
+};
+var WILD=Object.keys(WSP).filter(function(k){return !WSP[k].farm;});
+var LOOKALIKE={"jack-o-lantern":["chanterelle","honey-fungus"],"chanterelle":["jack-o-lantern"],"button":["death-cap"],"death-cap":["button","shaggy-mane"],"shaggy-mane":["button"],"honey-fungus":["jack-o-lantern"],"sculptured-puffball":["button"],"gypsy":["death-cap"]};
+var SEASONS=["Spring","Summer","Autumn","Winter"], WICON={sun:"☀",rain:"🌧",fog:"🌫",snow:"❄"};
+var SEASONAL={"morel":[0],"chanterelle":[1,2],"porcini":[1,2],"hedgehog":[1,2,3],"maitake":[1,2],"button":[0,1,2],"death-cap":[0,1,2],"fly-agaric":[0,1,2],"shaggy-mane":[0,2,3],"sculptured-puffball":[1,2],"cordyceps":[0,1,2]};
+function seasonOf(day){return Math.floor((day-1)/7)%4;}
+var PAGES_TEXT=[
+ "A single honey fungus colony in Oregon's Malheur National Forest covers about 2,200 acres and may be over 2,400 years old.",
+ "Mushrooms make vitamin D when exposed to UV light, even after they've been picked.",
+ "The death cap causes most fatal mushroom poisonings. Symptoms are delayed, and there is no antidote.",
+ "Penicillin, streptomycin and tetracycline, three famous antibiotics, all come from fungi.",
+ "Ötzi, the iceman frozen in the Alps over 5,000 years ago, was carrying pieces of birch polypore.",
+ "Some mushrooms glow in the dark. Bioluminescence is one of the secondary metabolites fungi make.",
+ "Fungi share more DNA with animals than with plants.",
+ "One mushroom can release billions of spores. Some species are thought to shed over 30 billion a day.",
+ "Truffles have resisted farming since trufficulture began in 1808. Many species are still uncultivated.",
+ "Fairy rings form as mycelium grows outward from a single spore, sometimes for centuries.",
+ "A giant puffball can reach 150 cm across and weigh 20 kg (44 lb).",
+ "Dutch mushroom farms harvest 27–35 kg of mushrooms per square metre of growing bed."
+];
+var CHEST_LOOT=[{coins:25,mat:{nails:2}},{coins:45,mat:{planks:4}},{coins:30,item:"reishi"},{coins:35,mat:{straw:2,oyster_spawn:1}},{coins:50},{coins:60,mat:{shiitake_dowels:1}},{coins:40,item:"agarikon"}];
+
+/* ---------- shop, builds, quests, levels ---------- */
+var SHOP=[
+ {id:"knife",n:"Foraging knife",p:15,lv:1,kind:"tool",d:"Cut brackets and conks (turkey tail, chaga, reishi…) from wood."},
+ {id:"guide",n:"Field guide",p:15,lv:1,kind:"tool",d:"Shows each mushroom's key identifying feature when you inspect it."},
+ {id:"basket",n:"Big basket",p:25,lv:2,kind:"cap",cap:12,d:"Carry 12 mushrooms instead of 6."},
+ {id:"axe",n:"Axe",p:35,lv:2,kind:"tool",d:"Chop fallen logs for wood, and cut fresh oak logs for shiitake."},
+ {id:"nails",n:"Nails",p:6,lv:2,kind:"mat",d:"A bundle of nails for building."},
+ {id:"pot",n:"Cooking pot",p:25,lv:3,kind:"tool",d:"Pasteurise straw at 160–170°F for an hour. Meals give 25% more energy."},
+ {id:"mister",n:"Spray mister",p:15,lv:3,kind:"tool",d:"Beds need misting every day to stay humid."},
+ {id:"straw",n:"Straw bale",p:5,lv:3,kind:"mat",d:"The classic beginner substrate for oysters."},
+ {id:"oyster_spawn",n:"Oyster spawn",p:12,lv:3,kind:"mat",d:"Grain spawn grown through with oyster mycelium."},
+ {id:"lantern",n:"Lantern",p:30,lv:3,kind:"tool",d:"Light for Foxfire Cave (north, past the birches), and a bigger glow at night."},
+ {id:"drill",n:"Drill & wax kit",p:30,lv:4,kind:"tool",d:"Drill a diamond pattern, plug the dowels, seal with wax."},
+ {id:"shiitake_dowels",n:"Shiitake dowels",p:18,lv:4,kind:"mat",d:"Spawn plugs for fresh hardwood logs."},
+ {id:"planks",n:"Planks",p:6,lv:4,kind:"mat",d:"Sawn boards for a proper cabin."},
+ {id:"waders",n:"Waders",p:40,lv:4,kind:"tool",d:"Wade through the shallows of Willow Marsh (take the boardwalk south)."},
+ {id:"backpack",n:"Forager's backpack",p:60,lv:5,kind:"cap",cap:20,d:"Carry 20 mushrooms."},
+ {id:"rope",n:"Climbing rope",p:50,lv:5,kind:"tool",d:"Climb the rock face up to Highpine Ridge (northeast)."}
+];
+var MATN={wood:"Wood",planks:"Planks",nails:"Nails",straw:"Straw bales",oyster_spawn:"Oyster spawn",shiitake_dowels:"Shiitake dowels",oak_log:"Fresh oak logs"};
+var TOOLN={knife:"Foraging knife",guide:"Field guide",axe:"Axe",pot:"Cooking pot",mister:"Spray mister",drill:"Drill & wax kit",lantern:"Lantern",waders:"Waders",rope:"Climbing rope"};
+var BUILDS={
+ leanto:{n:"Lean-to",need:{wood:6,nails:1},lv:2,d:"A sturdier shelter. Sleeping restores all your energy."},
+ oyster_bed:{n:"Oyster straw bed",need:{straw:1,oyster_spawn:1},tools:["pot"],lv:3,d:"Pasteurised straw packed with spawn. Mist daily; up to 3 flushes."},
+ shiitake_stack:{n:"Shiitake log stack",need:{oak_log:2,shiitake_dowels:1},tools:["drill"],lv:4,d:"Colonises for 4 days, then soak it to make it fruit. Keeps producing."},
+ cabin:{n:"Cabin",need:{wood:20,planks:10,nails:4},coins:40,lv:6,req:"leanto",d:"A real home. Full rest, and Wren pays you 10% more as a regular."}
+};
+var QUESTS=[
+ {n:"First forage",d:"Correctly identify and pick 3 edible mushrooms. Try the meadow (southeast), the pine woods (southwest), or around fallen logs. Walk up to a mushroom and press E.",goal:"pickEdible",need:3,rw:{xp:30,coins:10}},
+ {n:"Meet Old Wren",d:"Follow the path east over the bridge to the trading post and sell 3 mushrooms to Wren.",goal:"sold",need:3,rw:{xp:25,coins:10}},
+ {n:"Know your killers",d:"Find a death cap under the oaks at the meadow's edge (southeast) and identify it correctly. Leave it where it grows.",goal:"idToxic",need:1,rw:{xp:40,tool:"guide"}},
+ {n:"Tools of the trade",d:"Buy a foraging knife from Wren, then harvest 2 medicinal mushrooms from wood: turkey tail on logs, chaga or birch polypore on birch.",goal:"pickMed",need:2,rw:{xp:45,coins:15}},
+ {n:"A roof over your head",d:"Buy an axe and nails, chop 6 wood from fallen logs, then build a lean-to using the sign at your camp.",goal:"build_leanto",need:1,rw:{xp:60,coins:10}},
+ {n:"Straw and spores",d:"Buy a pot, a mister, straw and oyster spawn. Build an oyster bed at camp, mist it every day, and harvest a flush.",goal:"harvestOyster",need:1,rw:{xp:80,coins:25}},
+ {n:"The shiitake log",d:"Buy a drill kit and shiitake dowels, cut 2 fresh oak logs with your axe, build a log stack, and harvest it once it fruits.",goal:"harvestShiitake",need:1,rw:{xp:90,coins:25}},
+ {n:"Medicine hunt",d:"Wren's healer friend needs a lion's mane, a chaga and a reishi. Find all three and bring them to Wren.",goal:"deliver",need:1,items:["lions-mane","chaga","reishi"],rw:{xp:110,coins:60}},
+ {n:"Cabin fever",d:"Build a cabin at camp: 20 wood, 10 planks, 4 nails and 40 coins (needs the lean-to first).",goal:"build_cabin",need:1,rw:{xp:150,coins:20}},
+ {n:"Master grower",d:"Harvest 20 cultivated mushrooms in total from your beds and logs. Basket full? Harvests go into the shipping crate by the campfire, and Wren's cart buys them overnight.",goal:"harvestTotal",need:20,rw:{xp:250,coins:50}},
+ {n:"Into the dark",d:"Buy a lantern from Wren, then find Foxfire Cave past the birches in the far north. Identify a jack-o'-lantern, the glowing chanterelle look-alike.",goal:"id_jack-o-lantern",need:1,rw:{xp:120,coins:40}},
+ {n:"Wet feet",d:"Buy waders from Wren and follow the boardwalk at the south edge of the woods into Willow Marsh. Pick a lobster mushroom.",goal:"pick_lobster",need:1,rw:{xp:120,coins:40}},
+ {n:"The high country",d:"Buy a climbing rope and climb the rock face in the far northeast to Highpine Ridge. Pick a matsutake.",goal:"pick_matsutake",need:1,rw:{xp:150,coins:50}},
+ {n:"Lost pages",d:"Find 8 of the 12 lost journal pages hidden across the woods, the cave, the marsh and the ridge. Press M for a map of wherever you are.",goal:"pages",need:8,rw:{xp:200,coins:80}}
+];
+var LV=[0,40,110,220,380,600,880,1250,1700,2300,3000,3800,4700];
+function lvFor(xp){var l=1;for(var i=1;i<LV.length;i++)if(xp>=LV[i])l=i+1;return Math.min(l,LV.length);}
+
+/* ---------- map generation (fixed seeds, same world every game) ---------- */
+function wfRng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function wfRegion(x,y){if(x<WW*0.45&&y<WH*0.42)return"birch";if(x<WW*0.45&&y>WH*0.58)return"pine";if(x>WW*0.62&&y<WH*0.42)return"oak";if(x>WW*0.62&&y>WH*0.55)return"meadow";return"mixed";}
+function wfStreamX(y){return Math.round(WW*0.55+Math.sin(y*0.28)*2.2);}
+function wfInHome(x,y){return x>=HOME.x0&&x<=HOME.x1&&y>=HOME.y0&&y<=HOME.y1;}
+function wfInTrader(x,y){return x>=49&&x<=58&&y>=16&&y<=27;}
+function wfGenMap(){return asWoods(function(){
+  var r=wfRng(20261024),m=[],x,y;
+  for(y=0;y<WH;y++){m.push([]);for(x=0;x<WW;x++){
+    var reg=wfRegion(x,y),t=T.GRASS,v=r();
+    if(reg==="meadow"){t=v<0.04?T.OAK:T.MEADOW;}
+    else{var dens=reg==="mixed"?0.25:0.32;
+      if(v<dens)t=reg==="birch"?T.BIRCH:reg==="pine"?T.PINE:reg==="oak"?T.OAK:(r()<0.5?T.OAK:T.PINE);
+      else if(v<dens+0.03)t=T.LOG; else if(v<dens+0.04)t=T.ROCK;}
+    if(x===0||y===0||x===WW-1||y===WH-1)t=reg==="birch"?T.BIRCH:reg==="pine"?T.PINE:T.OAK;
+    m[y].push(t);}}
+  for(y=1;y<WH-1;y++)for(x=1;x<WW-1;x++){if(wfRegion(x,y)==="meadow"){var edge=wfRegion(x-3,y)!=="meadow"||wfRegion(x,y-3)!=="meadow";if(edge&&r()<0.32)m[y][x]=T.OAK;}}
+  for(y=0;y<WH;y++){var sx=wfStreamX(y);m[y][sx]=T.WATER;m[y][sx+1]=T.WATER;}
+  for(y=HOME.y0;y<=HOME.y1;y++)for(x=HOME.x0;x<=HOME.x1;x++)m[y][x]=T.PLOT;
+  for(y=16;y<=27;y++)for(x=WW-11;x<=WW-2;x++)m[y][x]=T.GRASS;
+  function trail(x0,y0,x1,y1){var dx=Math.sign(x1-x0),dy=Math.sign(y1-y0),cx=x0,cy=y0;for(;;){if(cx>0&&cy>0&&cx<WW-1&&cy<WH-1&&!wfInHome(cx,cy)){var t=m[cy][cx];m[cy][cx]=t===T.WATER?T.BRIDGE:(t===T.MEADOW?T.MEADOW:T.PATH);}if(cx===x1&&cy===y1)break;if(cx!==x1)cx+=dx;else cy+=dy;}}
+  trail(HOME.x1+1,PATHY,WW-9,PATHY);
+  trail(9,HOME.y0-1,9,4);trail(9,HOME.y1+1,9,WH-4);
+  trail(WW-14,4,WW-14,WH-4);
+  trail(9,5,WW-14,5);trail(9,WH-6,WW-14,WH-6);
+  trail(24,5,24,WH-6);
+  /* entrances to the new areas */
+  trail(18,5,18,3);m[2][18]=T.DOOR;[[17,1],[18,1],[19,1],[17,2],[19,2]].forEach(function(p){m[p[1]][p[0]]=T.ROCK;});
+  trail(24,WH-6,24,WH-3);m[WH-2][24]=T.DOOR;
+  m[3][46]=T.PATH;m[2][46]=T.DOOR;[[45,1],[46,1],[47,1],[45,2],[47,2]].forEach(function(p){m[p[1]][p[0]]=T.ROCK;});
+  return m;
+});}
+function wfGenCave(){
+  var w=36,h=28,r=wfRng(5150),m=[],x,y;
+  for(y=0;y<h;y++){m.push([]);for(x=0;x<w;x++)m[y].push(T.CWALL);}
+  function carve(cx,cy,rad){for(var j=-rad;j<=rad;j++)for(var i=-rad;i<=rad;i++){var xx=cx+i,yy=cy+j;if(xx>1&&yy>1&&xx<w-2&&yy<h-2)m[yy][xx]=T.CFLOOR;}}
+  var cx=18,cy=24;
+  for(var s=0;s<950;s++){carve(cx,cy,r()<0.14?2:1);var dir=[[1,0],[-1,0],[0,1],[0,-1]][Math.floor(r()*4)];if(r()<0.22)dir=[0,-1];cx=Math.max(3,Math.min(w-4,cx+dir[0]));cy=Math.max(3,Math.min(h-4,cy+dir[1]));}
+  m[24][18]=T.CFLOOR;m[25][18]=T.CFLOOR;m[26][18]=T.DOOR;
+  for(y=2;y<h-2;y++)for(x=2;x<w-2;x++){if(m[y][x]!==T.CFLOOR||(x===18&&y>=22))continue;var n=0;[[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){if(m[y+d[1]][x+d[0]]===T.CFLOOR)n++;});
+    if(n===1){var v=r();if(v<0.3)m[y][x]=T.POOL;else if(v<0.5)m[y][x]=T.ROCK;}}
+  return m;
+}
+function wfGenMarsh(){
+  var w=46,h=32,r=wfRng(8080),m=[],x,y;
+  for(y=0;y<h;y++){m.push([]);for(x=0;x<w;x++){var t=T.GRASS,v=r();
+    var nz=Math.sin(x*0.35)+Math.cos(y*0.42)+Math.sin((x+y)*0.21)*1.2;
+    if(nz>1.45)t=T.MARSH;else if(nz>1.1&&v<0.55)t=T.REEDS;else if(v<0.12)t=T.WILLOW;else if(v<0.15)t=T.LOG;else if(v<0.21)t=T.MUD;else if(v<0.28)t=T.REEDS;
+    if(x===0||y===0||x===w-1||y===h-1)t=T.WILLOW;
+    m[y].push(t);}}
+  for(x=1;x<w-1;x++){var ry=Math.round(h*0.58+Math.sin(x*0.25)*3);for(var k=-1;k<=1;k++)if(ry+k>0&&ry+k<h-1)m[ry+k][x]=T.MARSH;}
+  for(var p=0;p<7;p++){var px=4+Math.floor(r()*(w-8)),py=4+Math.floor(r()*(h-8));if(Math.abs(px-23)<4)continue;for(y=py-1;y<=py+1;y++)for(x=px-1;x<=px+1;x++)if(r()<0.8)m[y][x]=T.WATER;}
+  for(y=2;y<=Math.round(h*0.45);y++)m[y][23]=T.PATH;
+  m[1][23]=T.DOOR;
+  return m;
+}
+function wfGenRidge(){
+  var w=46,h=32,r=wfRng(9393),m=[],x,y;
+  for(y=0;y<h;y++){m.push([]);for(x=0;x<w;x++){var t=T.STONE,v=r(),nz=Math.sin(x*0.3+1)+Math.cos(y*0.37);
+    if(nz>0.6)t=T.GRASS;
+    if(v<0.17)t=T.PINE;else if(v<0.24)t=T.ROCK;
+    if(x===0||y===0||x===w-1||y===h-1)t=v<0.5?T.ROCK:T.PINE;
+    m[y].push(t);}}
+  var pts=[[4,29],[4,24],[14,24],[14,18],[26,18],[26,11],[36,11],[36,5],[40,5]];
+  for(var i=0;i<pts.length-1;i++){var a=pts[i],b=pts[i+1],cx=a[0],cy=a[1];for(;;){m[cy][cx]=T.PATH;if(cx===b[0]&&cy===b[1])break;if(cx!==b[0])cx+=Math.sign(b[0]-cx);else cy+=Math.sign(b[1]-cy);}}
+  for(y=3;y<=6;y++)for(x=38;x<=42;x++)if(m[y][x]!==T.PATH)m[y][x]=T.STONE;
+  m[30][4]=T.DOOR;
+  return m;
+}
+function wfReachZ(m,w,h,sx,sy){
+  var seen={},q=[[sx,sy]];seen[sx+","+sy]=1;
+  while(q.length){var c=q.shift();[[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){var x=c[0]+d[0],y=c[1]+d[1],k=x+","+y;if(x<0||y<0||x>=w||y>=h||seen[k])return;if(SOLID[m[y][x]])return;seen[k]=1;q.push([x,y]);});}
+  return seen;
+}
+function wfFloorZ(t){return t===T.GRASS||t===T.MEADOW||t===T.CFLOOR||t===T.MUD||t===T.STONE;}
+/* a spot that can hold a chest without cutting a corridor: open on all 8 sides, or a dead end */
+function wfChestOk(m,w,h,x,y){var open8=0,open4=0;for(var j=-1;j<=1;j++)for(var i=-1;i<=1;i++){if(!i&&!j)continue;var xx=x+i,yy=y+j;if(xx<0||yy<0||xx>=w||yy>=h)continue;if(!SOLID[m[yy][xx]]&&m[yy][xx]!==T.DOOR){open8++;if(!i||!j)open4++;}}return open8===8||open4===1;}
+function wfSpawns(m){return asWoods(function(){
+  var r=wfRng(777),reach=wfReachZ(m,WW,WH,START.x,START.y),used={},out=[],id=0;
+  function adj(x,y,t){return [[1,0],[-1,0],[0,1],[0,-1]].some(function(d){var yy=y+d[1],xx=x+d[0];return yy>=0&&xx>=0&&yy<WH&&xx<WW&&m[yy][xx]===t;});}
+  function noTree(x,y){return !adj(x,y,T.OAK)&&!adj(x,y,T.PINE)&&!adj(x,y,T.BIRCH);}
+  var rules={
+   "button":[10,function(x,y,g){return g==="meadow"&&m[y][x]===T.MEADOW&&!adj(x,y,T.OAK);}],
+   "death-cap":[7,function(x,y,g){return (g==="meadow"||(g==="oak"&&y>WH*0.3))&&adj(x,y,T.OAK);}],
+   "oyster":[9,function(x,y,g){return g!=="meadow"&&adj(x,y,T.LOG);}],
+   "turkey-tail":[8,function(x,y,g){return adj(x,y,T.LOG);}],
+   "reishi":[3,function(x,y,g){return (g==="oak"||g==="mixed")&&adj(x,y,T.LOG);}],
+   "chaga":[5,function(x,y,g){return adj(x,y,T.BIRCH);}],
+   "birch-polypore":[6,function(x,y,g){return adj(x,y,T.BIRCH);}],
+   "fly-agaric":[7,function(x,y,g){return (g==="birch"||g==="pine")&&(adj(x,y,T.BIRCH)||adj(x,y,T.PINE));}],
+   "lions-mane":[4,function(x,y,g){return (g==="oak"||g==="mixed")&&adj(x,y,T.OAK);}],
+   "maitake":[5,function(x,y,g){return (g==="oak"||g==="mixed")&&adj(x,y,T.OAK);}],
+   "chanterelle":[8,function(x,y,g){return g==="pine";}],
+   "porcini":[6,function(x,y,g){return g==="pine"&&adj(x,y,T.PINE);}],
+   "hedgehog":[6,function(x,y,g){return g==="pine";}],
+   "morel":[4,function(x,y,g){return (g==="birch"||g==="oak"||g==="mixed")&&noTree(x,y);}],
+   "cordyceps":[2,function(x,y,g){return g==="pine"&&y<WH*0.72;}],
+   "agarikon":[2,function(x,y,g){return g==="pine"&&adj(x,y,T.PINE)&&x<14&&y>WH-14;}]
+  };
+  Object.keys(rules).forEach(function(sp){
+    var cand=[];
+    for(var y=1;y<WH-1;y++)for(var x=1;x<WW-1;x++){var k=x+","+y;if(!reach[k]||used[k])continue;if(!wfFloorZ(m[y][x]))continue;if(wfInHome(x,y)||wfInTrader(x,y))continue;if(Math.abs(x-START.x)+Math.abs(y-START.y)<6)continue;if(rules[sp][1](x,y,wfRegion(x,y)))cand.push([x,y]);}
+    for(var i=cand.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var t=cand[i];cand[i]=cand[j];cand[j]=t;}
+    cand.slice(0,rules[sp][0]).forEach(function(c){used[c[0]+","+c[1]]=1;out.push({id:id++,sp:sp,x:c[0],y:c[1],up:1,back:0,idDay:-1});});
+  });
+  return out;
+});}
+function wfZoneData(id){
+  var cfg={
+   cave:{gen:wfGenCave,seed:61,start:[18,25],rules:[["honey-fungus",8,"wall"],["jack-o-lantern",7,"wall"]]},
+   marsh:{gen:wfGenMarsh,seed:62,start:[23,2],rules:[["lobster",6,"willow"],["dryads-saddle",6,"woodish"],["shaggy-mane",6,"open"],["oyster",4,"woodish"],["turkey-tail",4,"log"],["reishi",3,"log"]]},
+   ridge:{gen:wfGenRidge,seed:63,start:[4,29],rules:[["matsutake",6,"pine"],["sculptured-puffball",6,"open"],["gypsy",5,"pine"],["porcini",4,"pine"],["agarikon",4,"pine"],["hedgehog",3,"pine"]]}
+  }[id];
+  var w=ZONES[id].w,h=ZONES[id].h,m=cfg.gen(),r=wfRng(cfg.seed),reach=wfReachZ(m,w,h,cfg.start[0],cfg.start[1]),used={},spawns=[],sid=0;
+  function adj(x,y,t){return [[1,0],[-1,0],[0,1],[0,-1]].some(function(d){var yy=y+d[1],xx=x+d[0];return yy>=0&&xx>=0&&yy<h&&xx<w&&m[yy][xx]===t;});}
+  var test={wall:function(x,y){return adj(x,y,T.CWALL);},willow:function(x,y){return adj(x,y,T.WILLOW);},woodish:function(x,y){return adj(x,y,T.LOG)||adj(x,y,T.WILLOW);},
+    log:function(x,y){return adj(x,y,T.LOG);},open:function(x,y){return !adj(x,y,T.PINE)&&!adj(x,y,T.WILLOW)&&!adj(x,y,T.ROCK);},pine:function(x,y){return adj(x,y,T.PINE);}};
+  var lookout=id==="ridge"?{x:40,y:4}:null;
+  if(lookout){for(var ly=3;ly<=5;ly++)for(var lx=39;lx<=41;lx++)used[lx+","+ly]=1;}
+  var cand0=[];for(var y=1;y<h-1;y++)for(var x=1;x<w-1;x++){if(reach[x+","+y]&&wfFloorZ(m[y][x])&&Math.abs(x-cfg.start[0])+Math.abs(y-cfg.start[1])>4)cand0.push([x,y]);}
+  function pickFrom(list,n){var c=list.filter(function(p){return !used[p[0]+","+p[1]];});for(var i=c.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var t=c[i];c[i]=c[j];c[j]=t;}c=c.slice(0,n);c.forEach(function(p){used[p[0]+","+p[1]]=1;});return c;}
+  var npcCrit={cave:function(p){var d=Math.abs(p[0]-18)+Math.abs(p[1]-25);return d>=4&&d<=10;},marsh:function(p){return (p[0]===22||p[0]===24)&&p[1]>=7&&p[1]<=13;},ridge:function(p){return Math.abs(p[0]-40)+Math.abs(p[1]-4)<=4;}}[id];
+  var npcList=cand0.filter(function(p){return npcCrit(p)&&wfChestOk(m,w,h,p[0],p[1]);});
+  if(!npcList.length)npcList=cand0.filter(function(p){return wfChestOk(m,w,h,p[0],p[1]);});
+  var npc=pickFrom(npcList,1)[0]||null;
+  cfg.rules.forEach(function(rl){pickFrom(cand0.filter(function(p){return test[rl[2]](p[0],p[1]);}),rl[1]).forEach(function(p){spawns.push({id:sid++,sp:rl[0],x:p[0],y:p[1],up:1,back:0,idDay:-1});});});
+  var far=cand0.filter(function(p){return Math.abs(p[0]-cfg.start[0])+Math.abs(p[1]-cfg.start[1])>10;});
+  var chests=pickFrom(far.filter(function(p){return wfChestOk(m,w,h,p[0],p[1]);}),2);
+  var pages=pickFrom(far,3);
+  return {map:m,spawns:spawns,pages:pages,chests:chests,lookout:lookout,npc:npc};
+}
+function wfNewState(m){
+  return {v:1,day:1,min:7*60,x:START.x,y:START.y,dir:"down",energy:100,coins:5,xp:0,
+    inv:{},mat:{wood:0,planks:0,nails:0,straw:0,oyster_spawn:0,shiitake_dowels:0,oak_log:0},
+    tools:{},cap:6,shelter:"tent",beds:[null,null,null,null,null,null],chopped:{},oakCut:{},
+    spawns:wfSpawns(m),journal:{},quest:0,qp:0,done:[],riddleDay:0,harvested:0,sold:0,intro:1,crate:{},zone:"woods"};
+}
+function invCount(st){var n=0;for(var k in st.inv)n+=st.inv[k];return n;}
+
+/* ---------- identification traits (what you see when you examine each species) ---------- */
+var WTRAIT={
+ "button":{cap:"A smooth, white, dome-shaped cap about the width of a coin, clean and dry.",under:"Close-packed gills, pinkish-brown. They don't quite reach the stem (free gills).",stem:"A short white stem with a thin ring. No cup at the base.",smell:"Pleasant and mild. Classic mushroom."},
+ "oyster":{cap:"Grey-brown, fan-shaped shelves overlapping each other. No dome at all.",under:"Whitish gills running right down onto a stubby stem (decurrent gills).",stem:"Barely any stem. It grows sideways, straight out of the wood.",smell:"Faintly sweet, a little like anise."},
+ "chanterelle":{cap:"Egg-yolk gold, shaped like a funnel or trumpet, with a wavy edge.",under:"Blunt, forked ridges like melted wax running down the stem. False gills, not sharp blades.",stem:"Solid and the same gold as the cap, growing alone from the soil.",smell:"Fruity, like apricots."},
+ "porcini":{cap:"A fat, brown cap shaped like a bread roll.",under:"No gills at all: a spongy layer of tiny pores, cream turning olive.",stem:"Thick and club-shaped, pale, with a fine net pattern (a reticulum).",smell:"Nutty, like sourdough."},
+ "hedgehog":{cap:"Pale buff-orange, lumpy and irregular.",under:"Soft, icicle-like spines hang down where you'd expect gills.",stem:"Short and whitish, sometimes off-centre.",smell:"Sweet."},
+ "maitake":{cap:"A big rosette of small grey-brown fronds overlapping like feathers.",under:"Tiny white pores under each frond.",stem:"All the fronds branch from one short, thick base at the foot of the oak.",smell:"Rich and earthy."},
+ "morel":{cap:"A cone-shaped cap covered in deep honeycomb pits and ridges.",under:"No gills. Snap it and it's hollow inside, cap and stem all one piece.",stem:"White and hollow, joined right at the bottom of the cap.",smell:"Earthy."},
+ "turkey-tail":{cap:"Thin, leathery brackets banded brown, tan and blue-grey, like a turkey's tail feathers. Velvety.",under:"Tiny white pores.",stem:"No stem. The brackets grow in overlapping tiers straight from the log.",smell:"Almost nothing."},
+ "chaga":{cap:"Not a cap at all: a black, cracked lump like burnt charcoal bulging from the birch.",under:"A broken edge shows rusty orange-brown, corky flesh inside.",stem:"No stem. It grows out of the trunk itself.",smell:"Faint and woody, almost like vanilla."},
+ "birch-polypore":{cap:"A smooth, white-to-tan, kidney-shaped bracket with a rolled-under rim.",under:"Small, round, white pores.",stem:"Just a short knob attaching it to the birch.",smell:"Mild, slightly sour."},
+ "lions-mane":{cap:"A white ball of long, cascading spines, like a pom-pom or a beard.",under:"All spines. No gills, no pores.",stem:"None. It clings straight to the oak's bark.",smell:"Mild, faintly like seafood."},
+ "reishi":{cap:"A glossy red-brown bracket that looks varnished. Hard and woody.",under:"Cream-white pores that bruise brown when you press them.",stem:"Sometimes a short, shiny stem off to one side.",smell:"Bitter and woody."},
+ "cordyceps":{cap:"No cap. A slim, bright orange club poking up out of the soil.",under:"A rough, pimply surface toward the tip.",stem:"The whole thing is a stem. Dig gently and you'll find it growing from a buried insect larva.",smell:"Faint."},
+ "agarikon":{cap:"A tall, chalky-white conk shaped like a column, like hooves stacked on hooves.",under:"Small pale pores. The book says its bitterness was once sold as 'quinine'.",stem:"None. It's fixed to the side of an ancient pine.",smell:"Mealy. It would taste fiercely bitter."},
+ "death-cap":{cap:"A smooth, pale yellow-green cap with faint streaks, a little shiny.",under:"White gills, free from the stem.",stem:"White, with a skirt-like ring, and at the very base a cup-like sac: a volva.",smell:"Faintly sweet. Nothing at all to warn you."},
+ "fly-agaric":{cap:"A bright red cap scattered with white, wart-like flecks.",under:"White gills.",stem:"White, with a ring and a bulbous base circled by warty scales.",smell:"Mild."},
+ "honey-fungus":{cap:"Tight clusters of honey-coloured caps, darker and scaly in the centre.",under:"Pale gills running a little way down the stem.",stem:"Tough stems fused at the base, each with a ring. Black strands like bootlaces (rhizomorphs) snake off into the roots.",smell:"Strong and mushroomy. Around it, the old wood glows faintly green: foxfire."},
+ "jack-o-lantern":{cap:"Bright pumpkin-orange caps in a dense clump, each with a dip in the centre.",under:"Sharp, thin, true gills packed tight and running down the stem. In the dark, they glow.",stem:"Orange stems fused together, growing out of buried wood.",smell:"Unpleasant and oily."},
+ "lobster":{cap:"A twisted, misshapen lump, bright red-orange like a cooked lobster.",under:"No gills, just a crusty, bumpy red skin where gills should be.",stem:"Thick and hard. It's a russula or milk cap smothered by a parasite.",smell:"Like seafood."},
+ "dryads-saddle":{cap:"A big tan fan with dark brown, feathery scales, like a hawk's wing.",under:"Large, angular white pores.",stem:"A short, thick stem off to one side, black at the base.",smell:"Mealy, like watermelon rind."},
+ "shaggy-mane":{cap:"A tall, white cylinder covered in shaggy, upturned scales.",under:"Crowded gills, white turning pink, then black and inky at the bottom edge.",stem:"A hollow white stem with a loose ring.",smell:"Mild."},
+ "matsutake":{cap:"A thick white cap with brown fibrous scales, rolled under at the edge.",under:"White gills notched where they meet the stem.",stem:"Thick and firm, with a cottony ring.",smell:"Strong and spicy, like cinnamon and pine resin. Unmistakable."},
+ "sculptured-puffball":{cap:"A round white ball as big as a grapefruit, covered in shallow pyramid-shaped plates.",under:"No gills. You slice a sliver: firm and pure white inside, which is what you want.",stem:"No stem. It sits right on the ground.",smell:"Pleasant."},
+ "gypsy":{cap:"A tan-ochre cap, wrinkled, with a frosted look near the centre.",under:"Pale clay-coloured gills, attached to the stem.",stem:"Whitish, with a distinct papery ring.",smell:"Mild."}
+};
+
+/* ---------- characters ---------- */
+var NPC_INFO={
+ wren:{name:"Old Wren",hair:"#e8e4dc",robe:"#8860b8",robeD:"#5a3a88"},
+ cave:{name:"Pip",hair:"#f8d048",robe:"#3878c8",robeD:"#28508c"},
+ marsh:{name:"Moss",hair:"#4a7a3a",robe:"#8a6a40",robeD:"#5a4428"},
+ ridge:{name:"Old Hal",hair:"#c8c8c8",robe:"#3a6a48",robeD:"#244a30"}
+};
+var NPC_TALK={
+ cave:{
+  first:["Whoa! Another explorer? I'm Pip. I've been mapping Foxfire Cave all week.","Turn your lantern down a second... see that green shimmer on the old roots? That's foxfire. It's honey fungus mycelium, and it actually glows!"],
+  later:["Back again? Mind the drips. They get in your boots."],
+  ask:"What do you want to know?",
+  topics:[
+   {t:"Why does it glow?",lines:["The book I read says fungi make 'secondary metabolites': poisons, antibiotics, mind-altering stuff... and light. That's bioluminescence.","Honey fungus glows in its mycelium. That's the foxfire. Jack-o'-lanterns glow in their gills."]},
+   {t:"Jack-o'-lantern or chanterelle?",lines:["Easy to mix up! They're both orange. So look underneath.","A chanterelle has blunt ridges, like melted wax, that fork and run down the stem. 'False gills'.","A jack-o'-lantern has sharp, thin, true gills packed tight, and it grows in clumps on wood. Chanterelles grow one by one from the ground.","Eat a jack and you'll be very sick. And never trust colour alone. The book says it's one of the least reliable clues."]},
+   {t:"Found anything good?",lines:["There's a treasure chest somewhere deep in here. And I saw a torn journal page near the far pools, but I couldn't reach it before my candle ran out.","Dead ends are worth checking. That's where things wash up."]}
+  ],
+  bye:"Watch your head on the low bits!"},
+ marsh:{
+  first:["Shh... you'll scare the herons. Oh. Hello. I'm Moss. I watch birds, mostly. And mushrooms, when the birds are hiding.","Good thing you've got waders. The shallows are only knee-deep, but those dark pools? Don't even try."],
+  later:["Quiet day on the marsh. Good day for mushrooms."],
+  ask:"Curious about something?",
+  topics:[
+   {t:"Lobster mushrooms?",lines:["Ha! It isn't really a mushroom of its own. It starts life as a russula or a milk cap...","...then a parasite called Hypomyces lactifluorum takes over, twists it up, and turns it bright cooked-lobster red. Hard as wood, but good eating.","Look around the willows."]},
+   {t:"What else grows here?",lines:["Dryad's saddle on the willows and old logs: big scaly fans. Sniff one. Smells like watermelon rind. The book calls that 'farinaceous', or mealy.","Shaggy manes on open ground. Tall white columns. Pick them young; they melt into black ink within a day."]},
+   {t:"Any advice?",lines:["Wetlands and floodplains are a habitat of their own. Know where you're standing and what grows there. It narrows things down a lot.","And mushrooms soak up whatever's in the water and soil, heavy metals included. Only pick from clean places."]}
+  ],
+  bye:"Tread softly. The herons are nesting."},
+ ridge:{
+  first:["Well now. Not many make it up that rock face. Name's Hal. I've lived up here since before the logging trucks came through.","Have a look through the telescope there. The whole valley's at your feet."],
+  later:["Wind's up today. The pines are talking."],
+  ask:"Pull up a rock. What'll it be?",
+  topics:[
+   {t:"Matsutake?",lines:["The pine mushroom. Thick, white, brown-scaled, and a smell like cinnamon and pine resin. You'll know it when you smell it.","Japanese cooks pay a fortune for it. It only grows with certain pines. Mycorrhizal, see: partnered with the roots. That's why nobody can farm it."]},
+   {t:"Agarikon?",lines:["Those chalky columns on the oldest pines? Agarikon. The ancient Greeks used it for tuberculosis, the book says.","It only grows in very old forests. After a hundred and fifty years of logging, about 5% of the old forest out west is left. So it's rare now. Take only what you need."]},
+   {t:"Puffballs?",lines:["Sculptured puffballs like it up high, Rocky Mountain country. Round and white, with little pyramid plates.","Always slice one before you eat it. It must be pure white inside. Yellow or brown means it's gone over, and the outline of a tiny mushroom inside could be a young amanita."]},
+   {t:"Tell me a story",lines:["There's a honey fungus down in Oregon, a single organism, covering two thousand two hundred acres. Could be two and a half thousand years old.","Everything up here is connected under your boots like that. The mushrooms are only the fruit. The real creature is down in the dirt."]}
+  ],
+  bye:"Mind the wind on the way down."}
+};
+var WREN_WOODS=["Your camp's to the west, my post is east, and the stream runs between. Birches up north, pines to the southwest, oaks to the northeast, and the open meadow southeast.","Past the birches, right at the north edge, there's a cave. Folks call it Foxfire Cave. Pitch black inside. You'd want a lantern.","At the south edge there's a boardwalk into Willow Marsh. Wet going without waders.","And way up in the northeast corner, a rock face climbs to Highpine Ridge. Bring a rope."];
+var WREN_TIPS=["Never eat a mushroom you can't name for certain. Plenty of deadly ones look like edibles.","Learn the amanitas first. A cup at the base of the stem? Walk away.","Always look underneath: gills, pores, spines or ridges. That tells you more than colour ever will.","A spore print takes a few hours. Lay the cap gills-down on paper and cover it with a bowl. The colour's a big clue.","Mushrooms love rain. Get out the morning after a good soaking.","Use your nose. Mealy like watermelon rind? Anise? Bleach? Smell is a real clue.","Morels only show in spring. Chanterelles and porcini come in summer and autumn.","When you harvest your beds, twist the mushrooms off. Don't cut. The leftover stubs rot.","Mushrooms soak up whatever's around them. Don't pick by the roadside."];
+var QHINT=["Buttons in the meadow to the southeast are the easiest start. Oysters grow right out of fallen logs.","That's me! Bring me anything you've picked and I'll pay you fair.","Death caps hide under the oaks along the meadow's edge, southeast. Plain-looking things. Look for the cup at the base.","I sell knives. Turkey tail grows on fallen logs; chaga and birch polypore on the birches up north.","Axes and nails are on my shelf. Chop fallen logs for wood, then use the sign at your camp.","Pot, mister, straw and oyster spawn. Pasteurise the straw, pack in the spawn, and mist it every single day.","Drill kit and dowels from me. Cut two fresh oak logs with your axe. The book says healthy trees, inoculated within six months.","Lion's mane on the oaks, chaga on the birches, and reishi on fallen logs. Bring all three.","A cabin takes twenty wood, ten planks, four nails and forty coins. You'll need the lean-to up first.","Keep those beds misted and harvest on time. Your crate takes the overflow.","Lanterns are on my shelf. The cave's straight north past the birches. Look underneath anything orange in there.","Waders from me, then follow the boardwalk south.","A good rope from me, then head for the rock face in the far northeast.","Pages turn up everywhere: the woods, the cave, the marsh, the ridge. Press M for your map."];
+
+/* ---------- the game ---------- */
+function wfCreate(root){
+  WW=60;WH=44;
+  var woodsMap=wfGenMap();
+  var ZD={woods:{map:woodsMap},cave:wfZoneData("cave"),marsh:wfZoneData("marsh"),ridge:wfZoneData("ridge")};
+  var NPCS=[{id:"wren",zone:"woods",x:WREN.x,y:WREN.y}];
+  ["cave","marsh","ridge"].forEach(function(z){var p=ZD[z].npc;if(p)NPCS.push({id:z,zone:z,x:p[0],y:p[1]});});
+  var map=woodsMap;
+  var st=null, saved=lsGet("mc-woods-save");
+  if(saved){try{st=JSON.parse(saved);if(!st||st.v!==1)st=null;}catch(e){st=null;}}
+  if(!st)st=wfNewState(woodsMap);
+  migrate();
+  var canStore=lsSet("mc-woods-test","1");lsDel("mc-woods-test");
+
+  function migrate(){
+    if(!st.crate)st.crate={};
+    if(!st.zone||!ZONES[st.zone])st.zone="woods";
+    if(!st.zones)st.zones={};
+    ["cave","marsh","ridge"].forEach(function(z){if(!st.zones[z])st.zones[z]={spawns:JSON.parse(JSON.stringify(ZD[z].spawns))};});
+    var ck={};Object.keys(st.chopped||{}).forEach(function(k){ck[k.indexOf(":")<0?"woods:"+k:k]=st.chopped[k];});st.chopped=ck;
+    if(!st.pages)st.pages=[];if(!st.chests)st.chests=[];if(!st.visited)st.visited={};if(!st.met)st.met={};
+    if(!st.weather)st.weather="sun";if(!st.lookout)st.lookout=0;
+    if(!st.pageSpots||!st.chestSpots){
+      var occ={};st.spawns.forEach(function(s){occ[s.x+","+s.y]=1;});
+      var reach=wfReachZ(woodsMap,60,44,START.x,START.y),r=wfRng(4242),cand=[];
+      for(var y=2;y<42;y++)for(var x=2;x<58;x++){var k=x+","+y;if(!reach[k]||occ[k])continue;if(!wfFloorZ(woodsMap[y][x]))continue;if(wfInHome(x,y)||wfInTrader(x,y))continue;if(Math.abs(x-START.x)+Math.abs(y-START.y)<14)continue;cand.push([x,y]);}
+      for(var i=cand.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var t=cand[i];cand[i]=cand[j];cand[j]=t;}
+      var wc=cand.filter(function(p){return wfChestOk(woodsMap,60,44,p[0],p[1]);})[0]||cand[0];
+      var wp=cand.filter(function(p){return p!==wc;}).slice(0,3);
+      st.pageSpots=[];st.chestSpots=[];
+      wp.forEach(function(p,n){st.pageSpots.push({id:n,zone:"woods",x:p[0],y:p[1]});});
+      st.chestSpots.push({id:0,zone:"woods",x:wc[0],y:wc[1]});
+      var pid=3,cid=1;["cave","marsh","ridge"].forEach(function(z){ZD[z].pages.forEach(function(p){st.pageSpots.push({id:pid++,zone:z,x:p[0],y:p[1]});});ZD[z].chests.forEach(function(p){st.chestSpots.push({id:cid++,zone:z,x:p[0],y:p[1]});});});
+    }
+  }
+
+  root.innerHTML=
+   '<div class="wf-stage" id="wfStage" tabindex="0" aria-label="Blackpine Woods game. Arrow keys or WASD to move, E to interact.">'
+   +'<canvas id="wfCan"></canvas>'
+   +'<div class="wf-hud"><div class="wf-hl"><div class="wf-clock" id="wfClock"></div><div class="wf-bar" title="Energy"><span id="wfEn"></span><b>Energy</b></div></div>'
+   +'<div class="wf-hr"><div class="wf-coins" id="wfCoins"></div><div class="wf-lv"><span id="wfLv"></span><div class="wf-xp"><span id="wfXp"></span></div></div></div></div>'
+   +'<div class="wf-quest" id="wfQuest"></div>'
+   +'<div class="wf-prompt" id="wfPrompt" hidden></div>'
+   +'<div class="wf-toasts" id="wfToasts" aria-live="polite"></div>'
+   +'<div class="wf-zone" id="wfZoneBan" hidden></div>'
+   +'<div class="wf-dlg" id="wfDlg" hidden><canvas class="wf-dpor" id="wfDPor" width="48" height="48"></canvas><div class="wf-dmain"><div class="wf-dname" id="wfDName"></div><div class="wf-dtext" id="wfDText" aria-live="polite"></div><div class="wf-dopts" id="wfDOpts"></div></div><div class="wf-dnext" id="wfDNext">▼</div></div>'
+   +'<div class="wf-modal" id="wfModal" hidden><div class="wf-box" role="dialog" aria-modal="true"><button class="wf-x" id="wfX" aria-label="Close">✕</button><div id="wfBody"></div></div></div>'
+   +'<div class="wf-fade" id="wfFade"></div>'
+   +'<div class="wf-pad" id="wfPad"><div class="wf-dpad"><button data-k="up" aria-label="Up">▲</button><button data-k="left" aria-label="Left">◀</button><button data-k="right" aria-label="Right">▶</button><button data-k="down" aria-label="Down">▼</button></div><button class="wf-a" data-k="act" aria-label="Interact">E</button></div>'
+   +'</div>'
+   +'<div class="wf-bar2"><button class="btn" data-m="inv">🎒 Basket <kbd>I</kbd></button><button class="btn" data-m="journal">📖 Journal <kbd>J</kbd></button><button class="btn" data-m="quests">📜 Quests <kbd>Q</kbd></button><button class="btn" data-m="map">🗺 Map <kbd>M</kbd></button><button class="btn" data-m="help">❔ How to play</button><button class="btn" data-m="menu">⚙ Game</button></div>';
+
+  var can=document.getElementById("wfCan"),ctx=can.getContext("2d"),stage=document.getElementById("wfStage");
+  var modal=document.getElementById("wfModal"),body=document.getElementById("wfBody");
+  var keys={},raf=0,last=0,running=true,lastSave=0,hudT=0,dirty=true,warping=false;
+  var pl={px:st.x*TS,py:st.y*TS,tx:st.x,ty:st.y,moving:false,step:0};
+  var modalOpen=false, cw=0, ch=0;
+
+  /* ----- helpers ----- */
+  function spawnsHere(){return st.zone==="woods"?st.spawns:st.zones[st.zone].spawns;}
+  function allSpawns(){return st.spawns.concat(st.zones.cave.spawns,st.zones.marsh.spawns,st.zones.ridge.spawns);}
+  function inSeason(sp){if(st.zone==="cave")return true;var a=SEASONAL[sp];return !a||a.indexOf(seasonOf(st.day))>=0;}
+  function visible(s){return s.up&&inSeason(s.sp);}
+  function tileAt(x,y){if(x<0||y<0||x>=WW||y>=WH)return st.zone==="cave"?T.CWALL:T.OAK;var t=map[y][x];if(t===T.LOG&&st.chopped[st.zone+":"+x+","+y])return T.STUMP;return t;}
+  function chestAt(x,y){for(var i=0;i<st.chestSpots.length;i++){var c=st.chestSpots[i];if(c.zone===st.zone&&c.x===x&&c.y===y)return c;}return null;}
+  function pageAt(x,y){for(var i=0;i<st.pageSpots.length;i++){var p=st.pageSpots[i];if(p.zone===st.zone&&p.x===x&&p.y===y&&st.pages.indexOf(p.id)<0)return p;}return null;}
+  function npcAt(x,y){for(var i=0;i<NPCS.length;i++){var n=NPCS[i];if(n.zone===st.zone&&n.x===x&&n.y===y)return n;}return null;}
+  function warpAt(x,y){var ws=WARPS[st.zone];for(var i=0;i<ws.length;i++)if(ws[i].x===x&&ws[i].y===y)return ws[i];return null;}
+  function structAt(x,y){
+    if(st.zone==="woods"){
+      if(st.shelter==="cabin"){if((x===SHELTER.x||x===SHELTER.x+1)&&(y===SHELTER.y||y===SHELTER.y-1))return"shelter";}
+      else if(x===SHELTER.x&&y===SHELTER.y)return"shelter";
+      if(x===FIRE.x&&y===FIRE.y)return"fire";
+      if(x===SIGN.x&&y===SIGN.y)return"sign";
+      if(x===CRATE.x&&y===CRATE.y)return"crate";
+      for(var i=0;i<HUT.length;i++)if(HUT[i][0]===x&&HUT[i][1]===y)return"hut";
+      for(var j=0;j<SLOTS.length;j++)if(SLOTS[j][0]===x&&SLOTS[j][1]===y&&st.beds[j])return"bed"+j;
+    }
+    if(npcAt(x,y))return"npc";
+    if(chestAt(x,y))return"chest";
+    var lo=ZD[st.zone].lookout;if(lo&&lo.x===x&&lo.y===y)return"lookout";
+    return null;
+  }
+  function blocked(x,y){var t=tileAt(x,y);if(SOLID[t])return true;if(t===T.MARSH&&!st.tools.waders)return true;return !!structAt(x,y);}
+  function spawnAt(x,y){var a=spawnsHere();for(var i=0;i<a.length;i++){var s=a[i];if(visible(s)&&s.x===x&&s.y===y)return s;}return null;}
+  function clock(){var h=Math.floor(st.min/60)%24,mm=Math.floor(st.min%60);return (h<10?"0":"")+h+":"+(mm<10?"0":"")+mm;}
+  function lv(){return lvFor(st.xp);}
+  function priceOf(sp){return Math.round(WSP[sp].val*(st.shelter==="cabin"?1.1:1));}
+  function save(){st.x=pl.tx;st.y=pl.ty;if(canStore)lsSet("mc-woods-save",JSON.stringify(st));}
+  function toast(msg,kind){var t=document.createElement("div");t.className="wf-toast "+(kind||"");t.innerHTML=msg;var box=document.getElementById("wfToasts");box.appendChild(t);while(box.children.length>4)box.removeChild(box.firstChild);setTimeout(function(){t.classList.add("out");setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},400);},3800);}
+  function gainXP(n,why){var before=lv();st.xp+=n;if(why)toast("+"+n+" XP · "+why,"xp");var after=lv();if(after>before){
+    var un=SHOP.filter(function(s){return s.lv===after;}).map(function(s){return s.n;}).concat(Object.keys(BUILDS).filter(function(b){return BUILDS[b].lv===after;}).map(function(b){return BUILDS[b].n;}));
+    toast("⭐ <b>Level "+after+"!</b>"+(un.length?" Unlocked: "+un.join(", "):""),"lvl");}}
+  function addCoins(n){st.coins+=n;}
+  function addItem(sp,n){var room=Math.max(0,st.cap-invCount(st)),a=Math.min(room,n),b=n-a;if(a)st.inv[sp]=(st.inv[sp]||0)+a;if(b)st.crate[sp]=(st.crate[sp]||0)+b;return b;}
+
+  /* ----- quests ----- */
+  function quest(){return QUESTS[st.quest]||null;}
+  function qEvent(goal,n){var q=quest();if(!q||q.goal!==goal)return;st.qp+=(n||1);if(st.qp>=q.need)qComplete();renderQuest();}
+  function qComplete(){var q=quest();if(!q)return;var rw=q.rw;st.done.push(st.quest);
+    toast("📜 <b>Quest complete:</b> "+q.n,"lvl");
+    if(rw.coins){addCoins(rw.coins);toast("+"+rw.coins+" coins","coin");}
+    if(rw.tool&&!st.tools[rw.tool]){st.tools[rw.tool]=1;toast("Received: "+TOOLN[rw.tool],"coin");}
+    st.quest++;st.qp=0;if(rw.xp)gainXP(rw.xp,"quest reward");
+    var nq=quest();if(nq){toast("New quest: <b>"+nq.n+"</b>","");
+      if(nq.goal==="build_leanto"&&st.shelter!=="tent")qComplete();
+      else if(nq.goal==="build_cabin"&&st.shelter==="cabin")qComplete();
+      else if(nq.goal==="pages"){st.qp=st.pages.length;if(st.qp>=nq.need)qComplete();}}
+    renderQuest();save();}
+  function renderQuest(){var q=quest(),el=document.getElementById("wfQuest");if(!el)return;
+    el.innerHTML=q?'<b>📜 '+esc(q.n)+'</b><span>'+esc(q.d)+'</span>'+(q.need>1?'<i>'+Math.min(st.qp,q.need)+' / '+q.need+'</i>':''):'<b>🏆 All quests complete</b><span>You\'re a master of Blackpine Woods. Keep exploring!</span>';}
+
+  /* ----- pixel-art renderer (GBA-style: 16px tiles drawn crisp, then scaled up) ----- */
+  var PX=16, SC=3, lw=1, lh=1;
+  function mkc(w,h){var c=document.createElement("canvas");c.width=w;c.height=h;return c;}
+  var low=mkc(1,1), lctx=low.getContext("2d"), nlow=mkc(1,1), nctx=nlow.getContext("2d");
+  var groundA=mkc(WW*PX,WH*PX), groundB=mkc(WW*PX,WH*PX), objs=mkc(WW*PX,WH*PX);
+  function P(c,x,y,col){c.fillStyle=col;c.fillRect(x,y,1,1);}
+  function R(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x,y,w,h);}
+  function noise(x,y){var n=Math.sin(x*12.9898+y*78.233)*43758.5453;return n-Math.floor(n);}
+  function blob(c,cx,cy,rx,ry,o,d,m,l,top){
+    function ins(a,b){if(top&&b>cy)return false;var dx=(a+.5-cx)/rx,dy=(b+.5-cy)/ry;return dx*dx+dy*dy<=1;}
+    for(var j=Math.floor(cy-ry-1);j<=Math.ceil(cy+ry+1);j++)for(var i=Math.floor(cx-rx-1);i<=Math.ceil(cx+rx+1);i++){
+      if(!ins(i,j))continue;var edge=!ins(i+1,j)||!ins(i-1,j)||!ins(i,j+1)||!ins(i,j-1);
+      var s=(i+.5-cx)/rx*0.7+(j+.5-cy)/ry;P(c,i,j,edge?o:(s<-0.5?l:s>0.4?d:m));}
+  }
+  function fromRows(rows,pal){var c=mkc(rows[0].length,rows.length),x=c.getContext("2d");
+    for(var j=0;j<rows.length;j++)for(var i=0;i<rows[j].length;i++){var ch=rows[j][i];if(ch!=="."&&pal[ch])P(x,i,j,pal[ch]);}return c;}
+  function mir(h){return h.map(function(r){return r+r.split("").reverse().join("");});}
+  function flip(c){var o=mkc(c.width,c.height),x=o.getContext("2d");x.translate(c.width,0);x.scale(-1,1);x.drawImage(c,0,0);return o;}
+
+  /* characters */
+  var PAL={k:"#282030",h:"#e04838",H:"#a82828",w:"#f8f8f8",r:"#784020",s:"#f8c8a0",e:"#282030",j:"#50a860",J:"#2f7044",p:"#f09030",P:"#b86018",b:"#4868c0",B:"#283880"};
+  var DLEG={stand:["...kbbbbbbbbk...","...kbbbkkbbbk...","...kBBk..kBBk...","...kkkk..kkkk..."],a:["...kbbbbbbbbk...","...kbbbkkbbk....","...kBBk..kkk....","...kkkk........."],b:["...kbbbbbbbbk...","....kbbkkbbbk...","....kkk..kBBk...",".........kkkk..."]};
+  var RLEG={stand:["...kkkbbbbbk....","....kbbbbbk.....","....kBBkBBk.....","....kkk.kkk....."],a:["...kkkbbbbbk....","....kbbkbbk.....","...kBBk.kBBk....","...kkk...kkk...."],b:["...kkkbbbbbk....","....kbbbbbk.....","....kBBBBk......","....kkkkk......."]};
+  var DTOP=mir(["....kkkk","...khhhh","..khhhhw","..kHHHHH","..kkkkkk","...krsss","...ksess","...kssss","..kkjjjj",".kjjpjjj",".kjjpjjj",".ksjjjjj"]);
+  var UTOP=mir(["....kkkk","...khhhh","..khhhhh","..kHHHHH","..kkkkkk","...krrrr","...krrrr","...kkrrr","..kkpppp",".kjpPPPP",".kjpPPPP",".kspPPPP"]);
+  var RTOP=[".....kkkkk......","....khhhhhk.....","...khhhhhhhk....","...kHHHHHHHkk...","...kkkkkkkkkkkk.","....krrssssk....","....krsssesk....","....krssssk.....","...kppkjjjjk....","..kpppkjjjjk....","..kPPPkjjsjk....","..kPPPkjjjjk...."];
+  var HERO={};
+  ["stand","a","b"].forEach(function(f,i){HERO["down"+i]=fromRows(DTOP.concat(DLEG[f]),PAL);HERO["up"+i]=fromRows(UTOP.concat(DLEG[f]),PAL);HERO["right"+i]=fromRows(RTOP.concat(RLEG[f]),PAL);HERO["left"+i]=flip(HERO["right"+i]);});
+  var NPC_ROWS=mir(["........","....kkkk","...kgggg","..kggggg","..kggggg","..kgssss","...ksess","...kssss","..kkvvvv",".kvvvvvv",".kvvvvvv",".ksvvvvv","..kvvvvv","..kVVVVV","..kVVVVV","...kkkkk"]);
+  var NPCSPR={};Object.keys(NPC_INFO).forEach(function(id){var n=NPC_INFO[id];NPCSPR[id]=fromRows(NPC_ROWS,{k:"#282030",s:"#f8c8a0",e:"#282030",g:n.hair,v:n.robe,V:n.robeD});});
+
+  /* seasonal trees */
+  var LEAF=[["#1c4418","#2c7428","#3e9a34","#6cc44a"],["#163c14","#24682a","#358f30","#5cb840"],["#5a2008","#b04818","#e07828","#f8b848"],null];
+  function bareTree(x,snow){R(x,7,6,2,14,"#3a2010");R(x,7,6,1,13,"#6a4020");[[4,4],[5,5],[6,6],[11,3],[10,4],[9,5],[3,8],[4,8],[5,9],[12,8],[11,9],[10,10]].forEach(function(p){P(x,p[0],p[1],"#5a3418");});
+    if(snow)[[3,3],[4,3],[10,2],[11,2],[2,7],[3,7],[12,7],[13,7],[7,5],[8,5]].forEach(function(p){P(x,p[0],p[1],"#f8f8f8");});}
+  function sOak(s){var c=mkc(16,20),x=c.getContext("2d");if(s===3){bareTree(x,1);return c;}var L=LEAF[s];
+    R(x,6,13,4,7,"#3a2010");R(x,7,13,2,6,"#8a5428");P(x,7,14,"#a8703a");blob(x,8,7.5,7.6,7.2,L[0],L[1],L[2],L[3]);
+    [[4,4],[8,3],[11,5],[5,8],[9,7],[12,9],[6,11],[10,11],[3,7]].forEach(function(p){P(x,p[0],p[1],L[1]);});
+    if(s===0)[[5,5],[10,4],[7,9],[12,7]].forEach(function(p){P(x,p[0],p[1],"#f8a8c8");});else [[5,3],[4,5],[7,4]].forEach(function(p){P(x,p[0],p[1],L[3]);});return c;}
+  function sPine(s){var c=mkc(16,20),x=c.getContext("2d");R(x,6,16,4,4,"#3a2010");R(x,7,16,2,3,"#7a4a22");
+    var cols=s===2?["#14301e","#4a8a50","#3a7444","#2a5e36"]:["#14301e","#4a9a58","#3a8448","#2a6a3a"];
+    [[0,6,3],[4,11,5],[9,16,7]].forEach(function(t){for(var y=t[0];y<=t[1];y++){var hw=Math.max(1,Math.round(1+(y-t[0])/(t[1]-t[0])*t[2]));
+      for(var i=8-hw;i<8+hw;i++){var edge=i===8-hw||i===8+hw-1||y===t[1]||y===t[0];var col=edge?cols[0]:(i<7?cols[1]:i<9?cols[2]:cols[3]);if(s===3&&(y===t[0]+1||(y===t[0]+2&&(i+y)%3===0))&&!edge)col="#f4f8f8";P(x,i,y,col);}}});return c;}
+  function sBirch(s){var c=mkc(16,20),x=c.getContext("2d");R(x,6,9,4,11,"#282030");R(x,7,9,2,10,"#f4f4ec");P(x,8,12,"#282030");P(x,7,15,"#282030");P(x,8,17,"#282030");
+    if(s===3){R(x,6,3,4,8,"#282030");R(x,7,3,2,7,"#f4f4ec");[[4,4],[5,5],[11,4],[10,5],[3,6]].forEach(function(p){P(x,p[0],p[1],"#6a6060");});[[4,3],[11,3],[7,2]].forEach(function(p){P(x,p[0],p[1],"#ffffff");});return c;}
+    var L=s===2?["#7a5a08","#d0a020","#f0c838","#f8e080"]:["#2c5418","#5aa238","#7cc44c","#b0e478"];
+    blob(x,8,6.5,7,6.2,L[0],L[1],L[2],L[3]);[[5,4],[10,6],[7,9]].forEach(function(p){P(x,p[0],p[1],L[1]);});return c;}
+  function sWillow(s){var c=mkc(16,20),x=c.getContext("2d");R(x,6,11,4,9,"#3a2a18");R(x,7,11,2,8,"#6a5030");
+    var L=s===2?["#6a5a10","#b8a030","#d8c048","#f0e070"]:s===3?["#4a4030","#6a5a40","#7a6a50","#8a7a60"]:["#2a4a18","#4e8a30","#6aa83c","#9ad060"];
+    if(s!==3)blob(x,8,6,7.4,5.5,L[0],L[1],L[2],L[3]);
+    for(var i=1;i<15;i+=2){var len=7+Math.floor(noise(i,s)*6);for(var y=7;y<7+len&&y<19;y++)P(x,i,y,(y%3===0)?L[1]:L[2]);P(x,i,7+len,L[0]);}return c;}
+  function sReeds(s){var c=mkc(16,16),x=c.getContext("2d");var g=s===2?"#a89048":s===3?"#c8c0a8":"#4a8a38",g2=s===2?"#c8b060":s===3?"#e0dacb":"#6aaa48";
+    [[2,7],[4,5],[6,8],[8,4],[10,6],[12,5],[14,8]].forEach(function(p,i){for(var y=p[1];y<16;y++)P(x,p[0],y,i%2?g:g2);if(i%2===0){R(x,p[0],p[1]-3,1,3,"#6a4020");}});return c;}
+  var SEASPR={};
+  function sprSeason(s){if(!SEASPR[s])SEASPR[s]={oak:sOak(s),pine:sPine(s),birch:sBirch(s),willow:sWillow(s),reeds:sReeds(s)};return SEASPR[s];}
+
+  /* props */
+  function sLog(){var c=mkc(16,16),x=c.getContext("2d");blob(x,7.5,10.5,7,3.6,"#3a2010","#6a4020","#8a5a30","#a87848");
+    blob(x,13.5,10.5,2,3.2,"#3a2010","#c09868","#d8b080","#ecd0a0");P(x,13,10,"#a07040");P(x,4,8,"#58a040");P(x,5,8,"#58a040");P(x,9,13,"#58a040");return c;}
+  function sStump(){var c=mkc(16,16),x=c.getContext("2d");blob(x,8,11,4.5,3,"#3a2010","#6a4020","#8a5a30","#a87848");blob(x,8,10,3.2,1.8,"#5a3418","#c09868","#d8b080","#ecd0a0");return c;}
+  function sRock(){var c=mkc(16,16),x=c.getContext("2d");blob(x,8,10,6.5,4.8,"#383c48","#707888","#9098a8","#c8d0dc");P(x,5,8,"#e8ecf4");return c;}
+  function sCrystal(){var c=mkc(16,16),x=c.getContext("2d");[[5,4,3,10,"#5a3a98","#8a6ad8","#c8b0f8"],[9,6,3,8,"#2a6a88","#48a8c8","#a8e8f8"],[3,9,2,5,"#5a3a98","#8a6ad8","#c8b0f8"],[12,9,2,5,"#2a6a88","#48a8c8","#a8e8f8"]].forEach(function(k){
+      for(var y=k[1];y<k[1]+k[3];y++){var hw=y<k[1]+2?y-k[1]:k[2];for(var i=-hw;i<=hw;i++)P(x,k[0]+i,y,i===-hw||i===hw?"#282030":(i<0?k[6]:k[5]));}P(x,k[0],k[1],"#282030");});return c;}
+  var SPR={log:sLog(),stump:sStump(),rock:sRock(),crystal:sCrystal()};
+
+  /* mushrooms */
+  var MSPR={};
+  function stem(x,cx,y0,y1,col){R(x,cx-1,y0,2,y1-y0,col||"#f0e8d8");for(var y=y0;y<y1;y++){P(x,cx-2,y,"#282030");P(x,cx+1,y,"#282030");}R(x,cx-1,y1,2,1,"#282030");}
+  function mush(sp){if(MSPR[sp])return MSPR[sp];var c=mkc(12,12),x=c.getContext("2d"),o="#282030";
+    if(sp==="button"){stem(x,6,6,10);blob(x,6,6.5,5,4,o,"#c8c0b0","#f0ece4","#ffffff",true);}
+    else if(sp==="porcini"){R(x,4,6,4,4,"#e8dcc0");R(x,3,6,1,4,o);R(x,8,6,1,4,o);R(x,4,10,4,1,o);blob(x,6,6.5,5.5,4.2,o,"#5a3418","#8a5a34","#b07a4a",true);}
+    else if(sp==="hedgehog"){stem(x,6,6,10,"#f4ead8");blob(x,6,6.5,5.5,3.6,o,"#c8a070","#e8c79a","#f8e0b8",true);P(x,3,7,"#c8a070");P(x,5,7,"#c8a070");P(x,7,7,"#c8a070");P(x,9,7,"#c8a070");}
+    else if(sp==="death-cap"){stem(x,6,6,9,"#f8f8f0");R(x,3,9,6,2,"#f8f8f0");R(x,2,9,1,2,o);R(x,9,9,1,2,o);R(x,3,11,6,1,o);blob(x,6,6.5,5.2,3.8,o,"#a8b878","#cfd8a8","#eef4d0",true);}
+    else if(sp==="fly-agaric"){stem(x,6,6,10,"#f8f8f0");blob(x,6,6.5,5.5,4.2,o,"#a01810","#d8261c","#f85848",true);[[3,4],[6,3],[8,5],[5,5],[9,3]].forEach(function(p){P(x,p[0],p[1],"#ffffff");});}
+    else if(sp==="chanterelle"){for(var y=3;y<=10;y++){var hw=Math.round(1+(10-y)*0.55);for(var i=6-hw;i<6+hw;i++){var e=i===6-hw||i===6+hw-1||y===3||y===10;P(x,i,y,e?o:(i<5?"#f8c050":"#e89420"));}}}
+    else if(sp==="oyster"){blob(x,5,7.5,4.6,2.8,o,"#9a9080","#cfc6b8","#ece6dc");blob(x,8,4.5,3.4,2.2,o,"#9a9080","#cfc6b8","#ece6dc");}
+    else if(sp==="turkey-tail"){blob(x,6,8,5.5,3.4,o,"#4a5868","#7d8fa3","#a8b8c8",true);blob(x,6,8.6,3.4,1.8,"#7d8fa3","#c9b38a","#e0cc9c","#f0e0b8",true);}
+    else if(sp==="reishi"){blob(x,6,8,5.4,2.8,o,"#6a1810","#9a2f1f","#d86848");P(x,4,7,"#f8a888");P(x,5,7,"#f8a888");}
+    else if(sp==="birch-polypore"){blob(x,6,8,5.4,2.8,o,"#c8c0b0","#e9e2d3","#ffffff");R(x,2,9,8,1,"#c8c0b0");}
+    else if(sp==="chaga"){blob(x,6,7,4.8,4.4,"#100c08","#1a1410","#2b2420","#4a3c30");P(x,5,5,"#a06830");P(x,7,8,"#a06830");P(x,4,8,"#a06830");}
+    else if(sp==="agarikon"){blob(x,6,6,3.6,5.4,o,"#c8c0a8","#efe8d8","#ffffff");R(x,3,5,6,1,"#c8c0a8");R(x,3,8,6,1,"#c8c0a8");}
+    else if(sp==="lions-mane"){blob(x,6,5.5,4.8,4,o,"#d8d0c0","#f5efe3","#ffffff");for(var k=2;k<=9;k+=2){P(x,k,9,"#f5efe3");P(x,k,10,o);}}
+    else if(sp==="cordyceps"){for(var y2=3;y2<=10;y2++){P(x,5,y2,o);P(x,6,y2,y2<6?"#f8a040":"#f07a1a");P(x,7,y2,o);}P(x,6,2,o);P(x,6,11,o);}
+    else if(sp==="maitake"){blob(x,3.5,7,3,2.2,o,"#5a5048","#8c7f6f","#b0a490");blob(x,8,6.5,3.2,2.4,o,"#5a5048","#8c7f6f","#b0a490");blob(x,6,4,3,2.2,o,"#5a5048","#8c7f6f","#b0a490");}
+    else if(sp==="morel"){stem(x,6,7,10,"#f0e8d8");blob(x,6,4.5,3.2,4.2,o,"#7a5a30","#b08a5a","#d0aa78");P(x,5,3,"#5a3a18");P(x,7,5,"#5a3a18");P(x,5,6,"#5a3a18");P(x,7,2,"#5a3a18");}
+    else if(sp==="honey-fungus"){stem(x,3,7,10,"#e8d8a8");stem(x,8,6,10,"#e8d8a8");blob(x,3,6.5,2.8,2.4,o,"#8a5a18","#c8902a","#e8b850",true);blob(x,8,5.5,3.2,2.6,o,"#8a5a18","#c8902a","#e8b850",true);P(x,8,4,"#6a4010");P(x,3,5,"#6a4010");}
+    else if(sp==="jack-o-lantern"){[[3,6],[8,5],[6,8]].forEach(function(p){for(var y=0;y<4;y++){var hw=3-Math.floor(y*0.6);for(var i=-hw;i<=hw;i++)P(x,p[0]+i,p[1]+y,i===-hw||i===hw||y===0?o:(i<0?"#f8a040":"#e86810"));}});}
+    else if(sp==="lobster"){blob(x,6,7,5,3.6,o,"#a02810","#e04828","#f88858");P(x,4,6,"#b03018");P(x,7,8,"#b03018");P(x,8,5,"#f8a878");}
+    else if(sp==="dryads-saddle"){blob(x,6,8,5.6,3,o,"#8a6a40","#c8a070","#e8c898",true);[[3,7],[5,6],[7,7],[9,6],[6,8]].forEach(function(p){P(x,p[0],p[1],"#5a3a18");});}
+    else if(sp==="shaggy-mane"){R(x,4,2,4,7,"#f4f0e8");R(x,3,2,1,7,o);R(x,8,2,1,7,o);R(x,4,1,4,1,o);R(x,4,9,4,1,"#383038");[[4,3],[6,4],[5,6],[7,6]].forEach(function(p){P(x,p[0],p[1],"#c8b8a0");});stem(x,6,10,11);}
+    else if(sp==="matsutake"){R(x,4,6,4,4,"#f4ecdc");R(x,3,6,1,4,o);R(x,8,6,1,4,o);R(x,4,10,4,1,o);blob(x,6,6,5.4,3.6,o,"#7a5a38","#b08860","#d8b890",true);P(x,4,4,"#6a4a28");P(x,8,4,"#6a4a28");}
+    else if(sp==="sculptured-puffball"){blob(x,6,7,4.8,4,o,"#c8c0b0","#f0ece0","#ffffff");[[4,5],[7,5],[5,7],[8,7],[6,9]].forEach(function(p){P(x,p[0],p[1],"#c8c0b0");});}
+    else if(sp==="gypsy"){stem(x,6,6,10,"#efe6d0");R(x,4,8,4,1,"#ffffff");blob(x,6,6.5,5.2,3.8,o,"#8a7038","#c8a868","#e8d098",true);P(x,6,4,"#f0e8d8");}
+    else{stem(x,6,6,10);blob(x,6,6.5,5,4,o,"#7a4e2d","#a06a40","#c88a58",true);}
+    MSPR[sp]=c;return c;}
+
+  /* buildings, doors and props */
+  function sTent(){var c=mkc(16,16),x=c.getContext("2d");for(var y=2;y<=14;y++){var hw=Math.round((y-1)*0.6);for(var i=8-hw;i<=8+hw;i++){var e=i===8-hw||i===8+hw||y===14;P(x,i,y,e?"#282030":(i<8?"#f8a858":"#e07828"));}}
+    for(var y2=8;y2<=13;y2++){var h2=Math.round((y2-7)*0.45);for(var i2=8-h2;i2<=8+h2;i2++)P(x,i2,y2,"#6a3010");}return c;}
+  function sLeanto(){var c=mkc(16,16),x=c.getContext("2d");R(x,2,5,1,10,"#5a3418");R(x,13,8,1,7,"#5a3418");
+    for(var i=0;i<16;i++){var y=4+Math.round(i*0.3);R(x,i,y,1,3,i%3===0?"#8a5a30":"#b88850");P(x,i,y-1,"#282030");P(x,i,y+3,"#282030");}R(x,4,12,9,3,"#58a040");P(x,6,12,"#88c860");return c;}
+  function sCabin(){var c=mkc(32,32),x=c.getContext("2d");
+    R(x,2,13,28,18,"#282030");R(x,3,14,26,16,"#c89058");for(var y=16;y<30;y+=3)R(x,3,y,26,1,"#9a6a38");
+    for(var y2=0;y2<=13;y2++){var hw=Math.min(16,Math.round(4+y2*1.0));for(var i=16-hw;i<16+hw;i++){var e=i===16-hw||i===16+hw-1||y2===0||y2===13;P(x,i,y2,e?"#282030":((y2%3===0)?"#a83028":(i<16?"#e05040":"#c83a30")));}}
+    R(x,13,20,6,10,"#282030");R(x,14,21,4,9,"#6a3a18");P(x,17,25,"#f8d040");
+    [[5,18],[22,18]].forEach(function(w){R(x,w[0],w[1],6,5,"#282030");R(x,w[0]+1,w[1]+1,4,3,"#a8e0f8");P(x,w[0]+1,w[1]+1,"#ffffff");});
+    R(x,24,1,3,6,"#282030");R(x,25,2,1,5,"#888890");return c;}
+  function sShop(){var c=mkc(32,32),x=c.getContext("2d");
+    R(x,1,13,30,18,"#282030");R(x,2,14,28,16,"#f0ece0");R(x,2,27,28,3,"#d8d0c0");
+    for(var y=0;y<=13;y++){var hw=Math.min(16,Math.round(5+y*0.9));for(var i=16-hw;i<16+hw;i++){var e=i===16-hw||i===16+hw-1||y===0||y===13;P(x,i,y,e?"#282030":(y%3===1?"#2858b8":(i<16?"#4888e8":"#3870d0")));}}
+    R(x,9,9,14,6,"#282030");R(x,10,10,12,4,"#f8f8f8");R(x,14,10,4,1,"#d8261c");R(x,13,11,6,1,"#d8261c");P(x,14,10,"#ffffff");P(x,17,11,"#ffffff");R(x,15,12,2,2,"#e8dcc0");
+    R(x,13,20,6,10,"#282030");R(x,14,21,4,9,"#88c8f0");R(x,15,21,1,9,"#ffffff");
+    [[4,19],[22,19]].forEach(function(w){R(x,w[0],w[1],6,5,"#282030");R(x,w[0]+1,w[1]+1,4,3,"#f8d878");});return c;}
+  function sFire(f){var c=mkc(16,16),x=c.getContext("2d");
+    [[3,12],[6,13],[10,13],[12,12],[8,13]].forEach(function(p){blob(x,p[0]+.5,p[1]+.5,1.6,1.3,"#383840","#686870","#888890","#a8a8b0");});
+    R(x,4,11,8,2,"#6a3a18");R(x,5,10,6,1,"#8a5428");
+    for(var y=4;y<=10;y++){var hw=Math.round((y-3)*0.5);for(var i=8-hw;i<=8+hw-1;i++)P(x,i+(f&&y<7?-1:0),y,y>8?"#f8d040":y>6?"#f8a030":"#f86020");}
+    P(x,8,8,"#fff4b0");P(x,7,9,"#fff4b0");return c;}
+  function sSign(){var c=mkc(16,16),x=c.getContext("2d");R(x,7,8,2,7,"#282030");R(x,7,8,1,6,"#8a5428");R(x,2,2,12,8,"#282030");R(x,3,3,10,6,"#d8a868");R(x,4,4,8,1,"#8a5428");R(x,4,6,6,1,"#8a5428");return c;}
+  function sArrow(dir){var c=mkc(16,16),x=c.getContext("2d");R(x,7,9,2,6,"#282030");R(x,7,9,1,5,"#8a5428");R(x,2,2,12,8,"#282030");R(x,3,3,10,6,"#d8a868");
+    if(dir==="up"){R(x,7,4,2,4,"#5a3418");R(x,5,5,6,1,"#5a3418");R(x,6,4,4,1,"#5a3418");}else{R(x,7,4,2,4,"#5a3418");R(x,5,6,6,1,"#5a3418");R(x,6,7,4,1,"#5a3418");}return c;}
+  function sCrate(){var c=mkc(16,16),x=c.getContext("2d");R(x,1,5,14,10,"#282030");R(x,2,6,12,8,"#c89058");R(x,2,9,12,1,"#8a5a30");R(x,2,12,12,1,"#8a5a30");
+    R(x,2,6,1,8,"#9a6a38");R(x,13,6,1,8,"#9a6a38");R(x,0,4,16,2,"#282030");R(x,1,4,14,1,"#a87040");P(x,7,8,"#f8d048");P(x,8,8,"#f8d048");return c;}
+  function sCaveMouth(){var c=mkc(16,16),x=c.getContext("2d");blob(x,8,9,8,7.5,"#282030","#5a5e68","#7a808a","#a8b0b8");for(var y=6;y<16;y++){var hw=y<8?3:5;R(x,8-hw,y,hw*2,1,y<8?"#18141c":"#0c0a10");}return c;}
+  function sLadder(){var c=mkc(16,16),x=c.getContext("2d");blob(x,8,8,8,8,"#282030","#5a5e68","#7a808a","#a8b0b8");R(x,4,0,1,16,"#8a5a30");R(x,11,0,1,16,"#8a5a30");for(var y=2;y<16;y+=3)R(x,4,y,8,1,"#c09060");P(x,5,1,"#d8d8e0");P(x,10,1,"#d8d8e0");return c;}
+  function sCaveExit(){var c=mkc(16,16),x=c.getContext("2d");R(x,2,0,12,16,"#f8f0c8");R(x,4,0,8,16,"#ffffff");for(var i=0;i<16;i+=3)P(x,1,i,"#f8e8a0");for(var j=1;j<16;j+=3)P(x,14,j,"#f8e8a0");return c;}
+  function sChest(open){var c=mkc(16,16),x=c.getContext("2d");R(x,1,6,14,9,"#282030");R(x,2,7,12,7,"#a86828");R(x,2,10,12,1,"#7a4818");R(x,7,7,2,7,"#f8c838");
+    if(open){R(x,1,2,14,5,"#282030");R(x,2,3,12,3,"#7a4818");R(x,3,7,10,2,"#3a2010");P(x,5,8,"#f8e070");P(x,9,7,"#f8e070");}else{R(x,1,3,14,4,"#282030");R(x,2,4,12,2,"#c88038");R(x,7,4,2,4,"#f8c838");P(x,7,7,"#282030");}return c;}
+  function sPage(){var c=mkc(10,10),x=c.getContext("2d");R(x,1,1,8,8,"#282030");R(x,2,2,6,6,"#f8f0d8");R(x,3,3,4,1,"#a89878");R(x,3,5,4,1,"#a89878");R(x,3,7,3,1,"#a89878");P(x,7,2,"#d8c8a8");return c;}
+  function sScope(){var c=mkc(16,16),x=c.getContext("2d");R(x,7,8,1,7,"#282030");R(x,4,14,1,2,"#282030");R(x,11,14,1,2,"#282030");P(x,5,13,"#282030");P(x,6,12,"#282030");P(x,9,12,"#282030");P(x,10,13,"#282030");
+    for(var i=0;i<9;i++){R(x,3+i,7-Math.floor(i/2),2,2,i===0||i===8?"#282030":"#c8a040");}P(x,12,3,"#a8e0f8");return c;}
+  var BLD={tent:sTent(),leanto:sLeanto(),cabin:sCabin(),shop:sShop(),fire0:sFire(0),fire1:sFire(1),sign:sSign(),crate:sCrate(),caveMouth:sCaveMouth(),ladder:sLadder(),caveExit:sCaveExit(),signUp:sArrow("up"),signDown:sArrow("down"),chest:sChest(0),chestOpen:sChest(1),page:sPage(),scope:sScope()};
+  var BANG=fromRows(["..kkkk..",".kwwwwk.","kwwhhwwk","kwwhhwwk",".kwhhwk.",".kwwwwk.",".kwhhwk.","..kkkk.."],PAL);
+  var DROP=fromRows(["...k....","..kbk...","..kbk...",".kbbbk..",".kbwbk..",".kbbbk..","..kkk..."],{k:"#283880",b:"#58a8f8",w:"#ffffff"});
+
+  /* ground palettes by zone and season */
+  function gpal(){var s=seasonOf(st.day),z=st.zone,G;
+    if(z==="marsh")G=[["#5e9a48","#3e7a30","#6aa850"],["#5a9442","#3a7028","#68a24a"],["#8a9a40","#6a7828","#9aa848"],["#d8e4e4","#b8c8d0","#e4ecec"]][s];
+    else if(z==="ridge")G=[["#88b058","#689040","#98c068"],["#80a850","#608838","#90b860"],["#a8a050","#888038","#b8b060"],["#eef2f4","#d0dce4","#f4f6f8"]][s];
+    else G=[["#70c050","#50a038","#90d860"],["#68b848","#489030","#a0d058"],["#a8b048","#887830","#c0b050"],["#e4ecee","#c4d4dc","#eef2f4"]][s];
+    return {grass:G[0],tuft:G[1],meadow:G[2],winter:s===3,season:s};}
+
+  function buildWorld(){
+    var ga=groundA.getContext("2d"),gb=groundB.getContext("2d"),oc=objs.getContext("2d");
+    ga.clearRect(0,0,groundA.width,groundA.height);gb.clearRect(0,0,groundB.width,groundB.height);oc.clearRect(0,0,objs.width,objs.height);
+    var gp=gpal(),sp=sprSeason(gp.season),z=st.zone,winter=gp.winter&&z!=="cave";
+    function isPath(t){return t===T.PATH||t===T.BRIDGE||t===T.DOOR;}
+    function isWet(t){return t===T.WATER||t===T.BRIDGE;}
+    for(var y=0;y<WH;y++)for(var x=0;x<WW;x++){var t=tileAt(x,y),X=x*PX,Y=y*PX;
+      [ga,gb].forEach(function(g,phase){
+        if(z==="cave"){
+          if(t===T.CWALL){R(g,X,Y,PX,PX,"#2a2433");if(noise(x,y)<0.3)P(g,X+Math.floor(noise(x*3,y)*15),Y+Math.floor(noise(x,y*3)*9),"#2a2434");
+            if(tileAt(x,y+1)!==T.CWALL){R(g,X,Y+9,PX,7,"#5a4e6e");R(g,X,Y+9,PX,1,"#7a6e90");P(g,X+Math.floor(noise(x,y)*14)+1,Y+12,"#2a2434");P(g,X+Math.floor(noise(y,x)*14)+1,Y+14,"#4a4058");}return;}
+          if(t===T.POOL){R(g,X,Y,PX,PX,"#14284e");R(g,X+3+(phase?2:0),Y+5,4,1,"#3a68a8");R(g,X+8,Y+10-(phase?1:0),3,1,"#3a68a8");R(g,X,Y,PX,1,"#5a4e6e");return;}
+          if(t===T.DOOR){R(g,X,Y,PX,PX,"#6a6078");return;}
+          R(g,X,Y,PX,PX,"#6a6078");for(var q=0;q<4;q++)P(g,X+Math.floor(noise(x*3+q,y)*15),Y+Math.floor(noise(x,y*3+q)*15),"#7a7088");
+          if(noise(x*5,y*7)<0.2)P(g,X+Math.floor(noise(x,y*9)*15),Y+Math.floor(noise(x*9,y)*15),"#3a3440");
+          if(tileAt(x,y-1)===T.CWALL)R(g,X,Y,PX,2,"#4a4258");return;}
+        if(isWet(t)){var wc=z==="marsh"?"#2a6070":winter?"#7aa8d8":"#3888e0",wl=winter?"#c8e0f8":"#80c0f8";R(g,X,Y,PX,PX,wc);
+          for(var k=0;k<3;k++){var wx=Math.floor(noise(x+k,y)*12)+(phase?2:0),wy=3+k*5;R(g,X+wx%13,Y+wy,3,1,wl);}
+          if(!isWet(tileAt(x,y-1)))R(g,X,Y,PX,1,"#c8e8f8");if(!isWet(tileAt(x-1,y)))R(g,X,Y,1,PX,"#98d0f0");if(!isWet(tileAt(x+1,y)))R(g,X+PX-1,Y,1,PX,"#2868b8");
+          if(t===T.BRIDGE){R(g,X,Y+2,PX,12,"#c89058");for(var b=0;b<PX;b+=4)R(g,X+b,Y+2,1,12,"#8a5a30");R(g,X,Y+2,PX,1,"#6a4020");R(g,X,Y+13,PX,1,"#6a4020");R(g,X,Y+14,PX,1,"rgba(0,0,0,.25)");}
+          return;}
+        if(t===T.MARSH){R(g,X,Y,PX,PX,winter?"#a8c8d0":"#4a8a7a");for(var k2=0;k2<2;k2++){var mx=Math.floor(noise(x*2+k2,y)*10)+(phase?2:0);R(g,X+mx%12,Y+4+k2*6,4,1,winter?"#d8e8f0":"#7ab8a8");}
+          if(tileAt(x,y-1)!==T.MARSH&&!isWet(tileAt(x,y-1)))R(g,X,Y,PX,1,"#9ad0c0");return;}
+        if(isPath(t)){
+          if(z==="marsh"){R(g,X,Y,PX,PX,"#b08050");for(var pb=0;pb<PX;pb+=4)R(g,X,Y+pb,PX,1,"#7a5030");R(g,X,Y,1,PX,"#6a4020");R(g,X+PX-1,Y,1,PX,"#6a4020");return;}
+          var pc=z==="ridge"?"#c8b088":winter?"#e8e0d0":"#e8d088";R(g,X,Y,PX,PX,pc);for(var q2=0;q2<4;q2++)P(g,X+Math.floor(noise(x*3+q2,y)*15),Y+Math.floor(noise(x,y*3+q2)*15),"#c8a860");
+          if(!isPath(tileAt(x,y-1)))R(g,X,Y,PX,1,"#c8a868");if(!isPath(tileAt(x,y+1)))R(g,X,Y+PX-1,PX,1,"#c8a868");
+          if(!isPath(tileAt(x-1,y)))R(g,X,Y,1,PX,"#c8a868");if(!isPath(tileAt(x+1,y)))R(g,X+PX-1,Y,1,PX,"#c8a868");return;}
+        if(t===T.MUD){R(g,X,Y,PX,PX,winter?"#c8c4b8":"#7a6a48");for(var q3=0;q3<4;q3++)P(g,X+Math.floor(noise(x*7+q3,y)*15),Y+Math.floor(noise(x,y*7+q3)*15),"#5a4a30");return;}
+        if(t===T.STONE||(z==="ridge"&&(t===T.ROCK||t===T.PINE)&&!(noise(x*3,y*3)<0.4))){R(g,X,Y,PX,PX,winter?"#e4e8ec":"#a8a08c");for(var q4=0;q4<5;q4++)P(g,X+Math.floor(noise(x*4+q4,y)*15),Y+Math.floor(noise(x,y*4+q4)*15),q4%2?"#8a8270":"#c0b8a4");return;}
+        var meadow=z==="woods"&&(t===T.MEADOW||(t===T.OAK&&wfRegion(x,y)==="meadow"));
+        var worn=z==="woods"&&t===T.PLOT&&(Math.abs(x-FIRE.x)+Math.abs(y-FIRE.y)<3||y===PATHY||noise(x*3,y*5)<0.18);
+        R(g,X,Y,PX,PX,worn?(winter?"#dcd4c4":"#d8b878"):meadow?gp.meadow:gp.grass);
+        if(worn){for(var q5=0;q5<3;q5++)P(g,X+Math.floor(noise(x*5+q5,y)*15),Y+Math.floor(noise(x,y*5+q5)*15),"#b89858");return;}
+        for(var tf=0;tf<2;tf++){var tx=1+Math.floor(noise(x*7+tf,y*3)*12),ty=2+Math.floor(noise(x*5,y*9+tf)*11),dk=gp.tuft;P(g,X+tx,Y+ty,dk);P(g,X+tx+2,Y+ty,dk);P(g,X+tx+1,Y+ty+1,dk);}
+        if(meadow&&!winter&&noise(x*11,y*13)<(gp.season===2?0.15:0.35)){var fx=X+3+Math.floor(noise(x,y*7)*9),fy=Y+3+Math.floor(noise(x*7,y)*9),fc=["#f85858","#f8f8f8","#f8d040","#f890c8"][Math.floor(noise(x*2,y*2)*4)];
+          P(g,fx,fy-1,fc);P(g,fx-1,fy,fc);P(g,fx+1,fy,fc);P(g,fx,fy+1,fc);P(g,fx,fy,"#f8e060");}
+        if(winter&&noise(x*13,y*5)<0.5)P(g,X+Math.floor(noise(x,y*11)*15),Y+Math.floor(noise(x*11,y)*15),"#ffffff");
+      });
+      if(t===T.OAK)oc.drawImage(sp.oak,X,Y-4);else if(t===T.PINE)oc.drawImage(sp.pine,X,Y-4);else if(t===T.BIRCH)oc.drawImage(sp.birch,X,Y-4);else if(t===T.WILLOW)oc.drawImage(sp.willow,X,Y-4);
+      else if(t===T.LOG){oc.drawImage(SPR.log,X,Y);if(winter){R(oc,X+2,Y+7,10,1,"#f8f8f8");}}
+      else if(t===T.STUMP)oc.drawImage(SPR.stump,X,Y);else if(t===T.ROCK)oc.drawImage(z==="cave"?SPR.crystal:SPR.rock,X,Y);
+      else if(t===T.REEDS)oc.drawImage(sp.reeds,X,Y);
+    }
+    dirty=false;
+  }
+
+  /* beds */
+  function drawBed(b,X,Y,t){var c=lctx;
+    if(b.type==="oyster"){var dead=b.stage==="spent"||b.stage==="dead";R(c,X+1,Y+4,14,11,"#282030");R(c,X+2,Y+5,12,9,dead?"#a08858":"#e8c858");
+      for(var k=0;k<7;k++)R(c,X+3+((k*5)%10),Y+6+((k*3)%7),2,1,dead?"#7a6438":"#b89030");
+      var myc=b.stage==="colonising"?Math.min(1,(b.prog+1)/3):(b.stage==="pinning"||b.stage==="resting"||b.stage==="fruiting"||b.stage==="ready")?1:0;
+      for(var m=0;m<Math.round(myc*14);m++)P(c,X+3+Math.floor(noise(m,3)*10),Y+6+Math.floor(noise(3,m)*7),"#ffffff");
+      if(b.stage==="pinning")[[5,8],[9,7],[11,10]].forEach(function(p){P(c,X+p[0],Y+p[1],"#9a9080");});
+      if(b.stage==="fruiting"||b.stage==="ready"){var big=b.stage==="ready";[[5,7],[10,6],[8,10]].forEach(function(p){blob(c,X+p[0],Y+p[1],big?3:2,big?2:1.4,"#282030","#9a9080","#cfc6b8","#ece6dc");});}}
+    else{[Y+5,Y+10].forEach(function(r){blob(c,X+7.5,r+2,7,2.6,"#3a2010","#6a4020","#8a5a30","#a87848");blob(c,X+14,r+2,1.6,2.2,"#3a2010","#c09868","#d8b080","#ecd0a0");});
+      if(b.stage==="fruiting"||b.stage==="ready"){var bg=b.stage==="ready";[[4,6],[9,5],[6,11],[11,11]].forEach(function(p){blob(c,X+p[0],Y+p[1],bg?2.4:1.4,bg?1.6:1,"#282030","#5a3418","#7a4e2d","#a06a40",true);if(bg)P(c,X+p[0],Y+p[1]-1,"#f0e8d8");});}}
+    if(b.stage==="ready"){c.drawImage(BANG,X+4,Y-10-Math.floor(t/300)%2);}
+    else if(needsWater(b)){c.drawImage(DROP,X+5,Y-9);}
+  }
+  function needsWater(b){if(b.watered)return false;if(b.type==="shiitake")return b.stage==="waiting";return b.stage==="colonising"||b.stage==="pinning"||b.stage==="fruiting";}
+
+  /* light */
+  function darkness(){if(st.zone==="cave")return .8;var h=st.min/60;if(h<6)return .62;if(h<7)return .62*(7-h);if(h<19)return 0;if(h<21)return .62*(h-19)/2;return .62;}
+
+  function resize(){var r=stage.getBoundingClientRect();cw=Math.max(240,Math.round(r.width));ch=Math.max(220,Math.round(r.height));
+    SC=cw>=620?3:2;lw=Math.ceil(cw/SC);lh=Math.ceil(ch/SC);low.width=lw;low.height=lh;nlow.width=lw;nlow.height=lh;
+    can.width=lw*SC;can.height=lh*SC;can.style.width=(lw*SC)+"px";can.style.height=(lh*SC)+"px";}
+  function shadow(X,Y,w){lctx.fillStyle="rgba(20,30,20,.28)";lctx.fillRect(X+Math.round((16-w)/2)+1,Y+14,w-2,1);lctx.fillRect(X+Math.round((16-w)/2),Y+15,w,1);}
+  function render(t){
+    if(dirty)buildWorld();
+    var Z=st.zone,cx=pl.px/TS*PX,cy=pl.py/TS*PX;
+    var ox=Math.round(cx+PX/2-lw/2),oy=Math.round(cy+PX/2-lh/2);
+    ox=Math.max(0,Math.min(ox,WW*PX-lw));oy=Math.max(0,Math.min(oy,WH*PX-lh));
+    if(WW*PX<lw)ox=Math.round((WW*PX-lw)/2);if(WH*PX<lh)oy=Math.round((WH*PX-lh)/2);
+    lctx.imageSmoothingEnabled=false;
+    lctx.fillStyle=Z==="cave"?"#0c0a10":"#2a5a30";lctx.fillRect(0,0,lw,lh);
+    lctx.drawImage(Math.floor(t/700)%2?groundB:groundA,ox,oy,lw,lh,0,0,lw,lh);
+    var x0=Math.floor(ox/PX)-2,x1=Math.ceil((ox+lw)/PX)+2,y0=Math.floor(oy/PX)-2,y1=Math.ceil((oy+lh)/PX)+2;
+    function inView(x,y){return x>=x0&&x<=x1&&y>=y0&&y<=y1;}
+    var E=[],glows=[];
+    spawnsHere().forEach(function(s){if(visible(s)&&inView(s.x,s.y)){if(WSP[s.sp].glow)glows.push(s);E.push([s.y,function(){var X=s.x*PX-ox,Y=s.y*PX-oy;shadow(X,Y,8);lctx.drawImage(mush(s.sp),X+2,Y+3);
+      if((Math.floor(t/350)+s.id)%6===0){var sx=X+12,sy=Y+2;P(lctx,sx,sy-1,"#ffffff");P(lctx,sx-1,sy,"#ffffff");P(lctx,sx+1,sy,"#ffffff");P(lctx,sx,sy+1,"#ffffff");P(lctx,sx,sy,"#fff8a0");}}]);}});
+    st.pageSpots.forEach(function(p){if(p.zone===Z&&st.pages.indexOf(p.id)<0&&inView(p.x,p.y))E.push([p.y,function(){var X=p.x*PX-ox,Y=p.y*PX-oy,bob=Math.floor(t/400)%2;shadow(X,Y,8);lctx.drawImage(BLD.page,X+3,Y+4-bob);
+      if(Math.floor(t/300)%4===0){P(lctx,X+13,Y+2,"#ffffff");P(lctx,X+12,Y+3,"#fff8a0");}}]);});
+    st.chestSpots.forEach(function(c){if(c.zone===Z&&inView(c.x,c.y))E.push([c.y,function(){var X=c.x*PX-ox,Y=c.y*PX-oy;shadow(X,Y,14);lctx.drawImage(st.chests.indexOf(c.id)>=0?BLD.chestOpen:BLD.chest,X,Y);}]);});
+    WARPS[Z].forEach(function(w){if(!inView(w.x,w.y))return;E.push([w.y-0.5,function(){var X=w.x*PX-ox,Y=w.y*PX-oy,img=Z==="woods"?(w.to==="cave"?BLD.caveMouth:w.to==="ridge"?BLD.ladder:BLD.signDown):(Z==="cave"?BLD.caveExit:(w.y<5?BLD.signUp:BLD.signDown));lctx.drawImage(img,X,Y);}]);});
+    NPCS.forEach(function(n){if(n.zone!==Z||!inView(n.x,n.y))return;E.push([n.y,function(){var X=n.x*PX-ox,Y=n.y*PX-oy-2,bob=Math.floor(t/600+n.x)%2;shadow(X,Y+2,10);lctx.drawImage(NPCSPR[n.id],X,Y-bob);}]);});
+    var lo=ZD[Z].lookout;if(lo&&inView(lo.x,lo.y))E.push([lo.y,function(){lctx.drawImage(BLD.scope,lo.x*PX-ox,lo.y*PX-oy);}]);
+    if(Z==="woods"){
+      E.push([SHELTER.y,function(){var X=SHELTER.x*PX-ox,Y=SHELTER.y*PX-oy;if(st.shelter==="cabin")lctx.drawImage(BLD.cabin,X,Y-PX);else lctx.drawImage(st.shelter==="leanto"?BLD.leanto:BLD.tent,X,Y);}]);
+      E.push([FIRE.y,function(){lctx.drawImage(Math.floor(t/180)%2?BLD.fire1:BLD.fire0,FIRE.x*PX-ox,FIRE.y*PX-oy);}]);
+      E.push([SIGN.y,function(){lctx.drawImage(BLD.sign,SIGN.x*PX-ox,SIGN.y*PX-oy);}]);
+      E.push([CRATE.y,function(){var X=CRATE.x*PX-ox,Y=CRATE.y*PX-oy;shadow(X,Y,14);Object.keys(st.crate).filter(function(k){return st.crate[k]>0;}).slice(0,3).forEach(function(k,i){lctx.drawImage(mush(k),X+1+i*4,Y-3);});lctx.drawImage(BLD.crate,X,Y);}]);
+      SLOTS.forEach(function(sl,i){var b=st.beds[i];E.push([sl[1],function(){var X=sl[0]*PX-ox,Y=sl[1]*PX-oy;
+        if(!b){for(var k=1;k<15;k+=3){P(lctx,X+k,Y+2,"rgba(255,255,255,.4)");P(lctx,X+k,Y+13,"rgba(255,255,255,.4)");P(lctx,X+1,Y+k,"rgba(255,255,255,.4)");P(lctx,X+14,Y+k,"rgba(255,255,255,.4)");}return;}
+        drawBed(b,X,Y,t);}]);});
+      E.push([20,function(){lctx.drawImage(BLD.shop,HUT[0][0]*PX-ox,HUT[0][1]*PX-oy);}]);
+    }
+    E.push([pl.py/TS+0.01,function(){var X=Math.round(cx-ox),Y=Math.round(cy-oy)-2;var f=pl.moving?[1,0,2,0][Math.floor(pl.step/2.2)%4]:0;shadow(X,Y+2,10);lctx.drawImage(HERO[st.dir+f],X,Y);}]);
+    E.sort(function(a,b){return a[0]-b[0];}).forEach(function(e){e[1]();});
+    lctx.drawImage(objs,ox,oy,lw,lh,0,0,lw,lh);
+    /* weather (outdoors only) */
+    if(Z!=="cave"){var wx=st.weather;
+      if(wx==="rain"){lctx.fillStyle="rgba(40,60,110,.14)";lctx.fillRect(0,0,lw,lh);lctx.fillStyle="rgba(190,210,255,.55)";for(var i=0;i<Math.round(lw*lh/500);i++){var rx=Math.floor((i*97+t*0.09)%(lw+20))-10,ry=Math.floor((i*53+t*0.25)%(lh+10))-5;lctx.fillRect(rx,ry,1,3);lctx.fillRect(rx-1,ry+3,1,1);}}
+      else if(wx==="snow"){lctx.fillStyle="rgba(255,255,255,.85)";for(var j=0;j<Math.round(lw*lh/700);j++){var sx2=Math.floor((j*97+Math.sin(t/900+j)*8+t*0.01)%lw),sy3=Math.floor((j*61+t*0.03)%lh);lctx.fillRect(sx2,sy3,j%3?1:2,j%3?1:2);}}
+      else if(wx==="fog"){lctx.fillStyle="rgba(228,232,238,.34)";lctx.fillRect(0,0,lw,lh);lctx.fillStyle="rgba(240,244,248,.22)";for(var k=0;k<6;k++){var fx=Math.floor(((k*137+t*0.008)%(lw+80))-40),fy=Math.floor(k*lh/6);lctx.fillRect(fx,fy,60,10);lctx.fillRect(fx+10,fy+10,40,6);}}}
+    var d=darkness();
+    if(d>0){nctx.globalCompositeOperation="source-over";nctx.clearRect(0,0,lw,lh);nctx.fillStyle=Z==="cave"?"rgba(6,4,12,"+d+")":"rgba(16,20,56,"+d+")";nctx.fillRect(0,0,lw,lh);nctx.globalCompositeOperation="destination-out";
+      var lights=[[cx+8-ox,cy+8-oy,Z==="cave"?(st.tools.lantern?80:28):(st.tools.lantern?70:46)]];
+      if(Z==="woods"){lights.push([FIRE.x*PX+8-ox,FIRE.y*PX+8-oy,60+(Math.floor(t/200)%2)*3]);lights.push([WREN.x*PX-ox,20*PX-oy,48]);}
+      if(Z==="cave"){glows.forEach(function(s){lights.push([s.x*PX+8-ox,s.y*PX+8-oy,18]);});WARPS.cave.forEach(function(w){lights.push([w.x*PX+8-ox,w.y*PX+8-oy,30]);});}
+      lights.forEach(function(L){for(var rr=L[2];rr>0;rr-=L[2]/4){nctx.fillStyle="rgba(0,0,0,.36)";nctx.beginPath();nctx.arc(Math.round(L[0]),Math.round(L[1]),rr,0,7);nctx.fill();}});
+      lctx.drawImage(nlow,0,0);
+      if(glows.length&&(Z==="cave"||d>0.3)){lctx.globalCompositeOperation="lighter";glows.forEach(function(s){var gx=s.x*PX+8-ox,gy=s.y*PX+9-oy,col=WSP[s.sp].glow,pulse=0.08+0.04*Math.sin(t/500+s.id);
+        for(var rr2=14;rr2>0;rr2-=4){lctx.fillStyle=col+pulse+")";lctx.beginPath();lctx.arc(gx,gy,rr2,0,7);lctx.fill();}});lctx.globalCompositeOperation="source-over";}}
+    ctx.imageSmoothingEnabled=false;ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(low,0,0,lw*SC,lh*SC);
+    var tgt=(modalOpen||dlg.open)?null:target();var pr=document.getElementById("wfPrompt");
+    if(tgt){pr.hidden=false;pr.textContent=tgt.label;var sx3=(tgt.x*PX-ox)*SC,sy4=(tgt.y*PX-oy)*SC;
+      pr.style.left=Math.max(8,Math.min(cw-190,sx3-30))+"px";pr.style.top=Math.max(64,sy4-34)+"px";}else pr.hidden=true;
+  }
+
+  /* ----- dialogue (Pokémon-style text box) ----- */
+  var dlg={open:false,lines:null,i:0,typing:false,full:"",shown:0,timer:0,opts:null,cur:0,onDone:null};
+  var dEl=document.getElementById("wfDlg"),dName=document.getElementById("wfDName"),dText=document.getElementById("wfDText"),dOpts=document.getElementById("wfDOpts"),dNext=document.getElementById("wfDNext"),dPor=document.getElementById("wfDPor");
+  function portrait(kind){var c=dPor.getContext("2d");c.imageSmoothingEnabled=false;c.clearRect(0,0,48,48);if(!kind){dPor.hidden=true;return;}dPor.hidden=false;
+    var img=null,sz=48;
+    if(kind.indexOf("mush:")===0){img=mush(kind.slice(5));c.drawImage(img,0,0,12,12,0,0,48,48);return;}
+    if(kind.indexOf("npc:")===0)img=NPCSPR[kind.slice(4)];else if(kind==="hero")img=HERO.down0;else if(kind==="chest")img=BLD.chest;else if(kind==="page")img=BLD.page;else if(kind==="scope")img=BLD.scope;else if(kind==="door")img=BLD.signUp;
+    if(img)c.drawImage(img,0,0,img.width,img.height,0,0,img.width*3,img.height*3);else dPor.hidden=true;}
+  function dlgShow(){dEl.hidden=false;dlg.open=true;keys={};stage.classList.add("talking");}
+  function dlgClose(){clearInterval(dlg.timer);dEl.hidden=true;dlg.open=false;dlg.opts=null;dOpts.innerHTML="";stage.classList.remove("talking");stage.focus({preventScroll:true});}
+  function typeText(text){clearInterval(dlg.timer);dlg.full=text;dlg.shown=0;dlg.typing=true;dText.textContent="";dNext.hidden=true;dOpts.innerHTML="";
+    dlg.timer=setInterval(function(){dlg.shown+=2;dText.textContent=dlg.full.slice(0,dlg.shown);if(dlg.shown>=dlg.full.length)finishType();},18);}
+  function finishType(){clearInterval(dlg.timer);dlg.typing=false;dText.textContent=dlg.full;if(dlg.opts)renderOpts();else dNext.hidden=false;}
+  function setWho(who,por){dName.textContent=who||"";dName.hidden=!who;portrait(por);}
+  function say(who,por,lines,done){dlg.lines=lines.slice();dlg.i=0;dlg.opts=null;dlg.onDone=done||null;setWho(who,por);dlgShow();typeText(dlg.lines[0]);}
+  function ask(who,por,text,opts){dlg.lines=null;dlg.opts=opts.filter(Boolean);dlg.cur=0;dlg.onDone=null;setWho(who,por);dlgShow();typeText(text);}
+  function renderOpts(){dOpts.innerHTML=dlg.opts.map(function(o,i){return '<button class="wf-dopt'+(i===dlg.cur?" on":"")+'" data-i="'+i+'">'+esc(o.t)+'</button>';}).join("");dNext.hidden=true;}
+  function advance(){if(!dlg.open)return;if(dlg.typing){finishType();return;}if(dlg.opts){pickOpt(dlg.cur);return;}
+    dlg.i++;if(dlg.lines&&dlg.i<dlg.lines.length)typeText(dlg.lines[dlg.i]);else{var d=dlg.onDone;dlgClose();save();if(d)d();}}
+  function pickOpt(i){var o=dlg.opts&&dlg.opts[i];if(!o)return;dlgClose();if(o.f)o.f();else save();}
+  function moveCur(dv){if(!dlg.opts||dlg.typing)return;dlg.cur=(dlg.cur+dv+dlg.opts.length)%dlg.opts.length;renderOpts();var b=dOpts.querySelector(".on");if(b&&b.scrollIntoView)b.scrollIntoView({block:"nearest"});}
+  dOpts.addEventListener("click",function(e){e.stopPropagation();var b=e.target.closest("[data-i]");if(b)pickOpt(+b.dataset.i);});
+  dEl.addEventListener("click",function(){if(!dlg.opts||dlg.typing)advance();});
+
+  /* ----- interaction targets ----- */
+  function target(){
+    var fx=pl.tx+(st.dir==="left"?-1:st.dir==="right"?1:0),fy=pl.ty+(st.dir==="up"?-1:st.dir==="down"?1:0);
+    var cells=[[fx,fy],[pl.tx,pl.ty]];for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++)cells.push([pl.tx+dx,pl.ty+dy]);
+    for(var i=0;i<cells.length;i++){var c=cells[i],x=c[0],y=c[1];
+      var s=structAt(x,y);
+      if(s==="hut")return{kind:"wren",x:WREN.x,y:WREN.y,label:"E · Talk to Old Wren"};
+      if(s==="npc"){var n=npcAt(x,y);return{kind:"npc",n:n,x:x,y:y,label:"E · Talk to "+NPC_INFO[n.id].name};}
+      if(s==="shelter")return{kind:"shelter",x:SHELTER.x,y:SHELTER.y,label:"E · Sleep"};
+      if(s==="fire")return{kind:"fire",x:x,y:y,label:"E · Campfire"};
+      if(s==="sign")return{kind:"sign",x:x,y:y,label:"E · Build"};
+      if(s==="crate")return{kind:"crate",x:x,y:y,label:"E · Shipping crate"};
+      if(s==="chest"){var ch2=chestAt(x,y);return{kind:"chest",c:ch2,x:x,y:y,label:st.chests.indexOf(ch2.id)>=0?"E · Empty chest":"E · Open chest"};}
+      if(s==="lookout")return{kind:"lookout",x:x,y:y,label:"E · Look through the telescope"};
+      if(s&&s.indexOf("bed")===0)return{kind:"bed",i:+s.slice(3),x:x,y:y,label:"E · Check bed"};
+      var sp=spawnAt(x,y);if(sp)return{kind:"spawn",s:sp,x:x,y:y,label:"E · Examine mushroom"};
+      var pg=pageAt(x,y);if(pg)return{kind:"page",p:pg,x:x,y:y,label:"E · Pick up the page"};
+    }
+    for(i=0;i<cells.length;i++){c=cells[i];x=c[0];y=c[1];var tt=tileAt(x,y);
+      if(tt===T.DOOR){var w=warpAt(x,y);if(w)return{kind:"door",w:w,x:x,y:y,label:"▲ "+ZONES[w.to].n+(w.need&&!st.tools[w.need]?" (needs "+TOOLN[w.need].toLowerCase()+")":"")};}
+      if(tt===T.LOG)return{kind:"log",x:x,y:y,label:st.tools.axe?"E · Chop log":"Fallen log (needs an axe)"};
+      if(tt===T.OAK&&st.zone==="woods"&&st.tools.axe&&!st.oakCut[x+","+y]&&wfRegion(x,y)!=="meadow")return{kind:"oak",x:x,y:y,label:"E · Cut fresh oak log"};
+      if((tt===T.WATER||tt===T.POOL||tt===T.MARSH)&&i<2)return{kind:"water",x:x,y:y,label:"E · Drink"};
+    }
+    if(st.zone==="woods")for(var j=0;j<SLOTS.length;j++){var sl=SLOTS[j];if(!st.beds[j]&&Math.abs(sl[0]-pl.tx)<=1&&Math.abs(sl[1]-pl.ty)<=1)return{kind:"sign",x:sl[0],y:sl[1],label:"E · Build here"};}
+    return null;
+  }
+  function act(){
+    if(dlg.open){advance();return;}if(modalOpen||warping)return;var tg=target();if(!tg)return;
+    if(tg.kind==="spawn")inspect(tg.s);
+    else if(tg.kind==="wren")wren();
+    else if(tg.kind==="npc"){if(tg.n.id==="wren")wren();else talkNpc(tg.n);}
+    else if(tg.kind==="shelter")sleepMenu();
+    else if(tg.kind==="fire")fireMenu();
+    else if(tg.kind==="sign")buildMenu();
+    else if(tg.kind==="crate")crateMenu();
+    else if(tg.kind==="bed")bedMenu(tg.i);
+    else if(tg.kind==="chest")openChest(tg.c);
+    else if(tg.kind==="page")readPage(tg.p);
+    else if(tg.kind==="lookout")lookout();
+    else if(tg.kind==="door")tryDoor(tg.w);
+    else if(tg.kind==="log")chop(tg.x,tg.y);
+    else if(tg.kind==="oak")cutOak(tg.x,tg.y);
+    else if(tg.kind==="water"){st.energy=Math.min(100,st.energy+3);toast(st.zone==="cave"?"Ice-cold cave water. +3 energy":"Cool fresh water. +3 energy");}
+  }
+
+  /* ----- modal panels (for lists: shop, build, crate, journal…) ----- */
+  function open(html,wire){if(dlg.open)dlgClose();body.innerHTML=html;modal.hidden=false;modalOpen=true;keys={};if(wire)wire(body);var box=body.parentNode;box.scrollTop=0;var f=body.querySelector(".btn.primary:not([disabled]),button:not([disabled])");if(f)f.focus({preventScroll:true});}
+  function close(){modal.hidden=true;modalOpen=false;body.innerHTML="";stage.focus({preventScroll:true});save();}
+  document.getElementById("wfX").addEventListener("click",close);
+  modal.addEventListener("click",function(e){if(e.target===modal)close();});
+  function btn(id,label,cls,dis){return '<button class="btn '+(cls||"")+'" data-a="'+id+'"'+(dis?" disabled":"")+'>'+label+'</button>';}
+
+  /* ----- warps between areas ----- */
+  var DOOR_LOCKED={cave:"The cave mouth breathes cold air. It's pitch black inside. You'd need a lantern to go any further.",marsh:"The boardwalk ends in knee-deep black water. Without waders you'd be soaked to the hips in a minute.",ridge:"A sheer rock face. Someone has bolted iron anchors into it. With a climbing rope, you could make it up."};
+  function tryDoor(w){if(w.need&&!st.tools[w.need]){say("","door",[DOOR_LOCKED[w.to],"Old Wren sells "+NEEDN[w.need]+"."]);return;}doWarp(w);}
+  function banner(text){var b=document.getElementById("wfZoneBan");b.textContent=text;b.hidden=false;b.classList.remove("show");void b.offsetWidth;b.classList.add("show");clearTimeout(b._t);b._t=setTimeout(function(){b.hidden=true;},2600);}
+  function loadZone(){var z=ZONES[st.zone];WW=z.w;WH=z.h;map=ZD[st.zone].map;[groundA,groundB,objs].forEach(function(c){c.width=WW*PX;c.height=WH*PX;});dirty=true;}
+  function doWarp(w){warping=true;keys={};var f=document.getElementById("wfFade");f.style.opacity="1";
+    setTimeout(function(){st.zone=w.to;loadZone();pl.tx=w.dx;pl.ty=w.dy;pl.px=w.dx*TS;pl.py=w.dy*TS;pl.moving=false;st.dir=w.dir;
+      f.style.opacity="0";banner(ZONES[w.to].n);warping=false;
+      if(w.to!=="woods"&&!st.visited[w.to]){st.visited[w.to]=1;gainXP(40,"discovered "+ZONES[w.to].n);
+        var intro={cave:["Your lantern throws long shadows across the walls. Water drips somewhere in the dark.","On the roots ahead, a faint green glow. Foxfire."],marsh:["The boardwalk creaks underfoot. Frogs go quiet, then start up again.","Willows trail their branches in the shallows, and reeds rustle all around."],ridge:["You haul yourself over the lip of the rock face, breathing hard.","The air is thin and cold, and it smells of pine resin. The whole valley spreads out below."]}[w.to];
+        setTimeout(function(){say("",null,intro);},450);}
+      save();},280);}
+
+  /* ----- foraging by examination ----- */
+  function inspect(s){
+    var sp=WSP[s.sp],tr=WTRAIT[s.sp],known=(st.journal[s.sp]||0)>=2,por="mush:"+s.sp;
+    if(known){
+      if(sp.cat==="toxic"){say("",por,["A "+sp.n+". You'd know it anywhere now.",tr.stem,"Toxic. You leave it where it grows."]);return;}
+      ask("",por,"A "+sp.n+", growing "+sp.where+". You'd know it anywhere now.",[{t:"Pick it ("+invCount(st)+"/"+st.cap+")",f:function(){pick(s);}},{t:"Leave it"}]);return;}
+    var seen={};
+    function menu(intro){
+      var o=[];
+      if(!seen.cap)o.push({t:"Look at the cap",f:function(){seen.cap=1;say("",por,[tr.cap],function(){menu();});}});
+      if(!seen.under)o.push({t:"Look underneath",f:function(){seen.under=1;say("",por,[tr.under],function(){menu();});}});
+      if(!seen.stem)o.push({t:"Check the stem and base",f:function(){seen.stem=1;say("",por,[tr.stem],function(){menu();});}});
+      if(!seen.smell)o.push({t:"Smell it",f:function(){seen.smell=1;say("",por,[tr.smell],function(){menu();});}});
+      if(st.tools.guide&&!seen.guide)o.push({t:"Check your field guide",f:function(){seen.guide=1;say("Field guide",por,["\""+sp.key+"\""],function(){menu();});}});
+      o.push({t:"I know what it is…",f:nameIt});
+      o.push({t:"Leave it"});
+      ask("",por,intro||"What next?",o);}
+    function nameIt(){
+      var pool=[s.sp].concat((LOOKALIKE[s.sp]||[]).filter(function(k){return k!==s.sp;}));
+      shuffle(WILD.filter(function(k){return pool.indexOf(k)<0;})).forEach(function(k){if(pool.length<4)pool.push(k);});
+      pool=shuffle(pool.slice(0,4));
+      ask("",por,"So what is it?",pool.map(function(k){return {t:WSP[k].n,f:function(){answer(s,k);}};}).concat([{t:"I'm not sure. Leave it.",f:function(){say("",por,["When in doubt, leave it out. That's how foragers grow old."]);}}]));}
+    menu("You kneel beside a mushroom growing "+sp.where+".");
+  }
+  function answer(s,guess){
+    var sp=WSP[s.sp],g=WSP[guess],por="mush:"+s.sp,tr=WTRAIT[s.sp];
+    var note=(typeof PHOTO_NOTES!=="undefined"&&PHOTO_NOTES[s.sp])||sp.key;
+    if(guess===s.sp){
+      st.journal[s.sp]=(st.journal[s.sp]||0)+1;
+      var fresh=s.idDay!==st.day;s.idDay=st.day;qEvent("id_"+s.sp);
+      if(sp.cat==="toxic"){if(fresh)gainXP(15,"spotted a "+sp.n);qEvent("idToxic");
+        say("",por,["You're right. It's a "+sp.n+".",note,"You wipe your hands on the grass and leave it exactly where it is."]);return;}
+      if(fresh)gainXP(8,"identified "+sp.n);
+      if(sp.knife&&!st.tools.knife){say("",por,["Yes: a "+sp.n+".",note,"It's fixed fast to the wood. You'd need a foraging knife to cut it free. Wren sells one."]);return;}
+      say("",por,["Yes: a "+sp.n+".",note],function(){ask("",por,"Pick it?",[{t:"Pick it ("+invCount(st)+"/"+st.cap+")",f:function(){pick(s);}},{t:"Leave it for now"}]);});
+      return;}
+    if(sp.cat==="toxic"){say("",por,["You reach for it, thinking it's a "+g.n+"... and stop.",tr.stem+" "+tr.under,"That's no "+g.n+". It's a "+sp.n+". "+note,"Your heart's pounding. That's exactly how people get poisoned."]);return;}
+    st.energy=Math.max(0,st.energy-6);
+    if(g.cat==="toxic"){say("",por,["You think it's a "+g.n+" and back away... but something nags at you.","Looking closer, it's actually a harmless "+sp.n+". "+note,"Better too careful than not careful enough."]);return;}
+    s.up=0;s.back=st.day+1;
+    say("",por,["You decide it's a "+g.n+" and tug it free... then turn it over.","It isn't. It's a "+sp.n+". "+note,"You've bruised it badly checking. It's no good now. (−6 energy)"]);
+  }
+  function pick(s){
+    var sp=WSP[s.sp];
+    if(invCount(st)>=st.cap){say("","mush:"+s.sp,["Your basket is full. Sell some to Wren, cook some, or drop them in your shipping crate."]);return;}
+    st.inv[s.sp]=(st.inv[s.sp]||0)+1;s.up=0;s.back=st.day+1+Math.floor(Math.random()*2);st.energy=Math.max(0,st.energy-1);
+    gainXP(2);toast("Picked: "+sp.n);
+    if(sp.cat==="edible")qEvent("pickEdible");if(sp.cat==="medicinal")qEvent("pickMed");qEvent("pick_"+s.sp);save();
+  }
+  function chop(x,y){
+    if(!st.tools.axe){say("",null,["A fallen log, soft with moss. With an axe you could split it for firewood and building."]);return;}
+    if(st.energy<4){toast("Too tired to chop. Eat something or sleep.","bad");return;}
+    st.mat.wood+=2;st.chopped[st.zone+":"+x+","+y]=st.day+4;st.energy-=4;dirty=true;gainXP(3);toast("+2 wood");
+  }
+  function cutOak(x,y){
+    if(st.energy<5){toast("Too tired to cut wood.","bad");return;}
+    st.mat.oak_log++;st.oakCut[x+","+y]=st.day;st.energy-=5;gainXP(3);toast("+1 fresh oak log");
+  }
+
+  /* ----- chests, pages, lookout ----- */
+  function openChest(c){
+    if(st.chests.indexOf(c.id)>=0){say("","chest",["Empty. Just a few dry leaves and a beetle."]);return;}
+    var L=CHEST_LOOT[c.id]||{coins:20},got=[];st.chests.push(c.id);
+    if(L.coins){addCoins(L.coins);got.push(L.coins+" coins");}
+    if(L.mat)Object.keys(L.mat).forEach(function(k){st.mat[k]=(st.mat[k]||0)+L.mat[k];got.push(L.mat[k]+" "+MATN[k].toLowerCase());});
+    if(L.item){var over=addItem(L.item,1);got.push("a "+WSP[L.item].n.toLowerCase()+(over?" (into your crate)":""));}
+    gainXP(20);save();
+    say("","chest",["The lid creaks open...","Inside: "+got.join(", ")+"."]);
+  }
+  function readPage(p){
+    st.pages.push(p.id);addCoins(10);gainXP(15);var n=st.pages.length;
+    var q=quest();if(q&&q.goal==="pages"){st.qp=n;if(st.qp>=q.need)qComplete();renderQuest();}
+    var lines=["A torn, weathered page from someone's field journal. Lost journal page "+n+" of 12.","\""+PAGES_TEXT[p.id]+"\""];
+    if(n===12){addCoins(100);lines.push("That's every page! Pressed together, they make a complete notebook. (+100 coins)");}
+    save();say("","page",lines);
+  }
+  function lookout(){
+    var lines=["You put your eye to the old brass telescope.","Far below, the stream glints between the trees. There's the smoke from your campfire, and the blue roof of Wren's post beyond it.","To the north, the dark mouth of Foxfire Cave. To the south, the willows of the marsh, silver in the light."];
+    if(!st.lookout){st.lookout=1;addCoins(30);gainXP(60,"reached the lookout");lines.push("You feel like you can see the whole world from here. (+30 coins)");}
+    say("","scope",lines);
+  }
+
+  /* ----- characters ----- */
+  function talkNpc(n){
+    var info=NPC_INFO[n.id],tk=NPC_TALK[n.id],por="npc:"+n.id,met=st.met[n.id];st.met[n.id]=1;
+    function topics(){ask(info.name,por,tk.ask,tk.topics.map(function(tp){return {t:tp.t,f:function(){say(info.name,por,tp.lines,topics);}};}).concat([{t:"See you around",f:function(){say(info.name,por,[tk.bye]);}}]));}
+    say(info.name,por,met?tk.later:tk.first,topics);
+  }
+  function wrenGreeting(){var h=st.min/60,s=SEASONS[seasonOf(st.day)];
+    if(!st.met.wren)return "New face! I'm Wren. I run this trading post. Bring me what you forage and I'll pay you fair coin. What can I do for you?";
+    var g=h<11?"Morning, forager.":h<17?"Afternoon.":"Evening. Mind the dark on your way home.";
+    var w=st.weather==="rain"?" Good soaking rain today. The mushrooms will be up tomorrow.":st.weather==="fog"?" Thick fog this morning. Watch your step.":st.weather==="snow"?" Snow on the ground. Slim pickings except on the logs.":"";
+    return g+" "+s+" in the woods."+w+" What'll it be?";}
+  function wren(){
+    var q=quest(),canDeliver=q&&q.goal==="deliver"&&q.items.every(function(k){return st.inv[k]>0;});
+    var riddle=st.riddleDay!==st.day&&typeof TRIVIA!=="undefined";
+    var greet=wrenGreeting();st.met.wren=1;
+    ask("Old Wren","npc:wren",greet,[
+      {t:"Sell mushrooms",f:sellMenu},{t:"Buy supplies",f:buyMenu},
+      canDeliver?{t:"Hand over the medicine",f:function(){q.items.forEach(function(k){st.inv[k]--;if(!st.inv[k])delete st.inv[k];});say("Old Wren","npc:wren",["Oh, these are perfect. Look at that reishi shine.","My friend will be thrilled. Here, for your trouble."],function(){qEvent("deliver");});}}:null,
+      {t:"Tell me about the woods",f:function(){say("Old Wren","npc:wren",WREN_WOODS,wren);}},
+      {t:"Any foraging advice?",f:function(){say("Old Wren","npc:wren",[WREN_TIPS[Math.floor(Math.random()*WREN_TIPS.length)]],wren);}},
+      q?{t:"About my quest…",f:function(){say("Old Wren","npc:wren",[QHINT[st.quest]||"You're doing fine. Keep at it."],wren);}}:null,
+      riddle?{t:"Riddle me something",f:riddleTalk}:null,
+      {t:"Goodbye",f:function(){say("Old Wren","npc:wren",["Mind the death caps, now."]);}}
+    ]);
+  }
+  function riddleTalk(){
+    var t=TRIVIA[Math.floor(Math.random()*TRIVIA.length)];st.riddleDay=st.day;
+    say("Old Wren","npc:wren",["Here's one for you."],function(){
+      ask("Old Wren","npc:wren",t[0],t[1].map(function(o,i){return {t:o,f:function(){var ok=i===t[2];if(ok){addCoins(8);gainXP(10,"solved Wren's riddle");}
+        say("Old Wren","npc:wren",[ok?"Ha! Right you are. Eight coins, as promised.":"Not quite. The answer's \""+t[1][t[2]]+"\".",t[3]],wren);}};}));});
+  }
+
+  /* ----- campfire ----- */
+  function fireMenu(){
+    var items=Object.keys(st.inv).filter(function(k){return st.inv[k]>0;});
+    var mult=st.tools.pot?1.25:1;
+    var html='<span class="kicker">Campfire</span><h3>Cook or brew</h3><p>Edible mushrooms make a meal; medicinal ones make a restorative tea.'+(st.tools.pot?" Your pot adds 25% energy.":"")+'</p>'
+      +(items.length?'<div class="wf-list">'+items.map(function(k){var sp=WSP[k];return '<div class="wf-row"><span><b>'+esc(sp.n)+'</b> ×'+st.inv[k]+'</span><span class="muted">'+(sp.cat==="toxic"?"":"+"+Math.round(sp.food*mult)+" energy")+'</span>'+btn("eat:"+k,sp.cat==="medicinal"?"Brew tea":"Cook")+'</div>';}).join('')+'</div>':'<p class="muted">Your basket is empty. Go forage!</p>');
+    open(html,function(b){b.querySelectorAll('[data-a^="eat:"]').forEach(function(e){e.onclick=function(){var k=e.dataset.a.slice(4);st.inv[k]--;if(!st.inv[k])delete st.inv[k];var g=Math.round(WSP[k].food*mult);st.energy=Math.min(100,st.energy+g);toast((WSP[k].cat==="medicinal"?"You brew "+WSP[k].n+" tea":"You cook the "+WSP[k].n)+". +"+g+" energy");fireMenu();};});});
+  }
+
+  /* ----- sleep and the passing of days ----- */
+  function sleepMenu(){
+    var h=st.min/60,ok=h>=18||h<6||st.energy<35,where=st.shelter==="tent"?"your tent":st.shelter==="leanto"?"your lean-to":"your cabin";
+    if(!ok){say("",null,["It's too early to sleep. You can turn in after 6 pm, or any time you're worn out."]);return;}
+    ask("",null,"Crawl into "+where+" and sleep until morning?",[{t:"Sleep",f:function(){newDay(false);}},{t:"Not yet"}]);
+  }
+  function rollWeather(){var s=seasonOf(st.day),v=Math.random();if(v<0.28)return s===3?"snow":"rain";if(v<0.42)return"fog";return"sun";}
+  function newDay(fainted){
+    var wasWet=st.weather==="rain"||st.weather==="snow",oldSeason=seasonOf(st.day);
+    st.day++;st.min=6*60;
+    st.energy=fainted?45:(st.shelter==="tent"?80:100);
+    st.weather=rollWeather();
+    allSpawns().forEach(function(s){if(!s.up&&(s.back<=st.day||wasWet))s.up=1;});
+    Object.keys(st.chopped).forEach(function(k){if(st.chopped[k]<=st.day){delete st.chopped[k];dirty=true;}});
+    st.oakCut={};
+    var notes=[];
+    var shipped=0,earned=0;Object.keys(st.crate).forEach(function(k){var n=st.crate[k];if(n>0){shipped+=n;earned+=n*priceOf(k);}});
+    if(shipped){st.crate={};addCoins(earned);st.sold+=shipped;notes.push("🛒 Wren's cart collected your crate: "+shipped+" mushrooms, +"+earned+" coins.");qEvent("sold",shipped);gainXP(shipped);}
+    st.beds.forEach(function(b){if(!b)return;var msg=bedTick(b);if(msg)notes.push(msg);});
+    if(st.weather==="rain"||st.weather==="snow")st.beds.forEach(function(b){if(b)b.watered=true;});
+    if(seasonOf(st.day)!==oldSeason)dirty=true;
+    if(fainted){var lost=0;Object.keys(st.inv).forEach(function(k){var l=Math.ceil(st.inv[k]/2);st.inv[k]-=l;lost+=l;if(!st.inv[k])delete st.inv[k];});
+      if(st.zone!=="woods"){st.zone="woods";loadZone();}
+      pl.tx=SHELTER.x+1;pl.ty=SHELTER.y+1;pl.px=pl.tx*TS;pl.py=pl.ty*TS;pl.moving=false;}
+    var morning=[];
+    if(fainted)morning.push("Everything goes dark... You wake up at camp, stiff and sore."+(lost?" You lost "+lost+" mushrooms along the way.":""));
+    morning.push("Day "+st.day+". "+(seasonOf(st.day)!==oldSeason?{0:"Spring has come. The first morels may be pushing up in the clearings.",1:"Summer. Chanterelles and porcini season is starting under the pines.",2:"Autumn! The oaks are turning, and it's the best season for mushrooms.",3:"Winter. Snow on the ground. Most mushrooms are gone, but brackets and oysters still grow on the logs."}[seasonOf(st.day)]+" ":"")
+      +{sun:"A clear, bright morning.",rain:"Rain is drumming on the roof. It'll water your beds for you, and tomorrow the mushrooms will be up everywhere.",fog:"Thick fog hangs between the trees.",snow:"Fresh snow fell overnight. It'll keep your beds damp."}[st.weather]
+      +(wasWet?" After yesterday's rain, mushrooms have popped up all over.":""));
+    save();
+    say("",null,morning,function(){notes.forEach(function(n){toast(n);});});
+  }
+
+  /* ----- beds ----- */
+  function bedTick(b){
+    var w=b.watered;b.watered=false;
+    if(b.type==="oyster"){
+      if(b.stage==="colonising"){if(w){b.prog++;b.dry=0;}else b.dry=(b.dry||0)+1;if(b.dry>=3){b.stage="dead";return"An oyster bed dried out completely. Keep it misted!";}if(b.prog>=2){b.stage="pinning";b.prog=0;return"Oyster bed fully colonised. Keep misting to trigger pins.";}}
+      else if(b.stage==="pinning"){if(w){b.stage="fruiting";return"Tiny oyster pins appeared!";}}
+      else if(b.stage==="fruiting"){if(w){b.stage="ready";b.readyDay=st.day;return"Oysters are ready: the veils are tearing. Harvest today or tomorrow.";}}
+      else if(b.stage==="ready"){if(st.day-b.readyDay>=2){b.flush++;b.stage=b.flush>=3?"spent":"resting";b.prog=0;return"Oysters over-ripened and spoiled. Harvest sooner next time.";}}
+      else if(b.stage==="resting"){b.prog++;if(b.prog>=1){b.stage=b.flush>=3?"spent":"pinning";b.prog=0;}}
+    }else{
+      if(b.stage==="colonising"){b.prog+=w?1.5:1;if(b.prog>=4){b.stage="waiting";b.prog=0;return"Your shiitake logs are fully colonised. Soak them to make them fruit.";}}
+      else if(b.stage==="waiting"){if(w){b.stage="fruiting";return"Soaked shiitake logs are pushing out pins.";}}
+      else if(b.stage==="fruiting"){b.stage="ready";b.readyDay=st.day;return"Shiitake are ready to harvest!";}
+      else if(b.stage==="ready"){if(st.day-b.readyDay>=3){b.stage="resting";b.prog=0;return"Shiitake over-ripened on the logs.";}}
+      else if(b.stage==="resting"){b.prog++;if(b.prog>=2){b.stage="waiting";b.prog=0;}}
+    }
+    return null;
+  }
+  var BED_TIPS={
+    oyster:{colonising:"Mycelium is running through the pasteurised straw. Mist it daily; it needs 2 misted days.",pinning:"Fully colonised. Keep it humid (80–95%) with fresh air and indirect light so pins form.",fruiting:"Pins are growing into oysters. Mist again so they reach full size.",ready:"The veils are tearing. Harvest now! Twist them off; don't cut, or the stubs will rot.",resting:"The block is resting between flushes.",spent:"This straw has given its 3 flushes. Clear it to free the space.",dead:"It dried out. The book's number-one reason nothing grows: too little moisture. Clear it and try again."},
+    shiitake:{colonising:"The dowels' mycelium is spreading through the oak. Keep the stack shaded and damp (misting speeds it up).",waiting:"Fully colonised. Soak the logs in water to trigger fruiting.",fruiting:"Pins are pushing through the bark. Ready tomorrow.",ready:"Shiitake are ready. Harvest them!",resting:"The logs are resting before the next soak."}
+  };
+  function bedMenu(i){
+    var b=st.beds[i];if(!b)return;
+    var name=b.type==="oyster"?"Oyster straw bed":"Shiitake log stack",tip=BED_TIPS[b.type][b.stage]||"";
+    var canWater=needsWater(b);
+    var verb=b.type==="shiitake"&&b.stage==="waiting"?"Soak the logs":"Mist it";
+    var html='<span class="kicker">'+name+(b.type==="oyster"?" · flush "+Math.min(b.flush+1,3)+" of 3":"")+'</span><h3>'+esc(b.stage.charAt(0).toUpperCase()+b.stage.slice(1))+'</h3><p>'+esc(tip)+'</p>'
+      +(b.watered?'<p class="muted">Already watered today.</p>':'')
+      +'<div class="wf-acts">'+(b.stage==="ready"?btn("harvest","Harvest","primary"):"")
+      +(canWater?btn("water",verb+(st.tools.mister?"":" (needs a mister)"),b.stage==="ready"?"":"primary",!st.tools.mister):"")
+      +(b.stage==="spent"||b.stage==="dead"?btn("clear","Clear the bed","danger"):"")+btn("x","Close")+'</div>';
+    open(html,function(bx){bx.querySelector('[data-a="x"]').onclick=close;
+      var w=bx.querySelector('[data-a="water"]');if(w)w.onclick=function(){b.watered=true;st.energy=Math.max(0,st.energy-1);toast(b.type==="shiitake"&&b.stage==="waiting"?"You soak the logs.":"You mist the bed.");bedMenu(i);};
+      var h=bx.querySelector('[data-a="harvest"]');if(h)h.onclick=function(){harvest(i);};
+      var c=bx.querySelector('[data-a="clear"]');if(c)c.onclick=function(){st.beds[i]=null;toast("Bed cleared.");close();};});
+  }
+  function harvest(i){
+    var b=st.beds[i],n=b.type==="oyster"?[4,3,2][b.flush]||2:3,sp=b.type==="oyster"?"oyster":"shiitake";
+    if(st.day>b.readyDay)n=Math.max(1,n-1);
+    var toCrate=addItem(sp,n);
+    if(toCrate)toast("Basket full: "+toCrate+" "+WSP[sp].n.toLowerCase()+" went into your shipping crate.","coin");
+    st.harvested+=n;
+    if(b.type==="oyster"){b.flush++;b.stage=b.flush>=3?"spent":"resting";b.prog=0;}else{b.stage="resting";b.prog=0;}
+    gainXP(5*n,"harvested "+n+" "+WSP[sp].n.toLowerCase());
+    qEvent(b.type==="oyster"?"harvestOyster":"harvestShiitake");qEvent("harvestTotal",n);
+    close();
+  }
+
+  /* ----- shipping crate ----- */
+  function crateMenu(){
+    var basket=Object.keys(st.inv).filter(function(k){return st.inv[k]>0;});
+    var inCrate=Object.keys(st.crate).filter(function(k){return st.crate[k]>0;});
+    var worth=inCrate.reduce(function(a,k){return a+st.crate[k]*priceOf(k);},0);
+    var html='<span class="kicker">Your camp</span><h3>Shipping crate</h3><p>Wren\'s cart collects this every night and pays full price while you sleep. Farm harvests land here when your basket is full.</p>'
+      +'<div class="wf-sub">In the crate'+(inCrate.length?' · worth '+worth+' coins tonight':'')+'</div>'
+      +(inCrate.length?'<div class="wf-list">'+inCrate.map(function(k){return '<div class="wf-row"><span><b>'+esc(WSP[k].n)+'</b> ×'+st.crate[k]+'</span><span class="muted">'+priceOf(k)+'¢ each</span>'+btn("t:"+k,"Take 1")+'</div>';}).join('')+'</div>':'<p class="muted">Empty.</p>')
+      +'<div class="wf-sub">In your basket ('+invCount(st)+'/'+st.cap+')</div>'
+      +(basket.length?'<div class="wf-list">'+basket.map(function(k){return '<div class="wf-row"><span><b>'+esc(WSP[k].n)+'</b> ×'+st.inv[k]+'</span>'+btn("s:"+k,"Ship all")+'</div>';}).join('')+'</div>':'<p class="muted">Empty.</p>')
+      +'<div class="wf-acts">'+(basket.length?btn("all","Ship whole basket","primary"):"")+btn("x","Close")+'</div>';
+    open(html,function(b){b.querySelector('[data-a="x"]').onclick=close;
+      var all=b.querySelector('[data-a="all"]');if(all)all.onclick=function(){Object.keys(st.inv).forEach(function(k){st.crate[k]=(st.crate[k]||0)+st.inv[k];});st.inv={};toast("Basket emptied into the crate.");crateMenu();};
+      b.querySelectorAll('[data-a^="s:"]').forEach(function(e){e.onclick=function(){var k=e.dataset.a.slice(2);st.crate[k]=(st.crate[k]||0)+st.inv[k];delete st.inv[k];crateMenu();};});
+      b.querySelectorAll('[data-a^="t:"]').forEach(function(e){e.onclick=function(){var k=e.dataset.a.slice(2);if(invCount(st)>=st.cap){toast("Your basket is full.","bad");return;}st.inv[k]=(st.inv[k]||0)+1;st.crate[k]--;if(!st.crate[k])delete st.crate[k];crateMenu();};});});
+  }
+
+  /* ----- building ----- */
+  function haveAll(bd){for(var k in bd.need)if((st.mat[k]||0)<bd.need[k])return false;if(bd.coins&&st.coins<bd.coins)return false;if(bd.tools)for(var i=0;i<bd.tools.length;i++)if(!st.tools[bd.tools[i]])return false;return true;}
+  function buildMenu(){
+    var free=st.beds.indexOf(null);
+    var html='<span class="kicker">Your camp</span><h3>Build</h3><p>Materials come from Wren\'s shop and from chopping fallen logs with an axe.</p><div class="wf-list">'
+      +Object.keys(BUILDS).map(function(id){var bd=BUILDS[id];
+        var done=(id==="leanto"&&st.shelter!=="tent")||(id==="cabin"&&st.shelter==="cabin");
+        var locked=lv()<bd.lv,needReq=bd.req&&st.shelter==="tent";
+        var bedFull=(id==="oyster_bed"||id==="shiitake_stack")&&free<0;
+        var reqs=Object.keys(bd.need).map(function(k){var ok=(st.mat[k]||0)>=bd.need[k];return '<span class="'+(ok?"ok":"no")+'">'+bd.need[k]+' '+MATN[k].toLowerCase()+' ('+(st.mat[k]||0)+')</span>';});
+        if(bd.coins)reqs.push('<span class="'+(st.coins>=bd.coins?"ok":"no")+'">'+bd.coins+' coins</span>');
+        if(bd.tools)bd.tools.forEach(function(t){reqs.push('<span class="'+(st.tools[t]?"ok":"no")+'">'+TOOLN[t].toLowerCase()+'</span>');});
+        var label=done?"Built":locked?"Level "+bd.lv:needReq?"Needs lean-to":bedFull?"No free space":"Build";
+        return '<div class="wf-row col"><div><b>'+esc(bd.n)+'</b><span class="muted"> · '+esc(bd.d)+'</span></div><div class="wf-reqs">'+reqs.join('')+'</div>'+btn("b:"+id,label,haveAll(bd)&&!done&&!locked&&!needReq&&!bedFull?"primary":"",done||locked||needReq||bedFull||!haveAll(bd))+'</div>';}).join('')+'</div>';
+    open(html,function(b){b.querySelectorAll('[data-a^="b:"]').forEach(function(e){e.onclick=function(){build(e.dataset.a.slice(2));};});});
+  }
+  function build(id){
+    var bd=BUILDS[id];if(!haveAll(bd))return;
+    for(var k in bd.need)st.mat[k]-=bd.need[k];if(bd.coins)st.coins-=bd.coins;close();
+    if(id==="leanto"){st.shelter="leanto";gainXP(30,"built a lean-to");qEvent("build_leanto");say("",null,["You lash the poles together and lay the planks across. Not fancy, but it'll keep the rain off."]);}
+    else if(id==="cabin"){st.shelter="cabin";gainXP(80,"built a cabin");qEvent("build_cabin");say("",null,["The last nail goes in. You step back and look at it: a real cabin, with a chimney and glass in the windows.","Blackpine Woods is home now."]);}
+    else{var i=st.beds.indexOf(null);
+      if(id==="oyster_bed"){st.beds[i]={type:"oyster",stage:"colonising",prog:0,flush:0,watered:false,dry:0};gainXP(15,"built an oyster bed");say("",null,["You heat the straw to 160–170°F for an hour, let it cool, and pack in the oyster spawn.","Now it needs to stay damp. Mist it every day."]);}
+      else{st.beds[i]={type:"shiitake",stage:"colonising",prog:0,watered:false};gainXP(20,"inoculated shiitake logs");say("",null,["You drill a diamond pattern along each log, tap in the spawn dowels, and seal every hole with melted wax.","The mycelium will spread through the wood over the next few days."]);}}
+  }
+
+  /* ----- Wren's shop ----- */
+  function sellMenu(){
+    var items=Object.keys(st.inv).filter(function(k){return st.inv[k]>0&&WSP[k].cat!=="toxic";});
+    var html='<span class="kicker">Old Wren buys</span><h3>Sell</h3><p>'+(st.shelter==="cabin"?"Regulars get 10% extra. ":"")+'You have '+st.coins+' coins.</p>'
+      +(items.length?'<div class="wf-list">'+items.map(function(k){return '<div class="wf-row"><span><b>'+esc(WSP[k].n)+'</b> ×'+st.inv[k]+'</span><span class="muted">'+priceOf(k)+'¢ each</span>'+btn("s1:"+k,"Sell 1")+btn("sa:"+k,"Sell all")+'</div>';}).join('')+'</div>':'<p class="muted">Nothing to sell yet.</p>')
+      +'<div class="wf-acts">'+btn("back","← Back to Wren")+'</div>';
+    open(html,function(b){b.querySelector('[data-a="back"]').onclick=function(){close();wren();};
+      b.querySelectorAll('[data-a^="s1:"],[data-a^="sa:"]').forEach(function(e){e.onclick=function(){var all=e.dataset.a.charAt(1)==="a",k=e.dataset.a.slice(3),n=all?st.inv[k]:1;st.inv[k]-=n;if(!st.inv[k])delete st.inv[k];var c=n*priceOf(k);addCoins(c);st.sold+=n;gainXP(n);toast("Sold "+n+" "+WSP[k].n+" for "+c+" coins","coin");qEvent("sold",n);sellMenu();};});});
+  }
+  function buyMenu(){
+    var html='<span class="kicker">Old Wren sells</span><h3>Supplies</h3><p>You have <b>'+st.coins+' coins</b>. Level '+lv()+'.</p><div class="wf-list">'
+      +SHOP.map(function(it){
+        var owned=(it.kind==="tool"&&st.tools[it.id])||(it.kind==="cap"&&st.cap>=it.cap);
+        var locked=lv()<it.lv,poor=st.coins<it.p;
+        var label=owned?"Owned":locked?"Level "+it.lv:it.p+"¢";
+        var have=it.kind==="mat"?' <span class="muted">(have '+(st.mat[it.id]||0)+')</span>':"";
+        return '<div class="wf-row col"><div><b>'+esc(it.n)+'</b>'+have+'<span class="muted"> · '+esc(it.d)+'</span></div>'+btn("p:"+it.id,label,!owned&&!locked&&!poor?"primary":"",owned||locked||poor)+'</div>';}).join('')
+      +'</div><div class="wf-acts">'+btn("back","← Back to Wren")+'</div>';
+    open(html,function(b){b.querySelector('[data-a="back"]').onclick=function(){close();wren();};
+      b.querySelectorAll('[data-a^="p:"]').forEach(function(e){e.onclick=function(){var it=SHOP.filter(function(s){return s.id===e.dataset.a.slice(2);})[0];if(st.coins<it.p)return;st.coins-=it.p;
+        if(it.kind==="tool")st.tools[it.id]=1;else if(it.kind==="cap")st.cap=it.cap;else st.mat[it.id]=(st.mat[it.id]||0)+1;
+        toast("Bought: "+it.n,"coin");buyMenu();};});});
+  }
+
+  /* ----- info panels ----- */
+  function icon(sp){return '<img class="wf-pix" src="'+mush(sp).toDataURL()+'" alt="">';}
+  function invMenu(){
+    var items=Object.keys(st.inv).filter(function(k){return st.inv[k]>0;});
+    var mats=Object.keys(st.mat).filter(function(k){return st.mat[k]>0;});
+    var tools=Object.keys(st.tools);
+    open('<span class="kicker">Day '+st.day+' · '+SEASONS[seasonOf(st.day)]+' · Level '+lv()+'</span><h3>Your pack</h3>'
+      +'<div class="wf-sub">Basket '+invCount(st)+' / '+st.cap+'</div>'+(items.length?'<div class="wf-chips">'+items.map(function(k){return '<span class="chip">'+icon(k)+esc(WSP[k].n)+' ×'+st.inv[k]+'</span>';}).join('')+'</div>':'<p class="muted">Empty.</p>')
+      +'<div class="wf-sub">Materials</div>'+(mats.length?'<div class="wf-chips">'+mats.map(function(k){return '<span class="chip">'+esc(MATN[k])+' ×'+st.mat[k]+'</span>';}).join('')+'</div>':'<p class="muted">None yet.</p>')
+      +'<div class="wf-sub">Tools</div>'+(tools.length?'<div class="wf-chips">'+tools.map(function(k){return '<span class="chip moss">'+esc(TOOLN[k])+'</span>';}).join('')+'</div>':'<p class="muted">Just your boots and a backpack.</p>')
+      +'<p class="muted" style="margin-top:12px">'+st.coins+' coins · '+st.xp+' XP · '+st.harvested+' grown · '+st.sold+' sold · '+st.pages.length+'/12 pages · '+st.chests.length+'/7 chests</p>');
+  }
+  function journalMenu(){
+    var found=WILD.filter(function(k){return st.journal[k];}).length;
+    open('<span class="kicker">Field journal</span><h3>'+found+' of '+WILD.length+' species identified</h3><p class="muted">Identify a species correctly twice and you\'ll recognise it on sight.</p><div class="wf-jgrid">'
+      +WILD.map(function(k){var sp=WSP[k],n=st.journal[k]||0,tr=WTRAIT[k];
+        if(!n)return '<div class="wf-j unk"><b>??? Unknown</b><span>Look '+esc(sp.where)+'.</span></div>';
+        return '<div class="wf-j"><div class="wf-jh">'+icon(k)+'<b>'+esc(sp.n)+'</b></div><span class="chip '+(sp.cat==="toxic"?"amber":sp.cat==="medicinal"?"gold":"moss")+'">'+sp.cat+'</span><span><b>Cap:</b> '+esc(tr.cap)+'</span><span><b>Underneath:</b> '+esc(tr.under)+'</span><span><b>Stem:</b> '+esc(tr.stem)+'</span><span><b>Smell:</b> '+esc(tr.smell)+'</span>'+(n>=2?'<span class="muted">✓ Known on sight</span>':'<span class="muted">Seen once</span>')+'</div>';}).join('')+'</div>');
+  }
+  function questsMenu(){
+    var q=quest();
+    open('<span class="kicker">Quest log</span><h3>'+(q?esc(q.n):"All quests complete!")+'</h3>'+(q?'<p>'+esc(q.d)+'</p>'+(q.need>1?'<p class="muted">Progress: '+Math.min(st.qp,q.need)+' / '+q.need+'</p>':''):'<p>You\'ve done everything Blackpine Woods asked of you.</p>')
+      +'<div class="wf-sub">Completed</div>'+(st.done.length?'<ul class="list">'+st.done.map(function(i){return '<li>'+esc(QUESTS[i].n)+'</li>';}).join('')+'</ul>':'<p class="muted">None yet.</p>')
+      +'<div class="wf-sub">Coming up</div><ul class="list">'+QUESTS.slice(st.quest+1).map(function(x){return '<li class="muted">'+esc(x.n)+'</li>';}).join('')+'</ul>');
+  }
+  var MAPCOL={0:"#70c050",1:"#2c6a30",2:"#24502c",3:"#7aaa48",4:"#3888e0",5:"#e8d088",6:"#90d860",7:"#8a5a30",8:"#8a909a",9:"#c89058",10:"#b8a060",11:"#8a5a30",12:"#5a5262",13:"#2a2433",14:"#24407a",15:"#4a8a7a",16:"#3a6a28",17:"#6a9a48",18:"#7a6a48",19:"#b0a890",20:"#f8d048"};
+  function mapMenu(){
+    var s=Math.max(3,Math.min(7,Math.floor(470/WW)));
+    var here=st.pageSpots.filter(function(p){return p.zone===st.zone;}),got=here.filter(function(p){return st.pages.indexOf(p.id)>=0;}).length;
+    open('<span class="kicker">Map</span><h3>'+esc(ZONES[st.zone].n)+'</h3><div class="wf-mapwrap"><canvas id="wfMapC" width="'+WW*s+'" height="'+WH*s+'" class="wf-map"></canvas></div>'
+      +'<p class="muted"><b style="color:#e02818">●</b> You &nbsp; <b style="color:#c89010">■</b> Entrances &nbsp; <b style="color:#a86828">■</b> Unopened chests &nbsp; <b style="color:#7a3aa8">●</b> People</p>'
+      +'<p class="muted">Lost pages found here: '+got+' of '+here.length+' · Total: '+st.pages.length+' of 12</p>');
+    var c=document.getElementById("wfMapC").getContext("2d");
+    for(var y=0;y<WH;y++)for(var x=0;x<WW;x++){var t=tileAt(x,y);c.fillStyle=(t===T.STONE&&st.zone!=="ridge")?"#b0a890":(MAPCOL[t]||"#70c050");if(st.zone==="cave"&&t===T.ROCK)c.fillStyle="#8a6ad8";c.fillRect(x*s,y*s,s,s);}
+    WARPS[st.zone].forEach(function(w){c.fillStyle="#c89010";c.fillRect(w.x*s-1,w.y*s-1,s+2,s+2);});
+    st.chestSpots.forEach(function(ch){if(ch.zone===st.zone&&st.chests.indexOf(ch.id)<0){c.fillStyle="#a86828";c.fillRect(ch.x*s,ch.y*s,s,s);}});
+    NPCS.forEach(function(n){if(n.zone===st.zone){c.fillStyle="#7a3aa8";c.beginPath();c.arc(n.x*s+s/2,n.y*s+s/2,s*0.7,0,7);c.fill();}});
+    if(st.zone==="woods"){c.fillStyle="#e07828";c.fillRect(SHELTER.x*s,SHELTER.y*s,s*2,s*2);c.fillStyle="#3870d0";c.fillRect(HUT[0][0]*s,HUT[0][1]*s,s*2,s*2);}
+    c.fillStyle="#e02818";c.beginPath();c.arc(pl.tx*s+s/2,pl.ty*s+s/2,s*0.9,0,7);c.fill();c.strokeStyle="#ffffff";c.lineWidth=1;c.stroke();
+  }
+  function helpMenu(first){
+    open('<span class="kicker">'+(first?"Welcome to":"How to play")+'</span><h3>Blackpine Woods</h3>'
+      +(first?'<p>You\'ve hiked into the woods with a backpack, a tent and 5 coins. Forage wild mushrooms, sell them to Old Wren at the trading post, build a home, grow your own, and explore the wild places beyond.</p>':'')
+      +'<div class="wf-sub">Controls</div><ul class="list"><li><b>Move:</b> arrow keys or WASD (on a phone, use the pad)</li><li><b>Interact / continue talking:</b> E, Space or Enter. Use the arrow keys to pick a choice.</li><li><b>Basket</b> I · <b>Journal</b> J · <b>Quests</b> Q · <b>Map</b> M · <b>Close</b> Esc</li></ul>'
+      +'<div class="wf-sub">Identifying mushrooms</div><ul class="list"><li>Walk up to a mushroom and examine it: <b>the cap, underneath, the stem and base, and the smell</b>, just like the book\'s method. Then name it.</li><li>Get it wrong and you spoil it, or worse. Watch out for look-alikes like the jack-o\'-lantern (true gills) vs. the chanterelle (blunt ridges).</li><li>Name a species correctly twice and you\'ll recognise it on sight.</li></ul>'
+      +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Cook at your campfire or drink water to recover.</li><li>Sleep at your shelter after 6 pm to pass the night. Stay out past 2 am or hit zero energy and you collapse.</li></ul>'
+      +'<div class="wf-sub">Exploring</div><ul class="list"><li><b>Foxfire Cave</b> (north, past the birches) needs a lantern. <b>Willow Marsh</b> (south boardwalk) needs waders. <b>Highpine Ridge</b> (northeast rock face) needs a rope.</li><li>Talk to everyone you meet. Hunt for 7 treasure chests and 12 lost journal pages.</li><li>Seasons change every 7 days. Some mushrooms only grow in certain seasons. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
+      +'<div class="wf-sub">Farming</div><ul class="list"><li>Oyster beds: mist daily. 2 days to colonise, then pins, fruit, harvest, up to 3 flushes. Harvest within 2 days or they spoil.</li><li>Shiitake logs colonise for 4 days; then soak them to make them fruit, again and again.</li><li>The shipping crate by the campfire sells to Wren\'s cart every night.</li></ul>'
+      +'<div class="wf-acts">'+btn("go",first?"Start exploring":"Got it","primary")+'</div>',
+      function(b){b.querySelector('[data-a="go"]').onclick=function(){st.intro=0;close();};});
+  }
+  function gameMenu(){
+    open('<span class="kicker">Game</span><h3>Save & settings</h3><p>'+(canStore?"Your game saves automatically in this browser (when you sleep, every 20 seconds, and after conversations). It doesn't sync to other devices.":"Your browser is blocking storage here, so progress can't be saved.")+'</p>'
+      +'<div class="wf-acts wrap">'+btn("save","Save now","primary",!canStore)+btn("new","Start a new game","danger")+'</div><div id="wfNew"></div>',
+      function(b){b.querySelector('[data-a="save"]').onclick=function(){save();toast("Game saved");close();};
+        b.querySelector('[data-a="new"]').onclick=function(){b.querySelector("#wfNew").innerHTML='<p class="wf-warn">This erases your current game. Are you sure?</p><div class="wf-acts">'+btn("yes","Yes, start over","danger")+btn("no","Keep playing")+'</div>';
+          b.querySelector('[data-a="no"]').onclick=close;b.querySelector('[data-a="yes"]').onclick=function(){lsDel("mc-woods-save");st=wfNewState(woodsMap);migrate();loadZone();pl={px:st.x*TS,py:st.y*TS,tx:st.x,ty:st.y,moving:false,step:0};renderQuest();close();helpMenu(true);};};});
+  }
+
+  /* ----- loop ----- */
+  var DIRS={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+  function heldDir(){if(keys.up)return"up";if(keys.down)return"down";if(keys.left)return"left";if(keys.right)return"right";return null;}
+  function update(dt){
+    if(modalOpen||dlg.open||warping)return;
+    st.min+=dt*3.2;
+    var h=st.min/60;
+    if(h>=26){newDay(true);return;}
+    if(pl.moving){var tx=pl.tx*TS,ty=pl.ty*TS,sp=TS*8*dt;var dx=tx-pl.px,dy=ty-pl.py,dist=Math.hypot(dx,dy);
+      if(dist<=sp){pl.px=tx;pl.py=ty;pl.moving=false;var w=warpAt(pl.tx,pl.ty);if(w&&(!w.need||st.tools[w.need])){doWarp(w);return;}}
+      else{pl.px+=dx/dist*sp;pl.py+=dy/dist*sp;}pl.step+=dt*14;}
+    if(!pl.moving){var d=heldDir();if(d){st.dir=d;var nx=pl.tx+DIRS[d][0],ny=pl.ty+DIRS[d][1];
+      var wn=warpAt(nx,ny);if(wn&&wn.need&&!st.tools[wn.need]){keys={};tryDoor(wn);return;}
+      if(!blocked(nx,ny)){pl.tx=nx;pl.ty=ny;pl.moving=true;var drain=0.08*(h>=22&&st.zone!=="cave"?2.5:1);st.energy=Math.max(0,st.energy-drain);
+        if(st.energy<=0){newDay(true);}}}}
+  }
+  var nightWarned=0;
+  function hud(){
+    var s=seasonOf(st.day);
+    document.getElementById("wfClock").textContent="Day "+st.day+" · "+SEASONS[s]+" "+(st.zone==="cave"?"🕯":WICON[st.weather]||"")+" · "+clock();
+    var en=document.getElementById("wfEn");en.style.width=Math.max(0,st.energy)+"%";en.className=st.energy<25?"low":"";
+    document.getElementById("wfCoins").textContent="🪙 "+st.coins;
+    var l=lv(),lo=LV[l-1]||0,hi=LV[l]||lo+1;document.getElementById("wfLv").textContent="Lv "+l;
+    document.getElementById("wfXp").style.width=(l>=LV.length?100:Math.min(100,(st.xp-lo)/(hi-lo)*100))+"%";
+    var hr=st.min/60;if(hr>=21&&nightWarned!==st.day&&!dlg.open){nightWarned=st.day;toast("🌙 It's getting late. Head back to your shelter and sleep.","bad");}
+  }
+  function frame(t){
+    if(!running)return;
+    var dt=Math.min(0.05,(t-(last||t))/1000);last=t;
+    update(dt);render(t);
+    hudT+=dt;if(hudT>0.2){hudT=0;hud();}
+    if(t-lastSave>20000){lastSave=t;save();}
+    raf=requestAnimationFrame(frame);
+  }
+
+  /* ----- input ----- */
+  var KM={ArrowUp:"up",KeyW:"up",ArrowDown:"down",KeyS:"down",ArrowLeft:"left",KeyA:"left",ArrowRight:"right",KeyD:"right"};
+  function onKey(e){
+    if(!document.getElementById("wfStage"))return;
+    var tag=(e.target&&e.target.tagName)||"";if(tag==="INPUT"||tag==="TEXTAREA")return;
+    if(modalOpen){if(e.key==="Escape"){close();e.preventDefault();}return;}
+    var dir=KM[e.code];
+    if(dlg.open){if(e.type!=="keydown")return;
+      if(dir==="up"||dir==="left"){moveCur(-1);e.preventDefault();}
+      else if(dir==="down"||dir==="right"){moveCur(1);e.preventDefault();}
+      else if(e.code==="KeyE"||e.code==="Space"||e.code==="Enter"){if(!e.repeat)advance();e.preventDefault();}
+      else if(e.key==="Escape"){dlgClose();save();e.preventDefault();}
+      return;}
+    if(dir){keys[dir]=e.type==="keydown";e.preventDefault();return;}
+    if(e.type!=="keydown")return;
+    if(e.code==="KeyE"||e.code==="Space"||e.code==="Enter"){if(!e.repeat)act();e.preventDefault();}
+    else if(e.code==="KeyI"){invMenu();}else if(e.code==="KeyJ"){journalMenu();}else if(e.code==="KeyQ"){questsMenu();}else if(e.code==="KeyM"){mapMenu();}
+  }
+  document.addEventListener("keydown",onKey);document.addEventListener("keyup",onKey);
+  function onBlur(){keys={};}
+  window.addEventListener("blur",onBlur);
+  document.getElementById("wfPad").querySelectorAll("button").forEach(function(b){var k=b.dataset.k;
+    function down(e){e.preventDefault();if(k==="act")act();else if(dlg.open){if(k==="up"||k==="left")moveCur(-1);else moveCur(1);}else keys[k]=true;}
+    function up(e){e.preventDefault();if(k!=="act")keys[k]=false;}
+    b.addEventListener("pointerdown",down);b.addEventListener("pointerup",up);b.addEventListener("pointerleave",up);b.addEventListener("pointercancel",up);});
+  root.querySelector(".wf-bar2").addEventListener("click",function(e){var b=e.target.closest("[data-m]");if(!b)return;var m=b.dataset.m;
+    if(dlg.open)dlgClose();if(modalOpen)close();
+    if(m==="inv")invMenu();else if(m==="journal")journalMenu();else if(m==="quests")questsMenu();else if(m==="map")mapMenu();else if(m==="help")helpMenu(false);else gameMenu();});
+  stage.addEventListener("pointerdown",function(){if(!modalOpen)stage.focus({preventScroll:true});});
+  var ro=window.ResizeObserver?new ResizeObserver(function(){resize();}):null;if(ro)ro.observe(stage);else window.addEventListener("resize",resize);
+
+  loadZone();resize();renderQuest();hud();raf=requestAnimationFrame(frame);
+  (function(){var q=quest();if(q&&q.goal==="pages"){st.qp=st.pages.length;}if(q&&st.qp>=q.need)qComplete();})();
+  if(st.intro)helpMenu(true);
+  if(!canStore)toast("Your browser is blocking storage, so this game can't be saved.","bad");
+
+  return {stop:function(){running=false;cancelAnimationFrame(raf);clearInterval(dlg.timer);save();document.removeEventListener("keydown",onKey);document.removeEventListener("keyup",onKey);window.removeEventListener("blur",onBlur);if(ro)ro.disconnect();WW=60;WH=44;}};
+}
+
+function vPlay(){
+  return '<div class="view wf-view">'
+   +head("Play","Blackpine Woods","Start as a backpacker with 5 coins. Forage and identify mushrooms by examining them, trade with Old Wren, build a home, then explore a glowing cave, a misty marsh and a high mountain ridge.")
+   +'<div id="wfRoot" class="wf"></div>'
+   +'</div>';
+}
+function initPlay(){playStop();var r=document.getElementById("wfRoot");if(r)WF=wfCreate(r);}
+
+
+
+/* ================= PLAY: Forager's Eye ================= */
+var PHOTO_POOL=[
+ ["button","White button","Edible"],["crimini","Crimini","Edible"],["portobello","Portobello","Edible"],["shiitake","Shiitake","Edible"],["oyster","Oyster","Edible"],["enoki","Enoki","Edible"],["chanterelle","Chanterelle","Edible"],["porcini","Porcini","Edible"],["shimeji","Shimeji","Edible"],["morel","Morel","Edible"],["maitake","Maitake","Edible"],["king-trumpet","King trumpet","Edible"],["hedgehog","Hedgehog","Edible"],
+ ["turkey-tail","Turkey tail","Medicinal"],["reishi","Reishi","Medicinal"],["lions-mane","Lion's mane","Medicinal"],["cordyceps","Cordyceps","Medicinal"],["agarikon","Agarikon","Medicinal"],["birch-polypore","Birch polypore","Medicinal"],
+ ["cubensis","Psilocybe cubensis","Psychoactive"],["semilanceata","Liberty cap","Psychoactive"],["baeocystis","Psilocybe baeocystis","Psychoactive"],
+ ["death-cap","Death cap","Toxic"],["fly-agaric","Fly agaric","Toxic"]
+];
+var PHOTO_NOTES={
+ "death-cap":"The death cap causes most fatal mushroom poisonings, with delayed symptoms and no antidote.",
+ "fly-agaric":"Fly agaric contains muscimol and ibotenic acid. It is toxic and is not a psilocybin mushroom.",
+ "morel":"That honeycomb cap is the giveaway. Always cook morels and never confuse them with toxic false morels.",
+ "chanterelle":"Trumpet-shaped and golden, with false gills (ridges) running down the stem. It has poisonous look-alikes.",
+ "porcini":"Porcini are boletes: pores under the cap instead of gills.",
+ "hedgehog":"Spines, not gills, under the cap. Tastes much like a chanterelle.",
+ "turkey-tail":"Named for its banded colours, like a turkey's tail feathers. Studied for immune support.",
+ "reishi":"The 'mushroom of immortality'. Take it only as an extract, never as raw powder for long periods.",
+ "lions-mane":"Cascading icicle spines. Its hericenones are studied for nerve and brain health.",
+ "cordyceps":"Grows out of a buried caterpillar. A traditional energy and stamina tonic.",
+ "agarikon":"A rare, columnar polypore of ancient conifer forests, used by the ancient Greeks for tuberculosis.",
+ "birch-polypore":"Ötzi the 5,000-year-old iceman carried this bracket from birch trees.",
+ "cubensis":"P. cubensis: red-brown cap, pale stem, bruises blue. Some poisonous mushrooms bruise too.",
+ "semilanceata":"The liberty cap: small, with a pointed cap, in cool hilly pastures.",
+ "enoki":"Cultivated enoki are white because they grow without light; wild ones are brown.",
+ "maitake":"Hen of the woods: overlapping grey-brown fans at the base of oaks.",
+ "king-trumpet":"The largest oyster species. The meaty stalk is the prize.",
+ "oyster":"The easiest mushroom to grow at home, on straw or coffee grounds."
+};
+var TRIVIA=[
+ ["About how much of a raw mushroom is water?",["62%","75%","92%","99%"],2,"Raw brown mushrooms are about 92% water, 4% carbs, 2% protein and under 1% fat."],
+ ["White button, crimini and portobello are…",["Three related species","The same species at different ages","Different genera","Wild and farmed versions"],1,"All three are Agaricus bisporus: young white, intermediate brown, and fully mature."],
+ ["Which is the best beginner substrate for oyster mushrooms?",["Straw","Sand","Pine needles","Garden soil"],0,"Straw is the classic beginner substrate for oysters, even in an apartment."],
+ ["What temperature range does the book give for pasteurising straw?",["100–120°F","130–150°F","160–180°F","212°F boiling for hours"],2,"160–180°F kills harmful organisms but keeps beneficial ones. Hold 160–170°F for an hour."],
+ ["Which mushroom causes most fatal poisonings?",["Fly agaric","Death cap","Jack-o'-lantern","False morel"],1,"The death cap, Amanita phalloides, causes most mushroom deaths."],
+ ["A cup-like volva at the stem base is a warning sign of which genus?",["Agaricus","Pleurotus","Amanita","Boletus"],2,"A volva, left by the universal veil, is a classic Amanita feature."],
+ ["What is the most common spore print colour?",["White","Blue","Green","Red"],0,"White is most common; prints are almost never blue, green or red."],
+ ["The word 'mushroom' probably comes from…",["Latin mucus","French mousseron, from 'moss'","Old Norse musk","German Moos-Rum"],1,"From the French mousseron, related to mousse, moss."],
+ ["Roughly how old is the giant Armillaria colony in Oregon?",["24 years","240 years","2,400 years","24,000 years"],2,"It is estimated at 2,400+ years and covers about 2,200 acres."],
+ ["Mushrooms make vitamin D when exposed to…",["Cold","UV light","Salt","Darkness"],1,"UV light converts their ergosterol into vitamin D2, even after harvest."],
+ ["Which group carries its spores in sacs called asci?",["Basidiomycota","Ascomycota","Myxomycota","Zygomycota"],1,"Ascomycota, about 75% of fungi, including morels and truffles; usually eight spores per sac."],
+ ["How many spores does a basidium usually bear?",["One","Two","Four","Eight"],2,"Usually four, on tiny tips called sterigmata."],
+ ["Which medicinal mushroom grows out of a caterpillar?",["Chaga","Cordyceps","Reishi","Maitake"],1,"Cordyceps invades the buried larva of the Himalayan bat moth."],
+ ["How does the book say Reishi should be taken?",["Raw and fresh","As an extract","Fried in butter","Smoked"],1,"As an extract. Raw powder for over a month can cause liver damage."],
+ ["Chaga grows mainly on which tree?",["Oak","Pine","Birch","Palm"],2,"Birch, in cold northern forests. It looks like burnt charcoal."],
+ ["Which fungus was Ötzi the iceman carrying 5,000 years ago?",["Birch polypore","Shiitake","Truffle","Enoki"],0,"Birch polypore, plus Fomitopsis officinalis."],
+ ["Lion's mane is mostly studied for its effects on…",["Bones","Nerves and the brain","Eyesight","Hair growth"],1,"Its hericenones and NGF are studied for nerve and brain health."],
+ ["Lentinan, found in shiitake, is a type of…",["Beta-glucan","Alkaloid","Vitamin","Enzyme inhibitor"],0,"Lentinan is a beta-glucan, used in Japan since 1985 alongside stomach-cancer care."],
+ ["About how long does a shiitake log keep producing?",["One season","Two years","Around eight years","Forever"],2,"A well-made shiitake log typically fruits for around eight years."],
+ ["Which mushroom prefers it cold, around 45°F?",["Enoki","Shiitake","Oyster","Reishi"],0,"Enoki prefers about 45°F; most others like 55–60°F."],
+ ["What does too much CO₂ do to fruiting mushrooms?",["Makes them bigger","Long spindly stems, small caps","Turns them blue","Nothing"],1,"High CO₂ gives stunted, stalky mushrooms with tiny caps, so give fresh air."],
+ ["When should you harvest most cultivated mushrooms?",["When the veil starts to tear","When spores turn black","After the cap flattens fully","At night"],0,"Pick when the veil joining cap and stem starts to tear."],
+ ["Why twist mushrooms off instead of cutting them?",["Cutting is illegal","Leftover stubs rot","Twisting adds flavour","Knives spread spores"],1,"Partial stems left on the block rot and invite contamination."],
+ ["What must you always do with morels?",["Eat them raw","Cook them","Freeze them first","Peel them"],1,"Always cook morels, and beware of toxic false morels."],
+ ["Porcini have what under the cap instead of gills?",["Spines","Pores","Ridges","Nothing"],1,"Porcini are boletes, with a spongy layer of pores."],
+ ["Fly agaric's active compounds are…",["Psilocybin and psilocin","Muscimol and ibotenic acid","Caffeine","Lentinan"],1,"Muscimol and ibotenic acid. It is not a psilocybin mushroom."],
+ ["In the body, psilocybin is converted into…",["Serotonin","Psilocin","Dopamine","Melatonin"],1,"Psilocybin becomes psilocin, which acts on serotonin receptors."],
+ ["Which US city decriminalised psilocybin first, in 2019?",["Oakland","Portland","Denver","Austin"],2,"Denver in 2019, followed by Oakland a month later."],
+ ["By weight, psilocybin compared with LSD is…",["About 100× stronger","About the same","About 100× weaker","Identical"],2,"Psilocybin is roughly 100× less potent; the book gets this backwards."],
+ ["In the Johns Hopkins smoking study, how many of 15 smokers quit?",["3","7","12","15"],2,"12 of 15 (80%) had quit at six months."],
+ ["How heavy can a giant puffball get?",["2 kg","20 kg","200 kg","200 g"],1,"Up to 20 kg (44 lb) and 150 cm across."],
+ ["Which antibiotic comes from a fungus?",["Penicillin","Aspirin","Insulin","Morphine"],0,"Penicillin, streptomycin and tetracycline all come from fungi."],
+ ["Roughly how much of the world's mushrooms does China grow?",["About 10%","About 25%","More than half","None"],2,"China grows more than half of all mushrooms eaten worldwide."],
+ ["Saprotrophic mushrooms feed on…",["Living animals","Dead matter","Sunlight","Plant roots in partnership"],1,"Saprotrophs decompose dead matter, like oysters, buttons and shiitake."],
+ ["Mycorrhizal fungi form partnerships with…",["Insects","Plant roots","Bacteria only","Rocks"],1,"They trade water and minerals for the plant's sugars. That's why truffles and porcini are hard to farm."],
+ ["Which wood do shiitake love most?",["Oak","Apple","Ash","Sycamore"],0,"Oak is the favourite. Apple, ash and sycamore are not recommended."],
+ ["Do spent coffee grounds need pasteurising before growing oysters?",["Yes, boil for hours","No, brewing already did it","Only in summer","Only with bleach"],1,"Brewing pasteurises the grounds."],
+ ["Maitake is also called…",["Chicken of the woods","Hen of the woods","Lion's mane","Turkey tail"],1,"Hen of the woods, ram's head or dancing mushroom."],
+ ["What does a spore print help with?",["Cooking time","Identification","Growing speed","Storage"],1,"Spore colour is a key identification clue."],
+ ["What's the first commercial flush yield per square metre?",["1–2 kg","15–20 kg","150 kg","500 g"],1,"About 15–20 kg/m² hand-picked, with 27–35 kg/m² in total."]
+];
+
+/* boot */
+(function(){var root=document.getElementById("wfRoot");if(root)WF=wfCreate(root);})();
+</script>
+</body>
+</html>
