@@ -352,6 +352,10 @@ em{font-style:italic}
 .wf-act.first{background:rgba(255,246,208,.78)}.wf-act.dim{opacity:.85}
 .wf-bar,.wf-xp{opacity:.9}
 .wf-a{opacity:.82}.wf-joy{opacity:.75}.wf-joy.on,.wf-a:active{opacity:1}
+/* phone browsers: no selecting button text, no long-press Copy/Search menu, no grey tap flash. Save-code boxes still select */
+.wf-app,.wf-app *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.wf-app textarea,.wf-app input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+.wf-app button,.wf-stage{touch-action:manipulation}
 .wf-cloud{font-size:.8em;opacity:.35;transition:opacity .3s}.wf-cloud[data-s="saved"]{opacity:1;color:#2f8a4a}.wf-cloud[data-s="error"]{opacity:1;color:#c02818}
 [hidden]{display:none!important}
 /* ---------- standalone full-screen layout ---------- */
@@ -513,7 +517,7 @@ var TREEINFO={
  pine:{n:"Pine",log:"pine",lv:16,xp:48,give:1,fell:0.16,regrow:6},
  mpine:{n:"Mountain pine",log:"mpine",lv:24,xp:72,give:1,fell:0.14,regrow:7}
 };
-var LOGV={deadwood:1,birch:2,oak:4,willow:7,pine:11,mpine:18};
+var LOGV={deadwood:1,birch:1,oak:2,willow:4,pine:6,mpine:10};
 var WOODORDER=["deadwood","birch","willow","pine","mpine","oak"];
 
 /* ---------- skills ---------- */
@@ -523,43 +527,43 @@ function lvOf(xp){var l=1;while(l<MAXL&&xp>=xpAt(l+1))l++;return l;}
 
 /* ---------- shops ---------- */
 var SHOP=[
- {id:"knife",n:"Foraging knife",p:15,req:{forage:1},kind:"tool",d:"Cut brackets and conks (turkey tail, chaga, reishi…) from wood."},
- {id:"guide",n:"Field guide",p:15,req:{forage:1},kind:"tool",d:"Shows each mushroom's key identifying feature when you inspect it."},
- {id:"axe",n:"Axe",p:30,req:{wc:1},kind:"tool",d:"Chop fallen logs and standing birch. Better trees need a higher Woodcutting level."},
- {id:"bedroll",n:"Camping kit",p:20,req:{forage:2},kind:"tool",d:"A bedroll and a little tarp tent. After 6 pm (or when you're worn out) pitch camp and sleep wherever you are. Restores 70 energy."},
- {id:"tinder",n:"Tinderbox",p:10,req:{forage:1},kind:"tool",d:"Flint, steel and dry tinder. Light the stone fire rings you find around the world with 2 logs, then cook there."},
- {id:"rod",n:"Fishing rod",p:20,req:{fish:1},kind:"tool",d:"Cast into any water. Needs worms for bait."},
- {id:"worms",n:"Worms ×10",p:4,req:{fish:1},kind:"mat",qty:10,d:"Bait. One is used up for every fish you land."},
- {id:"nails",n:"Nails",p:6,req:{forage:2},kind:"mat",d:"A bundle of nails for building."},
- {id:"pouch",n:"Belt pouch",p:12,req:{forage:1},kind:"cap",cap:9,d:"A leather pouch on your belt. Carry 9 items instead of 6."},
- {id:"basket",n:"Big basket",p:25,req:{forage:3},kind:"cap",cap:12,d:"Carry 12 items instead of 6."},
- {id:"pot",n:"Cooking pot",p:25,req:{forage:4},kind:"tool",d:"Pasteurise straw for oyster beds. Meals give 25% more energy."},
- {id:"mister",n:"Spray mister",p:15,req:{forage:4},kind:"tool",d:"Beds need misting every day to stay humid."},
- {id:"straw",n:"Straw bale",p:5,req:{forage:4},kind:"mat",d:"The classic beginner substrate for oysters."},
- {id:"oyster_spawn",n:"Oyster spawn",p:12,req:{forage:4},kind:"mat",d:"Grain spawn grown through with oyster mycelium."},
- {id:"lantern",n:"Lantern",p:30,req:{forage:3},kind:"tool",d:"Light for Foxfire Cave (north edge, past the birches), and a bigger glow at night."},
- {id:"drill",n:"Drill & wax kit",p:30,req:{forage:6},kind:"tool",d:"Drill a diamond pattern, plug the dowels, seal with wax."},
- {id:"shiitake_dowels",n:"Shiitake dowels",p:18,req:{forage:6},kind:"mat",d:"Spawn plugs for fresh oak logs."},
- {id:"planks",n:"Planks",p:6,req:{forage:6},kind:"mat",d:"Sawn boards for a proper cabin."},
- {id:"waders",n:"Waders",p:40,req:{forage:6},kind:"tool",d:"Wade the shallows of Willow Marsh (boardwalk at the south edge)."},
- {id:"steelaxe",n:"Steel axe",p:120,req:{wc:10},kind:"tool",d:"Bites deeper. Every swing is far more likely to land a log."},
- {id:"backpack",n:"Forager's backpack",p:60,req:{forage:8},kind:"cap",cap:20,d:"Carry 20 items."},
- {id:"rope",n:"Climbing rope",p:50,req:{forage:8},kind:"tool",d:"Climb the rock face up to Highpine Ridge (north-east edge)."}
+ {id:"knife",n:"Foraging knife",p:25,req:{forage:1},kind:"tool",d:"Cut brackets and conks (turkey tail, chaga, reishi…) from wood."},
+ {id:"guide",n:"Field guide",p:25,req:{forage:1},kind:"tool",d:"Shows each mushroom's key identifying feature when you inspect it."},
+ {id:"axe",n:"Axe",p:45,req:{wc:1},kind:"tool",d:"Chop fallen logs and standing birch. Better trees need a higher Woodcutting level."},
+ {id:"bedroll",n:"Camping kit",p:45,req:{forage:2},kind:"tool",d:"A bedroll and a little tarp tent. After 6 pm (or when you're worn out) pitch camp and sleep wherever you are. Restores 70 energy."},
+ {id:"tinder",n:"Tinderbox",p:15,req:{forage:1},kind:"tool",d:"Flint, steel and dry tinder. Light the stone fire rings you find around the world with 2 logs, then cook there."},
+ {id:"rod",n:"Fishing rod",p:35,req:{fish:1},kind:"tool",d:"Cast into any water. Needs worms for bait."},
+ {id:"worms",n:"Worms ×10",p:6,req:{fish:1},kind:"mat",qty:10,d:"Bait. One is used up for every fish you land."},
+ {id:"nails",n:"Nails",p:10,req:{forage:2},kind:"mat",d:"A bundle of nails for building."},
+ {id:"pouch",n:"Belt pouch",p:30,req:{forage:1},kind:"cap",cap:9,d:"A leather pouch on your belt. Carry 9 items instead of 6."},
+ {id:"basket",n:"Big basket",p:75,req:{forage:3},kind:"cap",cap:12,d:"Carry 12 items instead of 6."},
+ {id:"pot",n:"Cooking pot",p:70,req:{forage:4},kind:"tool",d:"Pasteurise straw for oyster beds. Meals give 25% more energy."},
+ {id:"mister",n:"Spray mister",p:35,req:{forage:4},kind:"tool",d:"Beds need misting every day to stay humid."},
+ {id:"straw",n:"Straw bale",p:10,req:{forage:4},kind:"mat",d:"The classic beginner substrate for oysters."},
+ {id:"oyster_spawn",n:"Oyster spawn",p:25,req:{forage:4},kind:"mat",d:"Grain spawn grown through with oyster mycelium."},
+ {id:"lantern",n:"Lantern",p:110,req:{forage:3},kind:"tool",d:"Light for Foxfire Cave (north edge, past the birches), and a bigger glow at night."},
+ {id:"drill",n:"Drill & wax kit",p:90,req:{forage:6},kind:"tool",d:"Drill a diamond pattern, plug the dowels, seal with wax."},
+ {id:"shiitake_dowels",n:"Shiitake dowels",p:35,req:{forage:6},kind:"mat",d:"Spawn plugs for fresh oak logs."},
+ {id:"planks",n:"Planks",p:10,req:{forage:6},kind:"mat",d:"Sawn boards for a proper cabin."},
+ {id:"waders",n:"Waders",p:160,req:{forage:6},kind:"tool",d:"Wade the shallows of Willow Marsh (boardwalk at the south edge)."},
+ {id:"steelaxe",n:"Steel axe",p:420,req:{wc:10},kind:"tool",d:"Bites deeper. Every swing is far more likely to land a log."},
+ {id:"backpack",n:"Forager's backpack",p:260,req:{forage:8},kind:"cap",cap:20,d:"Carry 20 items."},
+ {id:"rope",n:"Climbing rope",p:220,req:{forage:8},kind:"tool",d:"Climb the rock face up to Highpine Ridge (north-east edge)."}
 ];
 var RUE_SHOP=[
- {id:"worms",n:"Worms ×10",p:4,req:{fish:1},kind:"mat",qty:10,d:"Bait. One is used up for every fish you land."},
- {id:"flyrod",n:"Fly rod",p:90,req:{fish:12},kind:"tool",d:"Light and quick. Lets you hook bass, catfish and pike, and gives you longer to react."},
- {id:"tacklebox",n:"Tackle box",p:45,req:{fish:6},kind:"tool",d:"A good knot and a sharp hook: fish slip off far less often."}
+ {id:"worms",n:"Worms ×10",p:6,req:{fish:1},kind:"mat",qty:10,d:"Bait. One is used up for every fish you land."},
+ {id:"flyrod",n:"Fly rod",p:380,req:{fish:12},kind:"tool",d:"Light and quick. Lets you hook bass, catfish and pike, and gives you longer to react."},
+ {id:"tacklebox",n:"Tackle box",p:180,req:{fish:6},kind:"tool",d:"A good knot and a sharp hook: fish slip off far less often."}
 ];
 var BRAM_SHOP=[
- {id:"mtnaxe",n:"Mountain axe",p:300,req:{wc:20},kind:"tool",d:"A heavy, balanced felling axe. The best there is."},
- {id:"deeprod",n:"Deep-water rod",p:280,req:{fish:20},kind:"tool",d:"Long and stiff with heavy line, for glow eels, char and golden trout."},
- {id:"explorer",n:"Explorer's pack",p:200,req:{forage:15},kind:"cap",cap:30,d:"Carry 30 items."},
- {id:"expedition",n:"Expedition frame pack",p:450,req:{forage:22},kind:"cap",cap:45,d:"A steel-framed pack for long trips. Carry 45 items."},
- {id:"copperpot",n:"Copper pot",p:120,req:{forage:12},kind:"tool",d:"Meals and teas give 60% more energy."},
- {id:"trailtent",n:"Trail tent",p:140,req:{forage:10},kind:"tool",d:"A light, warm two-skin tent for long trips. Sleeping out restores 90 energy."},
- {id:"boots",n:"Trail boots",p:150,req:{forage:10},kind:"tool",d:"Walking tires you half as much."},
- {id:"worms",n:"Worms ×10",p:4,req:{fish:1},kind:"mat",qty:10,d:"Bait for the tarn."}
+ {id:"mtnaxe",n:"Mountain axe",p:1300,req:{wc:20},kind:"tool",d:"A heavy, balanced felling axe. The best there is."},
+ {id:"deeprod",n:"Deep-water rod",p:1200,req:{fish:20},kind:"tool",d:"Long and stiff with heavy line, for glow eels, char and golden trout."},
+ {id:"explorer",n:"Explorer's pack",p:850,req:{forage:15},kind:"cap",cap:30,d:"Carry 30 items."},
+ {id:"expedition",n:"Expedition frame pack",p:1900,req:{forage:22},kind:"cap",cap:45,d:"A steel-framed pack for long trips. Carry 45 items."},
+ {id:"copperpot",n:"Copper pot",p:450,req:{forage:12},kind:"tool",d:"Meals and teas give 60% more energy."},
+ {id:"trailtent",n:"Trail tent",p:550,req:{forage:10},kind:"tool",d:"A light, warm two-skin tent for long trips. Sleeping out restores 90 energy."},
+ {id:"boots",n:"Trail boots",p:520,req:{forage:10},kind:"tool",d:"Walking tires you half as much."},
+ {id:"worms",n:"Worms ×10",p:6,req:{fish:1},kind:"mat",qty:10,d:"Bait for the tarn."}
 ];
 var MATN={deadwood:"Deadwood",birch:"Birch logs",oak:"Oak logs",pine:"Pine logs",willow:"Willow logs",mpine:"Mountain pine logs",planks:"Planks",nails:"Nails",straw:"Straw bales",oyster_spawn:"Oyster spawn",shiitake_dowels:"Shiitake dowels",worms:"Worms"};
 var TOOLN={bedroll:"Camping kit",trailtent:"Trail tent",tinder:"Tinderbox",knife:"Foraging knife",guide:"Field guide",axe:"Axe",steelaxe:"Steel axe",mtnaxe:"Mountain axe",rod:"Fishing rod",flyrod:"Fly rod",deeprod:"Deep-water rod",tacklebox:"Tackle box",pot:"Cooking pot",copperpot:"Copper pot",mister:"Spray mister",drill:"Drill & wax kit",lantern:"Lantern",waders:"Waders",rope:"Climbing rope",boots:"Trail boots"};
@@ -569,8 +573,8 @@ var BUILDS={
  shiitake_stack:{n:"Shiitake log stack",need:{oak:2,shiitake_dowels:1},tools:["drill"],lv:6,d:"Colonises for 4 days, then soak it to make it fruit. Keeps producing."},
  storage:{n:"Storage chest",need:{wood:8,nails:2},lv:2,bank:40,d:"Keep up to 40 mushrooms, fish and other basket items safe at camp. Wren and Bram can open it for you too."},
  storage2:{n:"Iron-bound chest",need:{oak:6,planks:4,nails:4},lv:6,bank:100,after:"storage",d:"Upgrade your storage to hold 100 items."},
- storage3:{n:"Root cellar",need:{wood:20,planks:10,nails:8},coins:60,lv:12,bank:250,after:"storage2",d:"Dig a stone-lined cellar under camp. Holds 250 items."},
- cabin:{n:"Cabin",need:{wood:20,planks:10,nails:4},coins:40,lv:8,req:"leanto",d:"A real home. Full rest, and Wren pays you 10% more as a regular."}
+ storage3:{n:"Root cellar",need:{wood:20,planks:10,nails:8},coins:300,lv:12,bank:250,after:"storage2",d:"Dig a stone-lined cellar under camp. Holds 250 items."},
+ cabin:{n:"Cabin",need:{wood:20,planks:10,nails:4},coins:200,lv:8,req:"leanto",d:"A real home. Full rest, and Wren pays you 10% more as a regular."}
 };
 
 /* ---------- the main story: the scattered Foragers' Club ---------- */
@@ -600,7 +604,7 @@ var SIDE=[
  {id:"oyster",n:"Straw and spores",d:"Buy a pot, a mister, straw and oyster spawn. Build an oyster bed at camp, mist it every day, and harvest a flush.",goal:"harvestOyster",need:1,lv:4,rw:{xp:{forage:100},coins:25}},
  {id:"shiitake",n:"The shiitake log",d:"Buy a drill kit and shiitake dowels, chop 2 oak logs, build a log stack, and harvest it once it fruits.",goal:"harvestShiitake",need:1,lv:6,rw:{xp:{forage:110,wc:40},coins:25}},
  {id:"medicine",n:"Medicine hunt",d:"Wren's healer friend needs a lion's mane, a chaga and a reishi. Bring all three to Wren.",goal:"deliver_med",need:1,lv:5,items:{"lions-mane":1,chaga:1,reishi:1},rw:{xp:{forage:140},coins:60}},
- {id:"cabin",n:"Cabin fever",d:"Build a cabin at camp: 20 wood, 10 planks, 4 nails and 40 coins (needs the lean-to first).",goal:"build_cabin",need:1,lv:8,rw:{xp:{forage:150,wc:120},coins:20}},
+ {id:"cabin",n:"Cabin fever",d:"Build a cabin at camp: 20 wood, 10 planks, 4 nails and 200 coins (needs the lean-to first).",goal:"build_cabin",need:1,lv:8,rw:{xp:{forage:150,wc:120},coins:20}},
  {id:"grower",n:"Master grower",d:"Harvest 20 cultivated mushrooms from your beds and logs.",goal:"harvestTotal",need:20,lv:6,rw:{xp:{forage:300},coins:50}},
  {id:"pages",n:"Lost pages",d:"Find all 12 lost journal pages hidden across every area. The map (M) shows how many are left where you are.",goal:"pages",need:12,lv:1,rw:{xp:{forage:300},coins:120}},
  {id:"angler",n:"Angler's log",d:"Catch one of every kind of fish (21 in all).",goal:"fishkinds",need:21,lv:1,rw:{xp:{fish:500},coins:200}},
@@ -1841,7 +1845,7 @@ function wfCreate(root){
     if(Z==="lake")return BLD.signLeft;
     if(to==="village"||to==="tarn")return BLD.arch;
     return w.y<5?BLD.signUp:BLD.signDown;}
-  function doorLock(w){if(w.need&&!st.tools[w.need])return "needs "+TOOLN[w.need].toLowerCase();if(w.flag&&!st.flags[w.flag])return w.flag==="ladder"?"no way down yet":"blocked";if(w.skill&&!reqOk(w.skill))return "needs "+reqText(w.skill);return "";}
+  function doorLock(w){if(w.need&&!st.tools[w.need])return "needs "+TOOLN[w.need].toLowerCase();if(w.flag&&!st.flags[w.flag])return w.flag==="ladder"?"broken ladder · ask Pip in the cave":w.flag==="pass"?"a fallen pine blocks the trail · ask Old Hal":"blocked";if(w.skill&&!reqOk(w.skill))return "needs "+reqText(w.skill);return "";}
   var floaters=[],fishing=null,chips=[],parts=[],fallers=[],flyers=[];
   /* popups at the same spot stack upward instead of printing on top of each other */
   function floatText(x,y,txt,col){var now=performance.now(),X=x*PX+8,Y=y*PX,n=floaters.filter(function(f){return Math.abs(f.x-X)<6&&Math.abs(f.y0-Y)<6&&now-f.t0<1000;}).length;
@@ -2921,6 +2925,7 @@ function wfCreate(root){
     if(m==="inv")invMenu();else if(m==="journal")journalMenu();else if(m==="quests")questsMenu();else if(m==="map")mapMenu();else if(m==="help")helpMenu(false);else gameMenu();});
   function sndBtn(){var b=document.getElementById("wfSnd");if(b){b.textContent=snd.music()?"♪ Music":"♪ Off";b.setAttribute("aria-pressed",snd.music()?"true":"false");}}sndBtn();
   root.querySelector(".wf-lv").addEventListener("click",function(e){e.stopPropagation();if(dlg.open)dlgClose();skillsMenu();});
+  root.addEventListener("contextmenu",function(e){var tg=e.target&&e.target.tagName;if(tg!=="TEXTAREA"&&tg!=="INPUT")e.preventDefault();});
   stage.addEventListener("pointerdown",function(){if(!modalOpen)stage.focus({preventScroll:true});});
   var ro=window.ResizeObserver?new ResizeObserver(function(){resize();}):null;if(ro)ro.observe(stage);else window.addEventListener("resize",resize);
 
