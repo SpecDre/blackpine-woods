@@ -369,7 +369,7 @@ var TREES={1:1,2:1,3:1,16:1};
 var PATHY=28;
 var HOME={x0:3,x1:14,y0:22,y1:34};
 var START={x:8,y:29};
-var SHELTER={x:5,y:24}, FIRE={x:8,y:26}, SIGN={x:4,y:29}, CRATE={x:11,y:27};
+var SHELTER={x:5,y:24}, FIRE={x:8,y:26}, SIGN={x:4,y:29}, CRATE={x:11,y:27}, STORE={x:11,y:24};
 var SLOTS=[[9,31],[11,31],[13,31],[9,33],[11,33],[13,33]];
 var HUT=[[70,25],[71,25],[70,26],[71,26]];
 var WREN={x:70,y:28};
@@ -504,6 +504,7 @@ var SHOP=[
  {id:"rod",n:"Fishing rod",p:20,req:{fish:1},kind:"tool",d:"Cast into any water. Needs worms for bait."},
  {id:"worms",n:"Worms ×10",p:4,req:{fish:1},kind:"mat",qty:10,d:"Bait. One is used up for every fish you land."},
  {id:"nails",n:"Nails",p:6,req:{forage:2},kind:"mat",d:"A bundle of nails for building."},
+ {id:"pouch",n:"Belt pouch",p:12,req:{forage:1},kind:"cap",cap:9,d:"A leather pouch on your belt. Carry 9 items instead of 6."},
  {id:"basket",n:"Big basket",p:25,req:{forage:3},kind:"cap",cap:12,d:"Carry 12 items instead of 6."},
  {id:"pot",n:"Cooking pot",p:25,req:{forage:4},kind:"tool",d:"Pasteurise straw for oyster beds. Meals give 25% more energy."},
  {id:"mister",n:"Spray mister",p:15,req:{forage:4},kind:"tool",d:"Beds need misting every day to stay humid."},
@@ -527,6 +528,7 @@ var BRAM_SHOP=[
  {id:"mtnaxe",n:"Mountain axe",p:300,req:{wc:20},kind:"tool",d:"A heavy, balanced felling axe. The best there is."},
  {id:"deeprod",n:"Deep-water rod",p:280,req:{fish:20},kind:"tool",d:"Long and stiff with heavy line, for glow eels, char and golden trout."},
  {id:"explorer",n:"Explorer's pack",p:200,req:{forage:15},kind:"cap",cap:30,d:"Carry 30 items."},
+ {id:"expedition",n:"Expedition frame pack",p:450,req:{forage:22},kind:"cap",cap:45,d:"A steel-framed pack for long trips. Carry 45 items."},
  {id:"copperpot",n:"Copper pot",p:120,req:{forage:12},kind:"tool",d:"Meals and teas give 60% more energy."},
  {id:"boots",n:"Trail boots",p:150,req:{forage:10},kind:"tool",d:"Walking tires you half as much."},
  {id:"worms",n:"Worms ×10",p:4,req:{fish:1},kind:"mat",qty:10,d:"Bait for the tarn."}
@@ -537,6 +539,9 @@ var BUILDS={
  leanto:{n:"Lean-to",need:{wood:6,nails:1},lv:2,d:"A sturdier shelter. Sleeping restores all your energy."},
  oyster_bed:{n:"Oyster straw bed",need:{straw:1,oyster_spawn:1},tools:["pot"],lv:4,d:"Pasteurised straw packed with spawn. Mist daily; up to 3 flushes."},
  shiitake_stack:{n:"Shiitake log stack",need:{oak:2,shiitake_dowels:1},tools:["drill"],lv:6,d:"Colonises for 4 days, then soak it to make it fruit. Keeps producing."},
+ storage:{n:"Storage chest",need:{wood:8,nails:2},lv:2,bank:40,d:"Keep up to 40 mushrooms, fish and other basket items safe at camp. Wren and Bram can open it for you too."},
+ storage2:{n:"Iron-bound chest",need:{oak:6,planks:4,nails:4},lv:6,bank:100,after:"storage",d:"Upgrade your storage to hold 100 items."},
+ storage3:{n:"Root cellar",need:{wood:20,planks:10,nails:8},coins:60,lv:12,bank:250,after:"storage2",d:"Dig a stone-lined cellar under camp. Holds 250 items."},
  cabin:{n:"Cabin",need:{wood:20,planks:10,nails:4},coins:40,lv:8,req:"leanto",d:"A real home. Full rest, and Wren pays you 10% more as a regular."}
 };
 
@@ -1041,6 +1046,7 @@ function wfCreate(root){
     if(!st.zone||!ZONES[st.zone])st.zone="woods";
     Object.keys(ZONES).forEach(function(z){if(!st.zones[z])st.zones[z]={spawns:JSON.parse(JSON.stringify(ZD[z].spawns))};});
     if(!st.skills)st.skills={forage:0,wc:0,fish:0};
+    if(!st.bank)st.bank={items:{},cap:0};
     Object.keys(MATN).forEach(function(k){if(st.mat[k]==null)st.mat[k]=0;});
   }
 
@@ -1097,6 +1103,7 @@ function wfCreate(root){
       if(x===FIRE.x&&y===FIRE.y)return"fire";
       if(x===SIGN.x&&y===SIGN.y)return"sign";
       if(x===CRATE.x&&y===CRATE.y)return"crate";
+      if(st.bank.cap&&x===STORE.x&&y===STORE.y)return"store";
       for(var i=0;i<HUT.length;i++)if(HUT[i][0]===x&&HUT[i][1]===y)return"hut";
       for(var j=0;j<SLOTS.length;j++)if(SLOTS[j][0]===x&&SLOTS[j][1]===y&&st.beds[j])return"bed"+j;
     }
@@ -1559,6 +1566,14 @@ function wfCreate(root){
     [[6,24],[9,20],[14,18.5],[19,18.5],[23,20],[26,24],[23,28],[16,29.5],[9,28]].forEach(function(p){ball(x,p[0],p[1],3,2.3,RP.stone,{rim:true});});
     line(x,11,24,20,22,"#3a2410",2);line(x,13,22,21,25,"#2a1a0c",2);P(x,16,23,"#7a3010");return outline(c,0.4);})();
   BLD.shack=sShack();BLD.house=sHouse(ramp("#1a2a48","#3a5a98","#a8c8f8"));BLD.house2=sHouse(ramp("#1a3a1a","#3a7a3a","#a8e8a8"));BLD.outfitter=sOutfitter();BLD.well=sWell();BLD.giantlog=sGiantLog();BLD.arch=sArch();BLD.hole=sHole();
+  BLD.ironchest=(function(){var c=mkc(32,32),x=c.getContext("2d");x.drawImage(sChest(0),0,0);
+    [6,25].forEach(function(i){for(var y=8;y<30;y++){P(x,i,y,"#6a7480");P(x,i+1,y,"#a8b0bc");}});for(var i2=4;i2<28;i2++){P(x,i2,21,"#6a7480");P(x,i2,22,"#a8b0bc");}
+    [[7,10],[24,10],[7,26],[24,26]].forEach(function(p){P(x,p[0],p[1],"#e8eef4");});return c;})();
+  BLD.cellar=(function(){var c=mkc(32,32),x=c.getContext("2d");
+    for(var y=8;y<30;y++)for(var i=3;i<29;i++){var edge=y<11||y>26||i<6||i>25;if(edge){P(x,i,y,tone(RP.stone,0.35+((i>>2)+(y>>2))%2*0.2));}}
+    for(var y2=11;y2<27;y2++)for(var i2=6;i2<26;i2++){var seam=i2===15||i2===16;P(x,i2,y2,seam?"#3a2410":tone(RP.wood,0.5+((y2-11)%4===0?-0.2:0)-(i2>22?0.1:0)));}
+    [[11,18],[20,18]].forEach(function(p){ball(x,p[0],p[1],2,2,ramp("#5a6270","#b8c0cc","#ffffff",5),{});P(x,p[0],p[1],"#3a4048");});
+    return outline(c,0.38);})();
   BLD.signLeft=flip(sArrow("up"));
   (function(){var c=mkc(32,32),x=c.getContext("2d");x.drawImage(BLD.signUp,0,0);BLD.signRight=c;
     var r=mkc(32,32),rx=r.getContext("2d");for(var y=17;y<31;y++)for(var i=14;i<18;i++)P(rx,i,y,tone(RP.wood,0.6-(i-14)*0.12));for(var y2=4;y2<19;y2++)for(var i2=4;i2<28;i2++)P(rx,i2,y2,tone(RP.wood,0.62+((y2-4)%5===0?-0.22:0)-(i2>24?0.12:0)));
@@ -1832,6 +1847,7 @@ function wfCreate(root){
       E.push([SHELTER.y,function(){var X=SHELTER.x*PX-ox,Y=SHELTER.y*PX-oy;if(st.shelter==="cabin")D(BLD.cabin,X,Y-PX);else D(st.shelter==="leanto"?BLD.leanto:BLD.tent,X,Y);}]);
       E.push([FIRE.y,function(){D(Math.floor(t/180)%2?BLD.fire1:BLD.fire0,FIRE.x*PX-ox,FIRE.y*PX-oy);}]);
       E.push([SIGN.y,function(){D(BLD.sign,SIGN.x*PX-ox,SIGN.y*PX-oy);}]);
+      if(st.bank.cap)E.push([STORE.y,function(){var X=STORE.x*PX-ox,Y=STORE.y*PX-oy;shadow(X,Y,14);D(st.bank.cap>=250?BLD.cellar:st.bank.cap>=100?BLD.ironchest:BLD.chest,X,Y);}]);
       E.push([CRATE.y,function(){var X=CRATE.x*PX-ox,Y=CRATE.y*PX-oy;shadow(X,Y,14);Object.keys(st.crate).filter(function(k){return st.crate[k]>0;}).slice(0,3).forEach(function(k,i){lctx.drawImage(itemSpr(k),X+1+i*4,Y-2,8,8);});D(BLD.crate,X,Y);}]);
       SLOTS.forEach(function(sl,i){var b=st.beds[i];E.push([sl[1],function(){var X=sl[0]*PX-ox,Y=sl[1]*PX-oy;
         if(!b){lctx.fillStyle="rgba(255,255,255,.4)";for(var k=1;k<15;k+=2){lctx.fillRect(X+k,Y+2,1,0.5);lctx.fillRect(X+k,Y+13.5,1,0.5);lctx.fillRect(X+1,Y+k,0.5,1);lctx.fillRect(X+14.5,Y+k,0.5,1);}return;}
@@ -1941,7 +1957,7 @@ function wfCreate(root){
     var out=[],seen={};cells.forEach(function(c){var t=cellTarget(c[0],c[1],c[2]);if(!t)return;var k=t.kind+":"+(t.n?t.n.id:t.x+","+t.y);if(t.kind==="wren")k="wren";if(seen[k])return;seen[k]=1;out.push(t);});
     var b=bedSlot();if(b&&!seen.sign)out.push(b);
     return out.slice(0,3);}
-  var ACTI={pit:"🔥",wren:"💬",npc:"💬",shelter:"🛏",fire:"🔥",well:"💧",sign:"🔨",crate:"📦",chest:"🗝",lookout:"🔭",bed:"🌱",spawn:"🔍",page:"📄",door:"🚪",block:"🪵",tree:"🪓",water:"🎣",house:"🚪"};
+  var ACTI={pit:"🔥",wren:"💬",npc:"💬",shelter:"🛏",fire:"🔥",well:"💧",sign:"🔨",crate:"📦",store:"🗄",chest:"🗝",lookout:"🔭",bed:"🌱",spawn:"🔍",page:"📄",door:"🚪",block:"🪵",tree:"🪓",water:"🎣",house:"🚪"};
   function actIcon(t){if(!t)return "✋";if(t.kind==="water")return t.spot&&rodTier()?"🎣":"💧";return ACTI[t.kind]||"✋";}
   function cleanLabel(l){return String(l||"").replace(/^E · /,"").replace(/^▶ /,"Go to ");}
   function bedSlot(){if(st.zone!=="woods")return null;for(var j=0;j<SLOTS.length;j++){var sl=SLOTS[j];if(!st.beds[j]&&Math.abs(sl[0]-pl.tx)<=1&&Math.abs(sl[1]-pl.ty)<=1)return{kind:"sign",x:sl[0],y:sl[1],label:"E · Build here"};}return null;}
@@ -1957,6 +1973,7 @@ function wfCreate(root){
       if(s==="fire")return{kind:"fire",x:x,y:y,label:"E · Campfire"};
       if(s==="sign")return{kind:"sign",x:x,y:y,label:"E · Build"};
       if(s==="crate")return{kind:"crate",x:x,y:y,label:"E · Shipping crate"};
+      if(s==="store")return{kind:"store",x:x,y:y,label:"E · Open storage"};
       if(s==="chest"){var ch2=chestAt(x,y);return{kind:"chest",c:ch2,x:x,y:y,label:st.chests.indexOf(ch2.id)>=0?"E · Empty chest":"E · Open chest"};}
       if(s==="lookout")return{kind:"lookout",x:x,y:y,label:"E · Look through the telescope"};
       if(s&&s.indexOf("bed")===0)return{kind:"bed",i:+s.slice(3),x:x,y:y,label:"E · Check bed"};
@@ -2003,6 +2020,7 @@ function wfCreate(root){
     else if(tg.kind==="pit"){if(tg.lit)fireMenu(tg);else lightFire(tg.x,tg.y);}
     else if(tg.kind==="sign")buildMenu();
     else if(tg.kind==="crate")crateMenu();
+    else if(tg.kind==="store")bankMenu();
     else if(tg.kind==="bed")bedMenu(tg.i);
     else if(tg.kind==="chest")openChest(tg.c);
     else if(tg.kind==="page")readPage(tg.p);
@@ -2266,6 +2284,7 @@ function wfCreate(root){
     if(n.home){say("Bram","npc:bram",["Home at last. Wren's already made me peel forty potatoes.","Thank you, friend. Truly."]);return;}
     function topics(){var o=[storyStep(id,topics)];
       if(id==="rue")o.push({t:"Buy tackle and bait",f:function(){shopMenu(RUE_SHOP,"Rue sells","Rue's bait shack",function(){talkNpc(n);});}},{t:"Sell fish",f:function(){sellMenu("rue",function(){talkNpc(n);});}});
+      if(id==="bram"&&st.bank.cap)o.push({t:"Open my storage",f:function(){bankMenu(function(){talkNpc(n);});}});
       if(id==="bram")o.push({t:"Buy gear",f:function(){shopMenu(BRAM_SHOP,"Bram sells","Mountain outfitters",function(){talkNpc(n);});}},{t:"Sell your goods",f:function(){sellMenu("bram",function(){talkNpc(n);});}});
       o.push(hintOpt(id,topics));
       tk.topics.forEach(function(tp){o.push({t:tp.t,f:function(){say(info.name,por,tp.lines,topics);}});});
@@ -2286,6 +2305,7 @@ function wfCreate(root){
       {t:"Sell",f:function(){sellMenu("wren",wren);}},{t:"Buy supplies",f:function(){shopMenu(SHOP,"Old Wren sells","Supplies",wren);}},
       medOk?{t:"Hand over the medicine",f:function(){takeItems(med.items);say("Old Wren","npc:wren",["Oh, these are perfect. Look at that reishi shine.","My friend will be thrilled. Here, for your trouble."],function(){qEvent("deliver_med");});}}:null,
       hintOpt("wren",wren),
+      st.bank.cap?{t:"Open my storage",f:function(){bankMenu(wren);}}:null,
       {t:"Tell me about the woods",f:function(){say("Old Wren","npc:wren",WREN_WOODS,wren);}},
       {t:"Any advice?",f:function(){say("Old Wren","npc:wren",[WREN_TIPS[Math.floor(Math.random()*WREN_TIPS.length)]],wren);}},
       {t:"Goodbye",f:function(){say("Old Wren","npc:wren",["Mind the death caps, now."]);}}
@@ -2396,6 +2416,30 @@ function wfCreate(root){
     close();
   }
 
+  /* ----- storage: a bank for basket items, at camp (and through Wren or Bram) ----- */
+  function bankCount(){var n=0;for(var k in st.bank.items)n+=st.bank.items[k];return n;}
+  function bankPut(k,n){var room=st.bank.cap-bankCount();n=Math.min(n,room,st.inv[k]||0);if(n<=0)return 0;st.inv[k]-=n;if(!st.inv[k])delete st.inv[k];st.bank.items[k]=(st.bank.items[k]||0)+n;return n;}
+  function bankTake(k,n){var room=Math.max(0,st.cap-invCount(st));n=Math.min(n,room,st.bank.items[k]||0);if(n<=0)return 0;st.bank.items[k]-=n;if(!st.bank.items[k])delete st.bank.items[k];st.inv[k]=(st.inv[k]||0)+n;return n;}
+  function bankMenu(back){
+    if(!st.bank.cap){say("",null,["You haven't built any storage yet. Put up a storage chest from the build sign at camp."],back);return;}
+    var used=bankCount(),full=used>=st.bank.cap,bfull=invCount(st)>=st.cap;
+    var basket=Object.keys(st.inv).filter(function(k){return st.inv[k]>0;});
+    var stored=Object.keys(st.bank.items).filter(function(k){return st.bank.items[k]>0;}).sort(function(a,b){return IT(a).n<IT(b).n?-1:1;});
+    var where=st.bank.cap>=250?"Root cellar":st.bank.cap>=100?"Iron-bound chest":"Storage chest";
+    var html='<span class="kicker">'+where+'</span><h3>Storage</h3><p>'+used+' / '+st.bank.cap+' items stored. Logs and materials stay in your pack and don\'t need storing.</p>'
+      +'<div class="wf-sub">Your basket ('+invCount(st)+' / '+st.cap+')</div>'
+      +(basket.length?'<div class="wf-list">'+basket.map(function(k){return '<div class="wf-row"><span>'+icon(k)+'<b>'+esc(IT(k).n)+'</b> ×'+st.inv[k]+'</span>'+btn("p1:"+k,"Store 1","",full)+btn("pa:"+k,"Store all","",full)+'</div>';}).join('')+'</div>'
+        +'<div class="wf-acts">'+btn("all","Store whole basket","primary",full)+'</div>':'<p class="muted">Empty.</p>')
+      +(full?'<p class="wf-warn">Storage is full.'+(st.bank.cap<250?' Upgrade it from the build sign at camp.':'')+'</p>':'')
+      +'<div class="wf-sub">In storage</div>'
+      +(stored.length?'<div class="wf-list">'+stored.map(function(k){return '<div class="wf-row"><span>'+icon(k)+'<b>'+esc(IT(k).n)+'</b> ×'+st.bank.items[k]+'</span>'+btn("t1:"+k,"Take 1","",bfull)+btn("ta:"+k,"Take all","",bfull)+'</div>';}).join('')+'</div>':'<p class="muted">Nothing stored yet.</p>')
+      +(back?'<div class="wf-acts">'+btn("back","← Back")+'</div>':'');
+    open(html,function(b){var bk=b.querySelector('[data-a="back"]');if(bk)bk.onclick=function(){close();back();};
+      var all=b.querySelector('[data-a="all"]');if(all)all.onclick=function(){var moved=0;Object.keys(st.inv).forEach(function(k){moved+=bankPut(k,st.inv[k]);});snd.sfx("tick");toast(moved?"Stored "+moved+" items.":"Storage is full.",moved?"":"bad");save();bankMenu(back);};
+      b.querySelectorAll('[data-a^="p1:"],[data-a^="pa:"]').forEach(function(e){e.onclick=function(){var k=e.dataset.a.slice(3);bankPut(k,e.dataset.a.charAt(1)==="a"?st.inv[k]:1);save();bankMenu(back);};});
+      b.querySelectorAll('[data-a^="t1:"],[data-a^="ta:"]').forEach(function(e){e.onclick=function(){var k=e.dataset.a.slice(3);if(!bankTake(k,e.dataset.a.charAt(1)==="a"?st.bank.items[k]:1))toast("Your basket is full.","bad");save();bankMenu(back);};});});
+  }
+
   /* ----- shipping crate ----- */
   function crateMenu(){
     var basket=Object.keys(st.inv).filter(function(k){return st.inv[k]>0;});
@@ -2422,13 +2466,13 @@ function wfCreate(root){
     var free=st.beds.indexOf(null);
     var html='<span class="kicker">Your camp</span><h3>Build</h3><p>Materials come from Wren\'s shop and from chopping trees and fallen logs. Any logs count as wood; oak is saved for last.</p><div class="wf-list">'
       +Object.keys(BUILDS).map(function(id){var bd=BUILDS[id];
-        var done=(id==="leanto"&&st.shelter!=="tent")||(id==="cabin"&&st.shelter==="cabin");
-        var locked=lv()<bd.lv,needReq=bd.req&&st.shelter==="tent";
+        var done=(id==="leanto"&&st.shelter!=="tent")||(id==="cabin"&&st.shelter==="cabin")||(bd.bank&&st.bank.cap>=bd.bank);
+        var locked=lv()<bd.lv,needReq=(bd.req&&st.shelter==="tent")||(bd.after&&st.bank.cap<BUILDS[bd.after].bank);
         var bedFull=(id==="oyster_bed"||id==="shiitake_stack")&&free<0;
         var reqs=Object.keys(bd.need).map(function(k){var ok=matHave(k)>=bd.need[k];return '<span class="'+(ok?"ok":"no")+'">'+bd.need[k]+' '+(k==="wood"?"wood (any logs)":MATN[k].toLowerCase())+' ('+matHave(k)+')</span>';});
         if(bd.coins)reqs.push('<span class="'+(st.coins>=bd.coins?"ok":"no")+'">'+bd.coins+' coins</span>');
         if(bd.tools)bd.tools.forEach(function(t){reqs.push('<span class="'+(st.tools[t]?"ok":"no")+'">'+TOOLN[t].toLowerCase()+'</span>');});
-        var label=done?"Built":locked?"Foraging "+bd.lv:needReq?"Needs lean-to":bedFull?"No free space":"Build";
+        var label=done?"Built":locked?"Foraging "+bd.lv:needReq?(bd.after?"Needs "+BUILDS[bd.after].n.toLowerCase():"Needs lean-to"):bedFull?"No free space":"Build";
         return '<div class="wf-row col"><div><b>'+esc(bd.n)+'</b><span class="muted"> · '+esc(bd.d)+'</span></div><div class="wf-reqs">'+reqs.join('')+'</div>'+btn("b:"+id,label,haveAll(bd)&&!done&&!locked&&!needReq&&!bedFull?"primary":"",done||locked||needReq||bedFull||!haveAll(bd))+'</div>';}).join('')+'</div>';
     open(html,function(b){b.querySelectorAll('[data-a^="b:"]').forEach(function(e){e.onclick=function(){build(e.dataset.a.slice(2));};});});
   }
@@ -2436,6 +2480,9 @@ function wfCreate(root){
     var bd=BUILDS[id];if(!haveAll(bd))return;snd.sfx("build");
     for(var k in bd.need){if(k==="wood")useWood(bd.need[k]);else st.mat[k]-=bd.need[k];}if(bd.coins)st.coins-=bd.coins;close();
     if(id==="leanto"){st.shelter="leanto";gainXP(30,"built a lean-to");gainXP(20,null,"wc");qEvent("build_leanto");say("",null,["You lash the poles together and lay the planks across. Not fancy, but it'll keep the rain off."]);}
+    else if(bd.bank){var first=!st.bank.cap;st.bank.cap=bd.bank;gainXP(first?25:40,"built a "+bd.n.toLowerCase());gainXP(15,null,"wc");
+      say("",null,[id==="storage"?"You knock together a sturdy chest by the camp and hinge the lid. Somewhere to keep your finds dry.":id==="storage2"?"You strap the chest with iron bands and line it with oak. It'll hold far more now.":"You dig down, line the walls with stone and fit a heavy oak hatch. Cool, dry and roomy. Your stores will keep for ages down here.",
+        "Storage holds "+bd.bank+" items. Wren and Bram can open it for you too."]);}
     else if(id==="cabin"){st.shelter="cabin";gainXP(80,"built a cabin");qEvent("build_cabin");say("",null,["The last nail goes in. You step back and look at it: a real cabin, with a chimney and glass in the windows.","Blackpine Woods is home now."]);}
     else{var i=st.beds.indexOf(null);
       if(id==="oyster_bed"){st.beds[i]={type:"oyster",stage:"colonising",prog:0,flush:0,watered:false,dry:0};gainXP(15,"built an oyster bed");say("",null,["You heat the straw to 160–170°F for an hour, let it cool, and pack in the oyster spawn.","Now it needs to stay damp. Mist it every day."]);}
@@ -2524,7 +2571,7 @@ function wfCreate(root){
     ZD[st.zone].props.forEach(function(p){if(p.kind!=="well"){c.fillStyle=p.kind==="house"?"#8a7a6a":"#3870d0";c.fillRect(p.x*s,p.y*s,p.w*s,p.h*s);}});
     st.chestSpots.forEach(function(ch){if(ch.zone===st.zone&&st.chests.indexOf(ch.id)<0){c.fillStyle="#a86828";c.fillRect(ch.x*s,ch.y*s,s,s);}});
     NPCS.forEach(function(n){if(n.zone===st.zone&&npcOn(n)){c.fillStyle="#7a3aa8";c.beginPath();c.arc(n.x*s+s/2,n.y*s+s/2,s*0.7,0,7);c.fill();}});
-    if(st.zone==="woods"){c.fillStyle="#e07828";c.fillRect(SHELTER.x*s,SHELTER.y*s,s*2,s*2);c.fillStyle="#3870d0";c.fillRect(HUT[0][0]*s,HUT[0][1]*s,s*2,s*2);}
+    if(st.zone==="woods"){if(st.bank.cap){c.fillStyle="#a86828";c.fillRect(STORE.x*s,STORE.y*s,s,s);}c.fillStyle="#e07828";c.fillRect(SHELTER.x*s,SHELTER.y*s,s*2,s*2);c.fillStyle="#3870d0";c.fillRect(HUT[0][0]*s,HUT[0][1]*s,s*2,s*2);}
     c.fillStyle="#e02818";c.beginPath();c.arc(pl.tx*s+s/2,pl.ty*s+s/2,s*0.9,0,7);c.fill();c.strokeStyle="#ffffff";c.lineWidth=1;c.stroke();
   }
   function mapLinks(){var out=WARPS[st.zone].map(function(w){var lk=doorLock(w);return '<li><b>'+esc(ZONES[w.to].n)+'</b>'+(lk?' <span class="muted">('+esc(lk)+')</span>':'')+'</li>';});return '<div class="wf-sub">Ways out of here</div><ul class="list">'+out.join('')+'</ul>';}
@@ -2534,7 +2581,7 @@ function wfCreate(root){
       +'<div class="wf-sub">Controls</div><ul class="list"><li><b>Move:</b> arrow keys or WASD (on a phone, drag the joystick)</li><li><b>Interact / continue talking:</b> E, Space or Enter. Use the arrow keys to pick a choice.</li><li><b>Basket</b> I · <b>Journal</b> J · <b>Quests</b> Q · <b>Map</b> M · <b>Close</b> Esc</li></ul>'
       +'<div class="wf-sub">Three skills</div><ul class="list"><li><b>🍄 Foraging:</b> examine a mushroom (cap, underneath, stem, smell), then name it. Get it right to pick it.</li><li><b>🪓 Woodcutting:</b> face a tree with an axe and press E once. You keep chopping by yourself until it comes down (2 to 10 logs a tree). Walk away any time to stop. Birch at level 1, oak at 5, willow at 12, pine at 16, mountain pine at 24.</li><li><b>🎣 Fishing:</b> fish only bite at <b>fishing spots</b>, where the water ripples and fish jump. They move every minute or two, like real shoals. Stand next to one with a rod and worms and press E. Each spot holds different fish: shallows, trout riffles, weed beds, drop-offs, deep holes and more. Once you start, you fish by yourself, hooking bites and recasting, until the spot moves, your basket fills, you run out of worms or you walk away. Better fish need higher levels and better rods.</li></ul>'
       +'<div class="wf-sub">Getting around</div><ul class="list"><li>Ways out of each area glow gold and show their name. Red means something is still needed: a tool, a skill level, or a favour for someone.</li><li>The story is told through the people you meet. Press Q to see what to do next, and the map (M) to see the ways out.</li></ul>'
-      +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Get it back by eating (cook mushrooms and fish at your campfire or a fire ring) and drinking. Collect raw water from streams and ponds, boil it at a fire to make fresh water, then drink it from your basket any time. The village well is clean enough to drink straight away. Sleeping restores energy overnight.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
+      +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Get it back by eating (cook mushrooms and fish at your campfire or a fire ring) and drinking. Collect raw water from streams and ponds, boil it at a fire to make fresh water, then drink it from your basket any time. The village well is clean enough to drink straight away. Sleeping restores energy overnight.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Basket full? Build a <b>storage chest</b> from the sign at camp and keep extra mushrooms, fish and water there. Old Wren and Bram can open it for you too. Upgrade it to an iron-bound chest (100 items) and then a root cellar (250). Bigger bags are sold at the shops as you level up.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
       +'<div class="wf-acts">'+btn("go",first?"Start exploring":"Got it","primary")+'</div>',
       function(b){b.querySelector('[data-a="go"]').onclick=function(){st.intro=0;close();flashQuest();};});
   }
