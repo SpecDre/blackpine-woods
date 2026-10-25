@@ -14,6 +14,10 @@ Open `index.html` in a browser, or visit the deployed site.
 - **Interact / continue:** E, Space or Enter
 - **Basket** I · **Journal** J · **Quests** Q · **Map** M
 
+## 3D view (beta)
+
+`3d.html` opens the same game with a 3D "HD-2D" view of Blackpine Woods: the pixel-art ground becomes a lit 3D floor with sunken water, and trees, people, animals and props stand up as sprite cards with real shadows, a day/night cycle and campfire light. It uses Three.js r128 from cdnjs, loaded only when the 3D view is on. In the main game it's a switch under **⚙ Game → View**. Other areas still show in 2D for now. Saves are shared between the two pages because they're on the same site.
+
 ## Saving
 
 Progress saves automatically in the browser's local storage, separately for each website. To move a game between sites or devices, open **⚙ Game**, choose **Copy save code**, then paste the code into **Load a save code** on the other site. Codes for this version start with `BPW2.`. Codes from the older, smaller version (`BPW1.`) don't carry over.
