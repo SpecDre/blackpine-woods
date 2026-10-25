@@ -2833,7 +2833,7 @@ function wfCreate(root){
       +(hasCloud?'<p class="muted">'+(cloudReady?"☁ Also saved to your Claude account, so it survives app restarts and works on your other devices.":"☁ Not connected to your Claude account right now, so this game is only saved on this device.")+'</p>':(canStore?'<p class="muted">Saved in this browser on this website. Clearing your browsing data erases it, so copy a save code now and then to keep a backup.</p>':''))
       +'<div class="wf-acts wrap">'+btn("save","Save now","primary",!canStore&&!cloudReady)+btn("new","Start a new game","danger")+'</div><div id="wfNew"></div>'
       +'<div class="wf-sub">Sound</div><div class="wf-acts wrap">'+btn("mus",snd.music()?"♪ Music: on":"♪ Music: off")+btn("fx",snd.fx()?"🔊 Sound effects: on":"🔇 Sound effects: off")+'</div>'
-      +'<div class="wf-sub">View</div><div class="wf-acts wrap">'+btn("v3d",pref3D?"🧊 3D view (beta): on":"🧊 3D view (beta): off")+'</div><p class="muted">The 3D view covers Blackpine Woods for now, and uses more battery.</p>'
+      +'<div class="wf-sub">View</div><div class="wf-acts wrap">'+btn("v3d",pref3D?"🧊 3D view (beta): on":"🧊 3D view (beta): off")+'</div><p class="muted">The 3D view works in every area. It uses more battery than 2D.</p>'
       +'<div class="wf-sub">Move your game to another device or site</div><p>To carry on somewhere else, copy your save code here and load it there.</p>'
       +'<div class="wf-acts wrap">'+btn("copy","Copy save code","primary")+'</div><textarea id="wfSaveOut" class="wf-code" readonly hidden aria-label="Your save code"></textarea><p class="muted" id="wfCopyMsg"></p>'
       +'<label class="wf-sub" for="wfSaveIn">Load a save code</label><textarea id="wfSaveIn" class="wf-code" placeholder="Paste a save code here" aria-label="Paste a save code"></textarea>'
@@ -2887,7 +2887,7 @@ function wfCreate(root){
   var G3={ready:false,loading:false,failed:false,instGen:0,lastZone:null};
   var pref3D=false;
   try{var p3=localStorage.getItem("bw-3d");pref3D=p3==="1"||(!!window.BW_3D_DEFAULT&&p3!=="0");}catch(e){pref3D=!!window.BW_3D_DEFAULT;}
-  function use3D(){return pref3D&&G3.ready&&!G3.failed&&st.zone==="woods";}
+  function use3D(){return pref3D&&G3.ready&&!G3.failed;}
   function load3D(){if(G3.ready||G3.loading||G3.failed)return;G3.loading=true;
     if(window.THREE){init3D();return;}
     var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
@@ -2909,15 +2909,22 @@ function wfCreate(root){
       G3.tilt=-0.35;G3.mats=new Map();G3.inst=[];G3.pool=[];G3.glows=[];G3.decals=[];G3.camT=null;G3.ready=true;resize3D();
     }catch(e){G3.failed=true;toast("3D isn't supported on this device, so the game stays in 2D.","bad");}}
   function resize3D(){if(!G3||!G3.ready)return;G3.R.setPixelRatio(DPR);G3.R.setSize(cw,ch,false);G3.cam.aspect=cw/ch;G3.cam.updateProjectionMatrix();}
-  function mat3(img,live){var m=G3.mats.get(img);if(m){if(live)m.tex.needsUpdate=true;return m;}
+  function mat3(img,live,emis){var mm=emis?(G3.matsE||(G3.matsE=new Map())):G3.mats,m=mm.get(img);if(m){if(live)m.tex.needsUpdate=true;return m;}
     var T3=G3.T,tex=new T3.CanvasTexture(img);tex.magFilter=T3.NearestFilter;tex.minFilter=T3.NearestFilter;tex.generateMipmaps=false;
-    var glowing=img===BLD.fire0||img===BLD.fire1;m={tex:tex,mat:new T3.MeshLambertMaterial(glowing?{map:tex,alphaTest:0.5,side:T3.DoubleSide,emissive:0xffffff,emissiveMap:tex}:{map:tex,alphaTest:0.5,side:T3.DoubleSide}),depth:new T3.MeshDepthMaterial({depthPacking:T3.RGBADepthPacking,map:tex,alphaTest:0.5})};
-    G3.mats.set(img,m);return m;}
+    var glowing=emis||img===BLD.fire0||img===BLD.fire1;m={tex:tex,mat:new T3.MeshLambertMaterial(glowing?{map:tex,alphaTest:0.5,side:T3.DoubleSide,emissive:0xffffff,emissiveMap:tex}:{map:tex,alphaTest:0.5,side:T3.DoubleSide}),depth:new T3.MeshDepthMaterial({depthPacking:T3.RGBADepthPacking,map:tex,alphaTest:0.5})};
+    mm.set(img,m);return m;}
   /* the ground: the same painted map the 2D game uses, on a mesh whose water squares sink into little basins */
   function ground3(){var T3=G3.T;if(G3.ground){G3.scene.remove(G3.ground);G3.ground.geometry.dispose();}
     var g=new T3.PlaneGeometry(WW,WH,WW,WH);g.rotateX(-Math.PI/2);g.translate(WW/2,0,WH/2);var pos=g.attributes.position;
-    function wet(x,y){if(x<0||y<0||x>=WW||y>=WH)return false;var t=tileAt(x,y);return t===T.WATER||t===T.POOL;}
-    for(var j=0;j<=WH;j++)for(var i=0;i<=WW;i++){var n=(wet(i-1,j-1)?1:0)+(wet(i,j-1)?1:0)+(wet(i-1,j)?1:0)+(wet(i,j)?1:0);pos.setY(j*(WW+1)+i,n>=4?-0.42:n===3?-0.22:0);}
+    var dark=!!ZONES[st.zone].dark,amp={ridge:1.1,tarn:0.6,village:0.35,lake:0.15}[st.zone]||0,H=new Float32Array((WW+1)*(WH+1));
+    function wet(x,y){if(x<0||y<0||x>=WW||y>=WH)return 0;var t=tileAt(x,y);return t===T.WATER||t===T.POOL?2:t===T.MARSH?1:0;}
+    function wall(x,y){if(x<0||y<0||x>=WW||y>=WH)return dark;return tileAt(x,y)===T.CWALL;}
+    for(var j=0;j<=WH;j++)for(var i=0;i<=WW;i++){var nb=[[i-1,j-1],[i,j-1],[i-1,j],[i,j]],n=0,nm=0,wl=0;
+      nb.forEach(function(q){var w=wet(q[0],q[1]);if(w===2)n++;if(w)nm++;if(wall(q[0],q[1]))wl++;});
+      var hg=dark?[0,0.1,0.45,0.85,1.3][wl]:amp?amp*(vn(i*0.11+3,j*0.11+7)*0.85+vn(i*0.33+1,j*0.33)*0.25):0;
+      if(n>=4)hg=-0.42;else if(n===3)hg=Math.min(hg,-0.22);else if(nm>=4)hg=-0.28;else if(nm===3)hg=Math.min(hg,-0.14);else if(nm>0)hg=Math.min(hg,0.02);
+      H[j*(WW+1)+i]=hg;pos.setY(j*(WW+1)+i,hg);}
+    G3.H=H;G3.dark=dark;
     pos.needsUpdate=true;g.computeVertexNormals();
     if(!G3.gA){G3.gA=new T3.CanvasTexture(groundA);G3.gB=new T3.CanvasTexture(groundB);[G3.gA,G3.gB].forEach(function(tx){tx.magFilter=T3.NearestFilter;tx.minFilter=T3.LinearMipmapLinearFilter;tx.anisotropy=Math.min(4,G3.R.capabilities.getMaxAnisotropy());});}
     else{G3.gA.needsUpdate=true;G3.gB.needsUpdate=true;}
@@ -2925,9 +2932,12 @@ function wfCreate(root){
     G3.ground=new T3.Mesh(g,G3.gmat);G3.ground.receiveShadow=true;G3.scene.add(G3.ground);
     if(!G3.water){G3.water=new T3.Mesh(new T3.PlaneGeometry(1,1),new T3.MeshPhongMaterial({color:0x6ab0f0,transparent:true,opacity:0.3,shininess:90,specular:0xffffff,depthWrite:false}));G3.water.rotation.x=-Math.PI/2;G3.scene.add(G3.water);
       G3.base=new T3.Mesh(new T3.PlaneGeometry(1,1),new T3.MeshLambertMaterial({color:0x1e3a22}));G3.base.rotation.x=-Math.PI/2;G3.scene.add(G3.base);}
-    G3.water.scale.set(WW,WH,1);G3.water.position.set(WW/2,-0.1,WH/2);G3.base.scale.set(WW+80,WH+80,1);G3.base.position.set(WW/2,-0.6,WH/2);
+    G3.water.scale.set(WW,WH,1);G3.water.position.set(WW/2,-0.1,WH/2);G3.water.material.color.set(st.zone==="marsh"?0x5a9a80:dark?0x3a6aa0:0x6ab0f0);G3.base.material.color.set(dark?0x0a080e:0x1e3a22);G3.base.scale.set(WW+80,WH+80,1);G3.base.position.set(WW/2,-0.6,WH/2);
     G3.zoneKey=st.zone+WW+"x"+WH;}
   /* trees, logs, rocks and reeds: one instanced batch per sprite, rebuilt only when the world changes */
+  /* ground height at a point (in squares), so cards stand on hills and ridges */
+  function hAt(x,z){var H=G3.H;if(!H)return 0;x=Math.max(0,Math.min(WW-0.001,x));z=Math.max(0,Math.min(WH-0.001,z));var i=Math.floor(x),j=Math.floor(z),fx=x-i,fz=z-j,k=j*(WW+1)+i;
+    return H[k]*(1-fx)*(1-fz)+H[k+1]*fx*(1-fz)+H[k+WW+1]*(1-fx)*fz+H[k+WW+2]*fx*fz;}
   function instKey3(){return st.zone+"|"+gpal().season+"|"+(chopping?chopping.x+","+chopping.y:"")+"|"+G3.instGen;}
   function statics3(){var T3=G3.T,groups=new Map(),m4=new T3.Matrix4(),q=new T3.Quaternion().setFromEuler(new T3.Euler(G3.tilt,0,0)),v=new T3.Vector3(),sv=new T3.Vector3();
     for(var y=0;y<WH;y++)for(var x=0;x<WW;x++){var os=objSpr(tileAt(x,y));if(!os)continue;if(chopping&&chopping.x===x&&chopping.y===y)continue;
@@ -2935,7 +2945,7 @@ function wfCreate(root){
       arr.push([x+(os[1]+w/2)/PX,y+(os[2]+h)/PX-0.12,w/PX*s,h/PX*s]);}
     G3.inst.forEach(function(m){G3.scene.remove(m);if(m.dispose)m.dispose();});G3.inst=[];
     groups.forEach(function(arr,img){var M=mat3(img),mesh=new T3.InstancedMesh(G3.geo,M.mat,arr.length);mesh.customDepthMaterial=M.depth;mesh.castShadow=true;mesh.frustumCulled=false;
-      arr.forEach(function(a,i){v.set(a[0],0,a[1]);sv.set(a[2],a[3],1);m4.compose(v,q,sv);mesh.setMatrixAt(i,m4);});mesh.instanceMatrix.needsUpdate=true;G3.scene.add(mesh);G3.inst.push(mesh);});
+      arr.forEach(function(a,i){v.set(a[0],hAt(a[0],a[1]),a[1]);sv.set(a[2],a[3],1);m4.compose(v,q,sv);mesh.setMatrixAt(i,m4);});mesh.instanceMatrix.needsUpdate=true;G3.scene.add(mesh);G3.inst.push(mesh);});
     G3.instKey=instKey3();}
   /* everything that moves or changes: a pool of sprite cards placed each frame.
      ux,uy = the feet point in world units; w,h = size in units; o.ax/o.ay = feet point inside the sprite (default bottom-centre) */
@@ -2944,19 +2954,19 @@ function wfCreate(root){
   function dynD(img,X,Y,o){var w=img.width/Q,h=img.height/Q;dyn(img,X+w/2,Y+h-1.5,w,h,o);}
   function flushDyn(){var T3=G3.T,i=0;
     DYN.forEach(function(d){var m=G3.pool[i];if(!m){m=new T3.Mesh(G3.geo,G3.geo&&mat3(d[0]).mat);G3.scene.add(m);G3.pool.push(m);}i++;
-      var o=d[5],M=mat3(d[0],o.live);if(o.hero)G3.heroMesh=m;m.material=M.mat;m.customDepthMaterial=M.depth;m.castShadow=o.shadow!==false;m.visible=true;
+      var o=d[5],M=mat3(d[0],o.live,o.emis);if(o.hero)G3.heroMesh=m;m.material=M.mat;m.customDepthMaterial=M.depth;m.castShadow=o.shadow!==false;m.visible=true;
       var w=d[3]/PX,h=d[4]/PX,ax=(o.ax!=null?o.ax:d[3]/2)/PX,below=(o.ay!=null?d[4]-o.ay:0)/PX;m.scale.set(w,h,1);
-      if(o.flat){m.rotation.set(-Math.PI/2,0,0);m.position.set(d[1]/PX-ax+w/2,0.03,d[2]/PX+1.5/PX);return;}
+      if(o.flat){m.rotation.set(-Math.PI/2,0,0);m.position.set(d[1]/PX-ax+w/2,hAt(d[1]/PX,d[2]/PX)+0.03,d[2]/PX+1.5/PX);return;}
       m.rotation.set(G3.tilt,0,o.rot||0);
       var up=new T3.Vector3(0,1,0).applyEuler(m.rotation),right=new T3.Vector3(1,0,0).applyEuler(m.rotation);
-      m.position.set(d[1]/PX,o.lift||0,d[2]/PX).addScaledVector(right,w/2-ax).addScaledVector(up,-below);});
+      m.position.set(d[1]/PX,(o.lift||0)+(o.water?0:hAt(d[1]/PX,d[2]/PX)),d[2]/PX).addScaledVector(right,w/2-ax).addScaledVector(up,-below);});
     for(;i<G3.pool.length;i++)G3.pool[i].visible=false;DYN=[];
     if(G3.heroMesh){if(!G3.ghost){G3.ghost=new T3.Mesh(G3.geo,new T3.MeshBasicMaterial({transparent:true,opacity:0.38,depthTest:false,depthWrite:false}));G3.ghost.renderOrder=999;G3.scene.add(G3.ghost);}
       G3.ghost.material.map=G3.heroMesh.material.map;G3.ghost.position.copy(G3.heroMesh.position);G3.ghost.rotation.copy(G3.heroMesh.rotation);G3.ghost.scale.copy(G3.heroMesh.scale);G3.ghost.visible=true;}}
   function glow3(x,z,y,sz,a,col){var T3=G3.T;
     if(!G3.glowTex){var c=mkc(32,32),g=c.getContext("2d"),gr=g.createRadialGradient(16,16,0,16,16,16);gr.addColorStop(0,"rgba(255,255,255,1)");gr.addColorStop(1,"rgba(255,255,255,0)");g.fillStyle=gr;g.fillRect(0,0,32,32);G3.glowTex=new T3.CanvasTexture(c);}
     var s=G3.glows[G3.gi];if(!s){s=new T3.Sprite(new T3.SpriteMaterial({map:G3.glowTex,blending:T3.AdditiveBlending,transparent:true,depthWrite:false}));G3.scene.add(s);G3.glows.push(s);}G3.gi++;
-    s.visible=true;s.position.set(x,y,z);s.scale.set(sz,sz,1);s.material.opacity=a;s.material.color.set(col||0xfff6c8);}
+    s.visible=true;s.position.set(x,y+hAt(x,z),z);s.scale.set(sz,sz,1);s.material.opacity=a;s.material.color.set(col||0xfff6c8);}
   /* 2D effects (fishing-spot ripples) painted into their own little canvas and laid flat on the water */
   function decal3(drawFn,x,z){var T3=G3.T,d=G3.decals[G3.di];
     if(!d){var c=mkc(64,48),tex=new T3.CanvasTexture(c);tex.magFilter=T3.NearestFilter;tex.minFilter=T3.NearestFilter;tex.generateMipmaps=false;
@@ -2986,7 +2996,9 @@ function wfCreate(root){
     if(G3.instKey!==instKey3())statics3();
     var cx=pl.px/TS*PX,cy=pl.py/TS*PX;G3.gi=0;G3.di=0;
     /* finds, people, animals, buildings */
-    spawnsHere().forEach(function(s){if(!visible(s))return;dyn(mush(s.sp),s.x*PX+8,s.y*PX+14,9.6,9.6,{shadow:false});glow3(s.x+0.5,s.y+0.85,0.3,0.8,0.22+0.12*Math.sin(t/520+s.id));});
+    spawnsHere().forEach(function(s){if(!visible(s))return;var gc=WSP[s.sp].glow;dyn(mush(s.sp),s.x*PX+8,s.y*PX+14,9.6,9.6,{shadow:false,emis:!!gc});
+      if(gc){var rgb=gc.match(/\d+/g);glow3(s.x+0.5,s.y+0.85,0.35,1.7,0.5+0.15*Math.sin(t/500+s.id),(+rgb[0]<<16)|(+rgb[1]<<8)|(+rgb[2]));}else glow3(s.x+0.5,s.y+0.85,0.3,0.8,0.22+0.12*Math.sin(t/520+s.id));});
+    var lo=ZD[Z].lookout;if(lo)dynD(BLD.scope,lo.x*PX,lo.y*PX);
     st.pageSpots.forEach(function(p){if(p.zone!==Z||st.pages.indexOf(p.id)>=0)return;dyn(BLD.page,p.x*PX+8,p.y*PX+13,6.5,6.5,{shadow:false,lift:0.04*Math.sin(t/500+p.id)});glow3(p.x+0.5,p.y+0.8,0.3,0.7,0.2+0.1*Math.sin(t/500+p.id));});
     st.chestSpots.forEach(function(c){if(c.zone===Z)dynD(st.chests.indexOf(c.id)>=0?BLD.chestOpen:BLD.chest,c.x*PX,c.y*PX);});
     WARPS[Z].forEach(function(w){dynD(doorImg(Z,w),w.x*PX,w.y*PX);var lk=doorLock(w);glow3(w.x+0.5,w.y+0.7,0.5,1.8,0.3+0.12*Math.sin(t/380),lk?0xff7a5a:0xffd66e);});
@@ -3002,7 +3014,7 @@ function wfCreate(root){
       dynD(BLD.shop,HUT[0][0]*PX,HUT[0][1]*PX);}
     faunaHere().forEach(function(a){var k=CK[a.kind],mv=a.state!=="idle",fr=k.fly?Math.floor(t/120+a.seed*5)%2:mv?Math.floor(a.ph)%2:(k.idle&&Math.floor(t/700+a.seed*7)%4===0?1:0);
       var img=critSpr(a.kind,fr,a.face<0),lift=k.hop&&mv?Math.abs(Math.sin(a.ph*Math.PI))*0.18:k.fly?0.55+Math.sin(t/260+a.seed*9)*0.12:k.water?-0.12:0;
-      dyn(img,a.x*PX+8,a.y*PX+14,img.width/Q,img.height/Q,{lift:lift});});
+      dyn(img,a.x*PX+8,a.y*PX+14,img.width/Q,img.height/Q,{lift:k.water?-0.02:lift,water:!!k.water});});
     if(chopping){var os=objSpr(tileAt(chopping.x,chopping.y));if(os){var iw=os[0].width/Q,ih=os[0].height/Q,ts=treeScale(chopping.x,chopping.y);
       dyn(os[0],chopping.x*PX+os[1]+iw/2+shakeAt(chopping.x,chopping.y,t),chopping.y*PX+os[2]+ih-2,iw*ts,ih*ts);}}
     fallers=fallers.filter(function(f){return t-f.t0<1100;});
@@ -3013,8 +3025,8 @@ function wfCreate(root){
     if(!G3.line){G3.line=new T3.Line(new T3.BufferGeometry().setFromPoints([new T3.Vector3(),new T3.Vector3()]),new T3.LineBasicMaterial({color:0xf4f4f4}));G3.scene.add(G3.line);}
     G3.line.visible=!!fishing;
     if(fishing){var bite=fishing.phase==="bite",bb=bite?Math.sin(t/35)*0.05+0.03:Math.sin(t/300)*0.015,fx=fishing.x+0.5,fz=fishing.y+0.5-(fishing.y<pl.ty?0.3:0);
-      dyn(bob3(),fx*PX,fz*PX,5,5,{shadow:false,ay:2.5,lift:-0.04+bb});
-      var rp=rodPts(12,14,t),feet=new T3.Vector3((cx+8)/PX,0,(cy+14)/PX),upv=new T3.Vector3(0,1,0).applyEuler(new T3.Euler(G3.tilt,0,0));
+      dyn(bob3(),fx*PX,fz*PX,5,5,{shadow:false,ay:2.5,lift:-0.04+bb,water:true});
+      var rp=rodPts(12,14,t),feet=new T3.Vector3((cx+8)/PX,hAt((cx+8)/PX,(cy+14)/PX),(cy+14)/PX),upv=new T3.Vector3(0,1,0).applyEuler(new T3.Euler(G3.tilt,0,0));
       var tip=feet.clone().add(new T3.Vector3((rp[2]-20)/PX,0,0)).addScaledVector(upv,(30-rp[3])/PX),pa=G3.line.geometry.attributes.position;
       pa.setXYZ(0,tip.x,tip.y,tip.z);pa.setXYZ(1,fx,0.02+bb,fz);pa.needsUpdate=true;}
     flushDyn();for(var gi=G3.gi;gi<G3.glows.length;gi++)G3.glows[gi].visible=false;for(var di=G3.di;di<G3.decals.length;di++)G3.decals[di].mesh.visible=false;
@@ -3025,24 +3037,28 @@ function wfCreate(root){
     G3.sun.intensity=0.72*day*(wet||fogW?0.45:1);G3.sun.color.copy(mixHex(0xfff2dc,0xffa860,gold*0.8));
     var skyC=mixHex(0x0c1424,fogW?0xc8d0d8:wet?0x8a98a8:0x9cc4dc,day).lerp(new T3.Color(0xf0a070),gold*0.35);G3.scene.fog.color.copy(skyC);G3.R.setClearColor(skyC);
     G3.scene.fog.near=fogW?6:20;G3.scene.fog.far=fogW?24:44;
-    G3.fire.position.set(FIRE.x+0.5,0.7,FIRE.y+0.6);G3.fire.intensity=(0.4+1.6*(1-day))*(1+0.08*Math.sin(t/90)+0.05*Math.sin(t/37));
-    G3.lamp.position.set((cx+8)/PX,1.5,(cy+14)/PX+1.1);G3.lamp.intensity=(1-day)*(st.tools.lantern?1.3:0.55);
+    if(G3.dark){var cc=new T3.Color(Z==="depths"?0x03100e:0x07060c);G3.scene.fog.color.copy(cc);G3.R.setClearColor(cc);G3.scene.fog.near=6;G3.scene.fog.far=22;
+      G3.hemi.intensity=0.14;G3.hemi.color.set(Z==="depths"?0x6ab8a8:0x8a7ab8);G3.sun.intensity=0;}
+    if(!G3.npcL){G3.npcL=[0,1].map(function(){var L=new T3.PointLight(0xffd8a0,0,7,2);G3.scene.add(L);return L;});}
+    var dn=G3.dark?NPCS.filter(function(n){return n.zone===Z&&npcOn(n);}):[];G3.npcL.forEach(function(L,i){var n=dn[i];if(n){L.position.set(n.x+0.5,hAt(n.x+0.5,n.y+0.9)+1.3,n.y+1.6);L.intensity=1.2;}else L.intensity=0;});
+    G3.fire.position.set(FIRE.x+0.5,0.7,FIRE.y+0.6);G3.fire.intensity=Z==="woods"?(0.4+1.6*(1-day))*(1+0.08*Math.sin(t/90)+0.05*Math.sin(t/37)):0;
+    G3.lamp.position.set((cx+8)/PX,hAt((cx+8)/PX,(cy+14)/PX)+1.5,(cy+14)/PX+1.1);G3.lamp.distance=G3.dark?11:7;G3.lamp.intensity=G3.dark?(st.tools.lantern?1.9:0.7):(1-day)*(st.tools.lantern?1.3:0.55);
     var lit=(ZD[Z].pits||[]).filter(function(p){return pitLit(p[0],p[1]);});
-    G3.pits.forEach(function(L,i){var p=lit[i];if(p){L.position.set(p[0]+0.5,0.7,p[1]+0.6);L.intensity=(0.4+1.4*(1-day))*(1+0.08*Math.sin(t/90+i));}else L.intensity=0;});
+    G3.pits.forEach(function(L,i){var p=lit[i];if(p){L.position.set(p[0]+0.5,hAt(p[0]+0.5,p[1]+0.6)+0.7,p[1]+0.6);L.intensity=(0.4+1.4*(1-day))*(1+0.08*Math.sin(t/90+i));}else L.intensity=0;});
     /* camera: follows you from the south, tilted like a diorama; pulled back further on a tall phone screen */
-    var tx=(cx+8)/PX,tz=(cy+14)/PX;if(!G3.camT)G3.camT=new T3.Vector3(tx,0,tz);G3.camT.x+=(tx-G3.camT.x)*0.18;G3.camT.z+=(tz-G3.camT.z)*0.18;
+    var tx=(cx+8)/PX,tz=(cy+14)/PX;var ty=Math.max(0,hAt(tx,tz));if(!G3.camT||G3.camZone!==Z){G3.camT=new T3.Vector3(tx,ty,tz);G3.camZone=Z;}G3.camT.x+=(tx-G3.camT.x)*0.18;G3.camT.z+=(tz-G3.camT.z)*0.18;G3.camT.y+=(ty-G3.camT.y)*0.1;
     var asp=cw/ch,wantW=asp<1?10:13,dist=Math.max(8,Math.min(24,wantW/(2*Math.tan(G3.cam.fov*Math.PI/360)*asp))),pitch=48*Math.PI/180;
-    G3.cam.position.set(G3.camT.x,Math.sin(pitch)*dist,G3.camT.z+Math.cos(pitch)*dist);G3.cam.lookAt(G3.camT.x,0.5,G3.camT.z);
-    G3.sun.target.position.set(G3.camT.x,0,G3.camT.z-3);G3.sun.position.set(G3.camT.x-7,16,G3.camT.z+8);
+    G3.cam.position.set(G3.camT.x,G3.camT.y+Math.sin(pitch)*dist,G3.camT.z+Math.cos(pitch)*dist);G3.cam.lookAt(G3.camT.x,G3.camT.y+0.5,G3.camT.z);
+    G3.sun.target.position.set(G3.camT.x,G3.camT.y,G3.camT.z-3);G3.sun.position.set(G3.camT.x-7,G3.camT.y+16,G3.camT.z+8);
     G3.R.render(G3.scene,G3.cam);
     /* words and weather on top, drawn sharp like the menus */
     ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,can.width,can.height);
-    if(wet){ctx.setTransform(DPR,0,0,DPR,0,0);if(st.weather==="rain"){ctx.strokeStyle="rgba(200,215,255,.5)";ctx.lineWidth=1;ctx.beginPath();for(var r=0;r<Math.round(cw*ch/2600);r++){var rx=(r*97+t*0.3)%(cw+40)-20,ry=(r*53+t*0.8)%(ch+40)-20;ctx.moveTo(rx,ry);ctx.lineTo(rx-3,ry+11);}ctx.stroke();}
+    if(wet&&!G3.dark){ctx.setTransform(DPR,0,0,DPR,0,0);if(st.weather==="rain"){ctx.strokeStyle="rgba(200,215,255,.5)";ctx.lineWidth=1;ctx.beginPath();for(var r=0;r<Math.round(cw*ch/2600);r++){var rx=(r*97+t*0.3)%(cw+40)-20,ry=(r*53+t*0.8)%(ch+40)-20;ctx.moveTo(rx,ry);ctx.lineTo(rx-3,ry+11);}ctx.stroke();}
       else{ctx.fillStyle="rgba(255,255,255,.85)";for(var sn=0;sn<Math.round(cw*ch/3200);sn++){var sx=(sn*97+Math.sin(t/900+sn)*14+t*0.02)%cw,sy=(sn*61+t*0.06)%ch;ctx.fillRect(sx,sy,sn%3?2:3,sn%3?2:3);}}}
     hiQ=[];
-    WARPS[Z].forEach(function(w){var a=proj3(w.x+0.5,1.35,w.y+0.7),b=proj3(w.x+0.5,0,w.y+0.7);if(!a[2])return;hiQ.push({k:"tag",x:a[0]/SC,y:a[1]/SC+6,dy:b[1]/SC-12,name:ZONES[w.to].n,lock:doorLock(w)});});
+    WARPS[Z].forEach(function(w){var gh=hAt(w.x+0.5,w.y+0.7),a=proj3(w.x+0.5,gh+1.35,w.y+0.7),b=proj3(w.x+0.5,gh,w.y+0.7);if(!a[2])return;hiQ.push({k:"tag",x:a[0]/SC,y:a[1]/SC+6,dy:b[1]/SC-12,name:ZONES[w.to].n,lock:doorLock(w)});});
     var now=performance.now();floaters=floaters.filter(function(f){return now-f.t0<1300;});
-    floaters.forEach(function(f){var k=(now-f.t0)/1300,p=proj3(f.x/PX,1.05+k*0.7,f.y/PX+0.6);if(p[2])hiQ.push({k:"float",x:p[0]/SC,y:p[1]/SC,txt:f.txt,col:f.col,a:1-k*k});});
+    floaters.forEach(function(f){var k=(now-f.t0)/1300,p=proj3(f.x/PX,hAt(f.x/PX,f.y/PX+0.6)+1.05+k*0.7,f.y/PX+0.6);if(p[2])hiQ.push({k:"float",x:p[0]/SC,y:p[1]/SC,txt:f.txt,col:f.col,a:1-k*k});});
     if(fishing&&fishing.phase==="bite"){var bp=proj3(fishing.x+0.5,0.9,fishing.y+0.5);hiQ.push({k:"bite",x:bp[0]/SC,y:bp[1]/SC,sc:1+Math.sin(t/70)*0.1});}
     drawHi();
     stage.classList.toggle("bite",!!(fishing&&fishing.phase==="bite"));updateActs();

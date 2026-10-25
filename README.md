@@ -16,7 +16,7 @@ Open `index.html` in a browser, or visit the deployed site.
 
 ## 3D view (beta)
 
-`3d.html` opens the same game with a 3D "HD-2D" view of Blackpine Woods: the pixel-art ground becomes a lit 3D floor with sunken water, and trees, people, animals and props stand up as sprite cards with real shadows, a day/night cycle and campfire light. It uses Three.js r128 from cdnjs, loaded only when the 3D view is on. In the main game it's a switch under **⚙ Game → View**. Other areas still show in 2D for now. Saves are shared between the two pages because they're on the same site.
+`3d.html` opens the same game with a 3D "HD-2D" view of every area: the pixel-art ground becomes a lit 3D floor (sunken water and marsh pools, raised cave walls, rolling hills on the ridge and around the tarn), and trees, people, animals and props stand up as sprite cards with real shadows, a day/night cycle, campfire and lantern light, and glowing foxfire underground. It uses Three.js r128 from cdnjs, loaded only when the 3D view is on. In the main game it's a switch under **⚙ Game → View**. Saves are shared between the two pages because they're on the same site.
 
 ## Saving
 
