@@ -414,6 +414,8 @@ figure.ph figcaption b{color:var(--ink);font-weight:600}
 .wf-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:7}
 .wf-mapwrap{overflow:auto;max-width:100%;border:3px solid var(--gb-line);border-radius:10px;background:#1c1824;margin:8px 0}
 .wf-map{display:block;image-rendering:pixelated;max-width:none}
+.wf-box .wf-code{display:block;width:100%;height:84px;margin:8px 0;font-family:var(--f-mono);font-size:.72rem;line-height:1.35;color:var(--gb-ink);background:#fff;border:2px solid var(--gb-line);border-radius:9px;padding:8px;resize:vertical;word-break:break-all}
+.wf-box label.wf-sub{display:block}
 .wf-pix{width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;margin-right:4px}
 .wf-box .wf-jh{display:flex;align-items:center;gap:4px}
 .wf-box .wf-jh .wf-pix{width:24px;height:24px}
@@ -762,6 +764,10 @@ function wfNewState(m){
     spawns:wfSpawns(m),journal:{},quest:0,qp:0,done:[],riddleDay:0,harvested:0,sold:0,intro:1,crate:{},zone:"woods"};
 }
 function invCount(st){var n=0;for(var k in st.inv)n+=st.inv[k];return n;}
+/* save codes: move a game between browsers or sites */
+function wfEncodeSave(st){return "BPW1."+btoa(unescape(encodeURIComponent(JSON.stringify(st))));}
+function wfDecodeSave(code){try{code=String(code||"").replace(/\s+/g,"");if(code.indexOf("BPW1.")!==0)return null;var s=JSON.parse(decodeURIComponent(escape(atob(code.slice(5)))));
+  if(!s||s.v!==1||typeof s.day!=="number"||!Array.isArray(s.spawns)||!s.inv||!s.mat||!Array.isArray(s.beds))return null;return s;}catch(e){return null;}}
 
 /* ---------- identification traits (what you see when you examine each species) ---------- */
 var WTRAIT={
@@ -1625,9 +1631,21 @@ function wfCreate(root){
       function(b){b.querySelector('[data-a="go"]').onclick=function(){st.intro=0;close();};});
   }
   function gameMenu(){
-    open('<span class="kicker">Game</span><h3>Save & settings</h3><p>'+(canStore?"Your game saves automatically in this browser (when you sleep, every 20 seconds, and after conversations). It doesn't sync to other devices.":"Your browser is blocking storage here, so progress can't be saved.")+'</p>'
-      +'<div class="wf-acts wrap">'+btn("save","Save now","primary",!canStore)+btn("new","Start a new game","danger")+'</div><div id="wfNew"></div>',
+    open('<span class="kicker">Game</span><h3>Save & settings</h3><p>'+(canStore?"Your game saves automatically in this browser (when you sleep, every 20 seconds, and after conversations).":"Your browser is blocking storage here, so progress can't be saved.")+'</p>'
+      +'<div class="wf-acts wrap">'+btn("save","Save now","primary",!canStore)+btn("new","Start a new game","danger")+'</div><div id="wfNew"></div>'
+      +'<div class="wf-sub">Move your game to another device or site</div><p>Saves stay in this browser and on this website. To carry on somewhere else, copy your save code here and load it there.</p>'
+      +'<div class="wf-acts wrap">'+btn("copy","Copy save code","primary")+'</div><textarea id="wfSaveOut" class="wf-code" readonly hidden aria-label="Your save code"></textarea><p class="muted" id="wfCopyMsg"></p>'
+      +'<label class="wf-sub" for="wfSaveIn">Load a save code</label><textarea id="wfSaveIn" class="wf-code" placeholder="Paste a save code here" aria-label="Paste a save code"></textarea>'
+      +'<div class="wf-acts">'+btn("load","Load this save")+'</div><div id="wfLoadMsg"></div>',
       function(b){b.querySelector('[data-a="save"]').onclick=function(){save();toast("Game saved");close();};
+        b.querySelector('[data-a="copy"]').onclick=function(){save();var code=wfEncodeSave(st),out=b.querySelector("#wfSaveOut"),msg=b.querySelector("#wfCopyMsg");out.value=code;out.hidden=false;
+          function manual(){out.focus();out.select();msg.textContent="Your save code is selected above. Copy it (Ctrl+C or long-press), then paste it into the other site.";}
+          try{navigator.clipboard.writeText(code).then(function(){msg.textContent="Copied! Open the game on the other site, choose ⚙ Game, and paste it into Load a save code.";},manual);}catch(e){manual();}};
+        b.querySelector('[data-a="load"]').onclick=function(){var lm=b.querySelector("#wfLoadMsg"),incoming=wfDecodeSave(b.querySelector("#wfSaveIn").value);
+          if(!incoming){lm.innerHTML='<p class="wf-warn">That doesn\'t look like a Blackpine Woods save code. Make sure you copied the whole thing.</p>';return;}
+          lm.innerHTML='<p class="wf-warn">This replaces your current game here with the saved one (day '+incoming.day+', level '+lvFor(incoming.xp)+', '+incoming.coins+' coins). Continue?</p><div class="wf-acts">'+btn("yesload","Yes, load it","danger")+btn("noload","Cancel")+'</div>';
+          b.querySelector('[data-a="noload"]').onclick=function(){lm.innerHTML="";};
+          b.querySelector('[data-a="yesload"]').onclick=function(){st=incoming;migrate();loadZone();pl={px:st.x*TS,py:st.y*TS,tx:st.x,ty:st.y,moving:false,step:0};st.intro=0;renderQuest();hud();save();close();toast("Save loaded. Welcome back to day "+st.day+"!","lvl");};};
         b.querySelector('[data-a="new"]').onclick=function(){b.querySelector("#wfNew").innerHTML='<p class="wf-warn">This erases your current game. Are you sure?</p><div class="wf-acts">'+btn("yes","Yes, start over","danger")+btn("no","Keep playing")+'</div>';
           b.querySelector('[data-a="no"]').onclick=close;b.querySelector('[data-a="yes"]').onclick=function(){lsDel("mc-woods-save");st=wfNewState(woodsMap);migrate();loadZone();pl={px:st.x*TS,py:st.y*TS,tx:st.x,ty:st.y,moving:false,step:0};renderQuest();close();helpMenu(true);};};});
   }
