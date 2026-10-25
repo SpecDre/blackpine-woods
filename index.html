@@ -891,6 +891,96 @@ var WREN_WOODS=["Your camp's to the west, my post is east, and the stream runs b
 var WREN_TIPS=["Long way from camp and getting hungry? Look for the old stone fire rings. A tinderbox and two logs gets one going, and you can cook right there.","Never eat a mushroom you can't name for certain. Plenty of deadly ones look like edibles.","Learn the amanitas first. A cup at the base of the stem? Walk away.","Always look underneath: gills, pores, spines or ridges. That tells you more than colour ever will.","Mushrooms love rain. Get out the morning after a good soaking.","Use your nose. Mealy like watermelon rind? Anise? Bleach? Smell is a real clue.","Morels only show in spring. Chanterelles and porcini come in summer and autumn.","Birch first, then oak at Woodcutting 5, willow at 12, pine at 16. Mountain pine needs 24.","A tackle box stops fish slipping the hook. Rue sells them at the lake."];
 
 /* ---------- the game ---------- */
+/* ---------- sound: chiptune music and effects, all synthesised (no files) ---------- */
+function wfAudio(){
+  var A={ctx:null,music:true,sfx:true,mood:null,master:null,mbus:null,sbus:null,timer:0,next:0,step:0,noiseBuf:null,last:{}};
+  try{var pref=JSON.parse(localStorage.getItem("bw-audio")||"{}");if(pref.music===false)A.music=false;if(pref.sfx===false)A.sfx=false;}catch(e){}
+  function keep(){try{localStorage.setItem("bw-audio",JSON.stringify({music:A.music,sfx:A.sfx}));}catch(e){}}
+  function mtof(m){return 440*Math.pow(2,(m-69)/12);}
+  function init(){if(A.ctx)return true;var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;
+    try{A.ctx=new AC();}catch(e){return false;}var c=A.ctx;
+    A.master=c.createGain();A.master.gain.value=0.9;A.master.connect(c.destination);
+    A.mbus=c.createGain();A.mbus.gain.value=A.music?0.5:0;A.mbus.connect(A.master);
+    A.sbus=c.createGain();A.sbus.gain.value=0.75;A.sbus.connect(A.master);
+    /* a soft echo for the lead line */
+    A.echo=c.createDelay(1);A.echo.delayTime.value=0.33;var fb=c.createGain();fb.gain.value=0.28;var ef=c.createBiquadFilter();ef.type="lowpass";ef.frequency.value=1800;
+    A.echo.connect(ef);ef.connect(fb);fb.connect(A.echo);ef.connect(A.mbus);
+    var n=c.sampleRate,b=c.createBuffer(1,n,n),d=b.getChannelData(0);for(var i=0;i<n;i++)d[i]=Math.random()*2-1;A.noiseBuf=b;
+    return true;}
+  /* first tap or key press unlocks audio (browsers require a gesture) */
+  function unlock(){if(!init())return;if(A.ctx.state==="suspended")A.ctx.resume();if(!A.timer)A.timer=setInterval(sched,90);}
+  function tone(o){var c=A.ctx;if(!c)return;var t=o.t||c.currentTime,os=c.createOscillator(),g=c.createGain();os.type=o.w||"square";
+    os.frequency.setValueAtTime(o.f,t);if(o.f2)os.frequency.exponentialRampToValueAtTime(o.f2,t+o.d);
+    var v=o.v||0.1,at=o.a||0.005;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(0.0001,t+o.d);
+    var out=g;if(o.lp){var f=c.createBiquadFilter();f.type="lowpass";f.frequency.value=o.lp;g.connect(f);out=f;}
+    os.connect(g);out.connect(o.bus||A.sbus);if(o.echo)out.connect(A.echo);os.start(t);os.stop(t+o.d+0.05);}
+  function noise(o){var c=A.ctx;if(!c)return;var t=o.t||c.currentTime,s=c.createBufferSource(),g=c.createGain(),f=c.createBiquadFilter();s.buffer=A.noiseBuf;s.loop=true;
+    f.type=o.ft||"bandpass";f.frequency.setValueAtTime(o.f||1000,t);if(o.f2)f.frequency.exponentialRampToValueAtTime(o.f2,t+o.d);f.Q.value=o.q||1;
+    var v=o.v||0.1;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+(o.a||0.004));g.gain.exponentialRampToValueAtTime(0.0001,t+o.d);
+    s.connect(f);f.connect(g);g.connect(o.bus||A.sbus);s.start(t,Math.random()*0.5);s.stop(t+o.d+0.05);}
+  function notes(list,w,v,gap,d){var t=A.ctx.currentTime;list.forEach(function(m,i){tone({f:mtof(m),w:w||"square",v:v||0.07,d:d||0.16,t:t+i*(gap||0.08),lp:3200});});}
+  var SFX={
+    chop:function(){noise({f:900,q:0.8,v:0.32,d:0.12});tone({f:150,f2:55,w:"sine",v:0.4,d:0.16});},
+    thunk:function(){noise({f:600,q:1.2,v:0.16,d:0.08});tone({f:110,f2:60,w:"sine",v:0.2,d:0.1});},
+    timber:function(){var t=A.ctx.currentTime;tone({f:320,f2:70,w:"sawtooth",v:0.06,d:0.7,lp:900});noise({f:400,f2:90,ft:"lowpass",v:0.35,d:0.9,t:t+0.55});tone({f:70,f2:35,w:"sine",v:0.5,d:0.5,t:t+0.55});},
+    cast:function(){var t=A.ctx.currentTime;noise({f:3000,f2:700,q:2,v:0.12,d:0.32});tone({f:700,f2:180,w:"sine",v:0.22,d:0.14,t:t+0.36});noise({f:1800,q:1,v:0.08,d:0.15,t:t+0.36});},
+    bite:function(){notes([88,91],"square",0.08,0.07,0.09);noise({f:2500,q:1,v:0.12,d:0.2});},
+    catch:function(){notes([72,76,79,84],"square",0.07,0.07,0.14);noise({f:1500,q:0.8,v:0.12,d:0.25});},
+    miss:function(){notes([67,62],"triangle",0.12,0.1,0.18);},
+    pick:function(){tone({f:880,f2:1320,w:"triangle",v:0.14,d:0.12});},
+    coin:function(){var t=A.ctx.currentTime;tone({f:988,w:"square",v:0.06,d:0.07,t:t,lp:4000});tone({f:1319,w:"square",v:0.06,d:0.22,t:t+0.07,lp:4000});},
+    level:function(){notes([67,72,76,79,84,88],"square",0.07,0.075,0.2);},
+    quest:function(){notes([72,76,79,84,79,84,88],"square",0.07,0.09,0.24);notes([48,55,60],"triangle",0.12,0.2,0.5);},
+    door:function(){noise({f:2400,f2:300,q:1.5,v:0.14,d:0.4});tone({f:440,f2:220,w:"triangle",v:0.08,d:0.35});},
+    blip:function(){tone({f:760+Math.random()*80,w:"square",v:0.025,d:0.03,lp:2400});},
+    tick:function(){tone({f:1200,w:"triangle",v:0.06,d:0.04});},
+    fire:function(){for(var i=0;i<6;i++)noise({f:2000+Math.random()*2000,q:3,v:0.12,d:0.05,t:A.ctx.currentTime+i*0.06+Math.random()*0.03});noise({f:300,ft:"lowpass",v:0.12,d:0.6});},
+    build:function(){var t=A.ctx.currentTime;for(var i=0;i<3;i++){noise({f:1400,q:2,v:0.25,d:0.06,t:t+i*0.18});tone({f:200,f2:120,w:"sine",v:0.25,d:0.08,t:t+i*0.18});}},
+    eat:function(){var t=A.ctx.currentTime;for(var i=0;i<3;i++)noise({f:1800,q:1.5,v:0.14,d:0.05,t:t+i*0.11});},
+    good:function(){notes([76,81],"triangle",0.14,0.09,0.16);},
+    bad:function(){notes([58,57],"square",0.06,0.14,0.22);},
+    morning:function(){notes([67,71,74,79],"triangle",0.12,0.12,0.3);}
+  };
+  function sfx(name){if(!A.sfx||!A.ctx||A.ctx.state!=="running"||!SFX[name])return;var now=performance.now();if(A.last[name]&&now-A.last[name]<(name==="blip"?45:70))return;A.last[name]=now;try{SFX[name]();}catch(e){}}
+
+  /* ----- music: each area has its own key, chords and pace; phrases repeat every 8 bars ----- */
+  var THEMES={
+    woods:{root:60,prog:[[0,"M"],[9,"m"],[5,"M"],[7,"M"]],scale:[0,2,4,7,9],bpm:88,dens:0.55,hat:1,seed:3},
+    lake:{root:55,prog:[[0,"M"],[4,"m"],[9,"m"],[2,"M"]],scale:[0,2,4,7,9],bpm:80,dens:0.45,hat:0,seed:7},
+    marsh:{root:62,prog:[[0,"m"],[10,"M"],[8,"M"],[10,"M"]],scale:[0,3,5,7,10],bpm:76,dens:0.4,hat:0,seed:11},
+    cave:{root:57,prog:[[0,"m"],[8,"M"],[7,"m"],[0,"m"]],scale:[0,3,5,7,10],bpm:64,dens:0.28,hat:0,seed:5,echo:1},
+    depths:{root:56,prog:[[0,"m"],[5,"m"],[8,"M"],[7,"M"]],scale:[0,2,3,7,8],bpm:60,dens:0.25,hat:0,seed:9,echo:1},
+    ridge:{root:53,prog:[[0,"M"],[7,"M"],[9,"m"],[5,"M"]],scale:[0,2,4,7,9],bpm:84,dens:0.5,hat:1,seed:13},
+    village:{root:65,prog:[[0,"M"],[5,"M"],[7,"M"],[0,"M"]],scale:[0,2,4,5,7,9],bpm:100,dens:0.6,hat:1,seed:17},
+    tarn:{root:52,prog:[[0,"m"],[3,"M"],[10,"M"],[5,"m"]],scale:[0,3,5,7,10],bpm:66,dens:0.3,hat:0,seed:19,echo:1}
+  };
+  function rng(s){return function(){s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};}
+  var bar=-1,phrase=null,lastNote=null;
+  function makeBar(th,b,night){var r=rng(th.seed*977+(b%8)*131+1),ch=th.prog[b%th.prog.length],chordTones=[0,ch[1]==="M"?4:3,7].map(function(x){return (x+ch[0])%12;}),out=[];
+    var prev=lastNote==null?th.root+12+chordTones[0]:lastNote;
+    for(var s=0;s<16;s++){var strong=s%4===0,p=th.dens*(strong?1.3:s%2?0.55:0.9)*(night?0.6:1);if(b%8===7&&s>8){out.push(null);continue;}
+      if(r()>p){out.push(null);continue;}
+      var pool=[];for(var o=0;o<2;o++)(strong?chordTones:th.scale).forEach(function(x){pool.push(th.root+12+o*12+x);});
+      pool.sort(function(a,c){return Math.abs(a-prev)-Math.abs(c-prev)+(r()-0.5)*7;});var m=pool[Math.floor(r()*Math.min(3,pool.length))];prev=m;
+      out.push({m:m,len:r()<0.3?2:1});}
+    lastNote=prev;return {lead:out,chord:ch,tones:chordTones};}
+  function sched(){var c=A.ctx;if(!c||c.state!=="running"||!A.mood)return;var md=A.mood(),th=THEMES[md.zone]||THEMES.woods;
+    var spb=60/th.bpm/4;if(A.next<c.currentTime)A.next=c.currentTime+0.05;
+    while(A.next<c.currentTime+0.3){var s=A.step%16;if(s===0){bar++;if(md.zone!==A.zone){A.zone=md.zone;bar=0;lastNote=null;}phrase=makeBar(th,bar,md.night);}
+      if(A.music&&phrase){var t=A.next,ch=phrase.chord,root=th.root-24+ch[0];
+        if(s===0||s===8)tone({f:mtof(root),w:"triangle",v:0.16,d:spb*7,t:t,bus:A.mbus});
+        if(s===4||s===12)tone({f:mtof(root+7),w:"triangle",v:0.1,d:spb*3,t:t,bus:A.mbus});
+        if(s%4===2){var arp=phrase.tones[(s/4|0)%3];tone({f:mtof(th.root+arp),w:"triangle",v:0.035,d:spb*2,t:t,bus:A.mbus});}
+        var n=phrase.lead[s];if(n)tone({f:mtof(n.m),w:"square",v:md.night?0.025:0.035,d:spb*(n.len*1.6),t:t,bus:A.mbus,lp:th.echo?1400:2200,echo:true});
+        if(th.hat&&!md.night&&s%2===0)noise({f:7000,ft:"highpass",v:s%4===0?0.018:0.01,d:0.03,t:t,bus:A.mbus});}
+      A.next+=spb;A.step++;}}
+  function setMusic(on){A.music=on;keep();if(A.mbus)A.mbus.gain.setTargetAtTime(on?0.5:0,A.ctx.currentTime,0.2);}
+  function setSfx(on){A.sfx=on;keep();}
+  function onVis(){if(!A.ctx)return;if(document.hidden)A.ctx.suspend();else A.ctx.resume();}
+  document.addEventListener("visibilitychange",onVis);
+  return {unlock:unlock,sfx:sfx,setMood:function(f){A.mood=f;},setMusic:setMusic,setSfx:setSfx,music:function(){return A.music;},fx:function(){return A.sfx;},
+    stop:function(){clearInterval(A.timer);A.timer=0;document.removeEventListener("visibilitychange",onVis);if(A.ctx)try{A.ctx.close();}catch(e){}A.ctx=null;}};
+}
 function wfEncodeSave(st){return "BPW2."+btoa(unescape(encodeURIComponent(JSON.stringify(st))));}
 function wfDecodeSave(code){try{code=String(code||"").replace(/\s+/g,"");if(code.indexOf("BPW2.")!==0)return null;var s=JSON.parse(decodeURIComponent(escape(atob(code.slice(5)))));
   if(!s||s.v!==2||typeof s.day!=="number"||!s.skills||!s.zones||!s.inv||!s.mat||!Array.isArray(s.beds)||!Array.isArray(s.pageSpots))return null;return s;}catch(e){return null;}}
@@ -908,6 +998,7 @@ function wfCreate(root){
   if(!st)st=wfNewState(ZD);
   migrate();
   var canStore=lsSet("mc-woods-test","1");lsDel("mc-woods-test");
+  var snd=wfAudio();snd.setMood(function(){var hr=st.min/60;return {zone:st.zone,night:!darkZone()&&(hr>=20||hr<6)};});
 
   function migrate(){
     ["side","flags","caught","felled","crate","visited","met","zones","fires"].forEach(function(k){if(!st[k])st[k]={};});
@@ -931,7 +1022,7 @@ function wfCreate(root){
    +'<div class="wf-fade" id="wfFade"></div>'
    +'<div class="wf-pad" id="wfPad"><div class="wf-joy" id="wfJoy" aria-label="Joystick: drag to move"><div class="wf-knob" id="wfKnob"></div></div><button class="wf-a" data-k="act" aria-label="Do it">✋</button></div>'
    +'</div>'
-   +'<div class="wf-bar2"><button class="btn" data-m="inv">🎒 Basket <kbd>I</kbd></button><button class="btn" data-m="journal">📖 Journal <kbd>J</kbd></button><button class="btn" data-m="quests">📜 Quests <kbd>Q</kbd></button><button class="btn" data-m="map">🗺 Map <kbd>M</kbd></button><button class="btn" data-m="help">❔ How to play</button><button class="btn" data-m="menu">⚙ Game</button></div>';
+   +'<div class="wf-bar2"><button class="btn" data-m="inv">🎒 Basket <kbd>I</kbd></button><button class="btn" data-m="journal">📖 Journal <kbd>J</kbd></button><button class="btn" data-m="quests">📜 Quests <kbd>Q</kbd></button><button class="btn" data-m="map">🗺 Map <kbd>M</kbd></button><button class="btn" data-m="help">❔ How to play</button><button class="btn" data-m="sound" id="wfSnd" aria-label="Music on or off">♪ Music</button><button class="btn" data-m="menu">⚙ Game</button></div>';
 
   var can=document.getElementById("wfCan"),ctx=can.getContext("2d"),stage=document.getElementById("wfStage");
   var modal=document.getElementById("wfModal"),body=document.getElementById("wfBody");
@@ -1011,9 +1102,9 @@ function wfCreate(root){
       if(skill==="forage")Object.keys(BUILDS).forEach(function(b){if(BUILDS[b].lv===after)un.push(BUILDS[b].n);});
       if(skill==="wc")Object.keys(TREEINFO).forEach(function(k){if(TREEINFO[k].lv===after)un.push("chopping "+TREEINFO[k].n.toLowerCase());});
       if(skill==="fish")Object.keys(FISH).forEach(function(k){if(FISH[k].lv===after)un.push(FISH[k].n.toLowerCase());});
-      toast("⭐ <b>"+SKILLN[skill]+" level "+after+"!</b>"+(un.length?" Unlocked: "+un.join(", "):""),"lvl");hud();}}
+      snd.sfx("level");toast("⭐ <b>"+SKILLN[skill]+" level "+after+"!</b>"+(un.length?" Unlocked: "+un.join(", "):""),"lvl");hud();}}
   function giveXP(xp,why){Object.keys(xp||{}).forEach(function(k){gainXP(xp[k],why,k);});}
-  function addCoins(n){st.coins+=n;}
+  function addCoins(n){if(n>0)snd.sfx("coin");st.coins+=n;}
   function addItem(sp,n){var room=Math.max(0,st.cap-invCount(st)),a=Math.min(room,n),b=n-a;if(a)st.inv[sp]=(st.inv[sp]||0)+a;if(b)st.crate[sp]=(st.crate[sp]||0)+b;return b;}
   function haveN(k){return MATN[k]?(st.mat[k]||0):(st.inv[k]||0);}
   function itemName(k){return MATN[k]?MATN[k].toLowerCase():(IT(k)?IT(k).n.toLowerCase():k);}
@@ -1032,9 +1123,9 @@ function wfCreate(root){
     SIDE.forEach(function(j){if(j.goal===goal&&sideOn(j)){var s=st.side[j.id]||(st.side[j.id]={p:0});s.p=v;if(s.p>=j.need)sideComplete(j);}});}
   function reward(rw,why){if(rw.coins){addCoins(rw.coins);toast("+"+rw.coins+" coins","coin");}
     if(rw.tool&&!st.tools[rw.tool]){st.tools[rw.tool]=1;toast("Received: "+TOOLN[rw.tool],"coin");}giveXP(rw.xp,why);}
-  function sideComplete(j){var s=st.side[j.id];if(s.done)return;s.done=1;toast("📋 <b>Side job done:</b> "+j.n,"lvl");reward(j.rw,"side job");save();}
+  function sideComplete(j){var s=st.side[j.id];if(s.done)return;s.done=1;snd.sfx("quest");toast("📋 <b>Side job done:</b> "+j.n,"lvl");reward(j.rw,"side job");save();}
   function qComplete(){var q=quest();if(!q)return;st.done.push(st.quest);
-    toast("📜 <b>Quest complete:</b> "+q.n,"lvl");
+    snd.sfx("quest");toast("📜 <b>Quest complete:</b> "+q.n,"lvl");
     st.quest++;st.qp=0;reward(q.rw,"quest reward");
     var nq=quest();if(nq){toast("New quest: <b>"+nq.n+"</b>","");
       if(nq.goal==="build_leanto"&&st.shelter!=="tent")qComplete();}
@@ -1591,6 +1682,17 @@ function wfCreate(root){
   var floaters=[],fishing=null,chips=[];
   function floatText(x,y,txt,col){floaters.push({x:x*PX+8,y:y*PX,txt:txt,col:col||"#ffffff",t0:performance.now()});if(floaters.length>12)floaters.shift();}
   function drawWorldFx(t,ox,oy){
+    /* fishing spots: rings, bubbles and the odd jumping fish */
+    spotsHere().forEach(function(s){var X=s.x*PX+8-ox,Y=s.y*PX+9-oy;if(X<-24||Y<-24||X>lw+24||Y>lh+24)return;
+      var a=Math.max(0,Math.min(1,(t-s.born)/700,(s.born+s.life-t)/700));if(!a)return;lctx.save();lctx.globalAlpha=a;
+      lctx.fillStyle="rgba(6,24,60,.32)";lctx.beginPath();lctx.ellipse(X,Y,7.5,3.6,0,0,7);lctx.fill();
+      for(var r=0;r<3;r++){var k=((t/1200)+r/3+s.seed)%1;lctx.strokeStyle="rgba(255,255,255,"+(0.95*(1-k)).toFixed(3)+")";lctx.lineWidth=1;lctx.beginPath();lctx.ellipse(X,Y,1.5+k*7.5,0.8+k*3.4,0,0,7);lctx.stroke();}
+      for(var fm=0;fm<7;fm++){var fa=fm/7*6.28+t/900+s.seed,fr=2.5+Math.sin(t/170+fm*1.7)*1.2;lctx.fillStyle="rgba(255,255,255,.85)";lctx.fillRect(Math.round(X+Math.cos(fa)*fr*1.6),Math.round(Y+Math.sin(fa)*fr*0.7),1,1);}
+      for(var b=0;b<5;b++){var bk=((t/650)+b*0.23+s.seed)%1,bx=X+Math.sin(s.seed*3+b*2.1)*4.5,by=Y+1-bk*5;lctx.fillStyle="rgba(240,252,255,"+(0.95*(1-bk)).toFixed(3)+")";lctx.fillRect(Math.round(bx),Math.round(by),1.3,1.3);}
+      var lp=((t/2400)+s.seed)%1;if(lp<0.24){var u=lp/0.24,dr=Math.floor(t/2400+s.seed)%2?1:-1,fx=X-dr*5+dr*u*10,fy=Y-1-Math.sin(u*Math.PI)*7;
+        lctx.save();lctx.translate(fx,fy);lctx.scale(dr,1);lctx.rotate((u-0.5)*2);lctx.fillStyle="#d8e4ec";lctx.fillRect(-2.5,-1,5,2);lctx.fillStyle="#9ab0c0";lctx.fillRect(-2.5,0,5,1);lctx.fillRect(-4,-1.5,1.5,3);lctx.fillStyle="#202830";lctx.fillRect(1.5,-0.6,0.7,0.7);lctx.restore();
+        if(u<0.18||u>0.82){var sx=u<0.5?X-dr*5:X+dr*5;lctx.fillStyle="rgba(255,255,255,.9)";for(var dd=0;dd<4;dd++)lctx.fillRect(sx-2+dd*1.3,Y-1-((dd%2)?2:1),1,1);}}
+      lctx.restore();});
     /* wood chips */
     chips=chips.filter(function(c){return t-c.t0<500;});chips.forEach(function(c){var k=(t-c.t0)/500;lctx.fillStyle=c.col;lctx.fillRect(c.x-ox+c.vx*k*10,c.y-oy+c.vy*k*10+k*k*8,1,1);});
     if(fishing){var X=fishing.x*PX+8-ox,Y=fishing.y*PX+8-oy,bite=fishing.phase==="bite",bob=bite?Math.sin(t/35)*2+2:Math.sin(t/300)*0.8;
@@ -1633,13 +1735,14 @@ function wfCreate(root){
     if(dlg.open&&btn){var k2=dlg.opts&&!dlg.typing?"✔":"▶";if(btn.textContent!==k2){btn.textContent=k2;btn.classList.remove("idle");}actsKey=null;if(!bar.hidden){bar.hidden=true;bar.innerHTML="";actsList=[];}return;}
     if(modalOpen||warping){list=[];}
     else if(fishing){list=fishing.phase==="bite"?[{kind:"reel",label:"Reel in now!",icon:"🎣",hot:1}]:[{kind:"wait",label:"Waiting for a bite…",icon:"🎣",dim:1},{kind:"stop",label:"Stop fishing",icon:"✖"}];}
+    else if(chopping){list=[{kind:"wait",label:(chopping.tk==="dead"?"Splitting the log…":"Chopping the "+TREEINFO[chopping.tk].n.toLowerCase()+"…"),icon:"🪓",dim:1},{kind:"stopchop",label:"Stop",icon:"✖"}];}
     else list=targets().map(function(t){return {t:t,label:cleanLabel(t.label),icon:actIcon(t)};}).filter(function(a){return a.label;});
     key=list.map(function(a){return a.icon+a.label;}).join("|");
     if(key!==actsKey){actsKey=key;actsList=list;
       bar.innerHTML=list.map(function(a,i){return '<button class="wf-act'+(a.hot?" hot":"")+(a.dim?" dim":"")+(i===0?" first":"")+'" data-i="'+i+'"><span>'+a.icon+'</span>'+esc(a.label)+(i===0?'<kbd>E</kbd>':'')+'</button>';}).join("");
       bar.hidden=!list.length;
       if(btn){btn.textContent=list.length?list[0].icon:"✋";btn.classList.toggle("idle",!list.length);}}}
-  function runAct(a){if(!a)return;if(a.kind==="reel"){if(fishing&&fishing.phase==="bite")reelIn();}else if(a.kind==="stop"){fishing=null;toast("You reel in your line.");}else if(a.kind==="wait"){}else doAct(a.t);actsKey=null;}
+  function runAct(a){if(!a)return;if(a.kind==="reel"){if(fishing&&fishing.phase==="bite")reelIn();}else if(a.kind==="stop"){fishing=null;toast("You reel in your line.");}else if(a.kind==="stopchop"){chopping=null;}else if(a.kind==="wait"){}else doAct(a.t);actsKey=null;}
   function rrect(x,y,w,h,r){lctx.beginPath();lctx.moveTo(x+r,y);lctx.lineTo(x+w-r,y);lctx.quadraticCurveTo(x+w,y,x+w,y+r);lctx.lineTo(x+w,y+h-r);lctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);lctx.lineTo(x+r,y+h);lctx.quadraticCurveTo(x,y+h,x,y+h-r);lctx.lineTo(x,y+r);lctx.quadraticCurveTo(x,y,x+r,y);lctx.closePath();}
   function render(t){
     if(dirty){dirtyTiles=[];buildWorld();}else if(dirtyTiles.length){var dts=dirtyTiles;dirtyTiles=[];buildWorld(dts);}
@@ -1654,7 +1757,7 @@ function wfCreate(root){
     function inView(x,y){return x>=x0&&x<=x1&&y>=y0&&y<=y1;}
     var E=[],glows=[];
     for(var oyy=Math.max(0,y0);oyy<=Math.min(WH-1,y1+1);oyy++)for(var oxx=Math.max(0,x0);oxx<=Math.min(WW-1,x1);oxx++){var os=objSpr(tileAt(oxx,oyy));
-      if(os)(function(o,xx,yy){E.push([yy-0.02,function(){D(o[0],xx*PX-ox+o[1],yy*PX-oy+o[2]);}]);})(os,oxx,oyy);}
+      if(os)(function(o,xx,yy){E.push([yy-0.02,function(){var sh=chopping&&chopping.x===xx&&chopping.y===yy&&t-chopping.hitT<160?(Math.floor(t/40)%2?1:-1):0;D(o[0],xx*PX-ox+o[1]+sh,yy*PX-oy+o[2]);}]);})(os,oxx,oyy);}
     spawnsHere().forEach(function(s){if(visible(s)&&inView(s.x,s.y)){if(WSP[s.sp].glow)glows.push(s);E.push([s.y,function(){var X=s.x*PX-ox,Y=s.y*PX-oy;shadow(X,Y,10);D(mush(s.sp),X,Y+mushDrop(s.sp));
       if((Math.floor(t/350)+s.id)%6===0){var sx=X+12,sy=Y+2;P(lctx,sx,sy-1,"#ffffff");P(lctx,sx-1,sy,"#ffffff");P(lctx,sx+1,sy,"#ffffff");P(lctx,sx,sy+1,"#ffffff");P(lctx,sx,sy,"#fff8a0");}}]);}});
     st.pageSpots.forEach(function(p){if(p.zone===Z&&st.pages.indexOf(p.id)<0&&inView(p.x,p.y))E.push([p.y,function(){var X=p.x*PX-ox,Y=p.y*PX-oy,bob=Math.floor(t/400)%2;shadow(X,Y,8);D(BLD.page,X+3,Y+4-bob*0.5);
@@ -1678,7 +1781,10 @@ function wfCreate(root){
     E.push([pl.py/TS+0.01,function(){var X=Math.round((cx-ox)*Q)/Q,Y=Math.round((cy-oy)*Q)/Q-2;var f=pl.moving?[1,0,2,0][Math.floor(pl.step/2.2)%4]:0;shadow(X,Y+2,10);
       if(pl.moving&&!DZ&&st.weather!=="rain"){var ph=pl.step%4.4,dxs=st.dir==="left"?11:st.dir==="right"?3:7,dys=st.dir==="up"?17:15,dc=st.weather==="snow"||seasonOf(st.day)===3?"rgba(255,255,255,":"rgba(230,210,160,";
         lctx.fillStyle=dc+(0.7-ph*0.15)+")";lctx.fillRect(X+dxs-Math.floor(ph),Y+dys-Math.floor(ph/2),1,1);lctx.fillRect(X+dxs+2+Math.floor(ph/2),Y+dys-Math.floor(ph/3),1,1);}
-      D(HERO[st.dir+f],X,Y-4);}]);
+      D(HERO[st.dir+f],X,Y-4);
+      if(chopping){var ph=chopping.t/chopInt(),sw=ph<0.2?0.7-ph/0.2*2:ph<0.82?-1.3-Math.sin(ph*9)*0.05:-1.3+(ph-0.82)/0.18*2,sd=st.dir==="left"?-1:1;
+        lctx.save();lctx.translate(X+(st.dir==="left"?4:st.dir==="right"?12:11),Y+9);lctx.scale(sd,1);lctx.rotate(sw);
+        lctx.fillStyle="#6a4020";lctx.fillRect(-0.6,-8,1.3,9);lctx.fillStyle="#d8dee6";lctx.fillRect(0.3,-9,3.2,2.8);lctx.fillStyle="#7a8490";lctx.fillRect(3,-9,0.7,2.8);lctx.restore();}}]);
     E.sort(function(a,b){return a[0]-b[0];}).forEach(function(e){e[1]();});
     lctx.drawImage(objs,ox*Q,oy*Q,lw*Q,lh*Q,0,0,lw,lh);
     drawWorldFx(t,ox,oy);
@@ -1707,7 +1813,7 @@ function wfCreate(root){
       var lights=[[cx+8-ox,cy+8-oy,DZ?(st.tools.lantern?80:28):(st.tools.lantern?70:46)]];
       if(Z==="woods"){lights.push([FIRE.x*PX+8-ox,FIRE.y*PX+8-oy,60+(Math.floor(t/200)%2)*3]);lights.push([WREN.x*PX-ox,(WREN.y-2)*PX-oy,48]);}
       ZD[Z].props.forEach(function(p){if(p.w>1)lights.push([(p.x+p.w/2)*PX-ox,(p.y+p.h)*PX-oy,44]);});
-      if(fishing)lights.push([fishing.x*PX+8-ox,fishing.y*PX+8-oy,14]);
+      if(fishing)lights.push([fishing.x*PX+8-ox,fishing.y*PX+8-oy,14]);spotsHere().forEach(function(s){lights.push([s.x*PX+8-ox,s.y*PX+8-oy,16]);});
       (ZD[Z].pits||[]).forEach(function(p){if(pitLit(p[0],p[1]))lights.push([p[0]*PX+8-ox,p[1]*PX+8-oy,56+(Math.floor(t/200)%2)*3]);});
       if(DZ){glows.forEach(function(s){lights.push([s.x*PX+8-ox,s.y*PX+8-oy,18]);});WARPS[Z].forEach(function(w){lights.push([w.x*PX+8-ox,w.y*PX+8-oy,30]);});}
       lights.forEach(function(L){var gr=nctx.createRadialGradient(L[0],L[1],0,L[0],L[1],L[2]);gr.addColorStop(0,"rgba(0,0,0,.95)");gr.addColorStop(0.45,"rgba(0,0,0,.75)");gr.addColorStop(1,"rgba(0,0,0,0)");nctx.fillStyle=gr;nctx.beginPath();nctx.arc(L[0],L[1],L[2],0,7);nctx.fill();});
@@ -1744,7 +1850,7 @@ function wfCreate(root){
   function dlgShow(){dEl.hidden=false;dlg.open=true;keys={};stage.classList.add("talking");}
   function dlgClose(){clearInterval(dlg.timer);dEl.hidden=true;dlg.open=false;dlg.opts=null;dOpts.innerHTML="";stage.classList.remove("talking");stage.focus({preventScroll:true});}
   function typeText(text){clearInterval(dlg.timer);dlg.full=text;dlg.shown=0;dlg.typing=true;dText.textContent="";dNext.hidden=true;dOpts.innerHTML="";
-    dlg.timer=setInterval(function(){dlg.shown+=2;dText.textContent=dlg.full.slice(0,dlg.shown);if(dlg.shown>=dlg.full.length)finishType();},18);}
+    dlg.timer=setInterval(function(){dlg.shown+=2;if(dlg.shown%6===0)snd.sfx("blip");dText.textContent=dlg.full.slice(0,dlg.shown);if(dlg.shown>=dlg.full.length)finishType();},18);}
   function finishType(){clearInterval(dlg.timer);dlg.typing=false;dText.textContent=dlg.full;if(dlg.opts)renderOpts();else dNext.hidden=false;}
   function setWho(who,por){dName.textContent=who||"";dName.hidden=!who;portrait(por);}
   function say(who,por,lines,done){dlg.lines=lines.slice();dlg.i=0;dlg.opts=null;dlg.onDone=done||null;setWho(who,por);dlgShow();typeText(dlg.lines[0]);}
@@ -1772,7 +1878,7 @@ function wfCreate(root){
     var b=bedSlot();if(b&&!seen.sign)out.push(b);
     return out.slice(0,3);}
   var ACTI={pit:"🔥",wren:"💬",npc:"💬",shelter:"🛏",fire:"🔥",sign:"🔨",crate:"📦",chest:"🗝",lookout:"🔭",bed:"🌱",spawn:"🔍",page:"📄",door:"🚪",block:"🪵",tree:"🪓",water:"🎣",house:"🚪"};
-  function actIcon(t){if(!t)return "✋";if(t.kind==="water")return rodTier()&&!t.well?"🎣":"💧";return ACTI[t.kind]||"✋";}
+  function actIcon(t){if(!t)return "✋";if(t.kind==="water")return rodTier()&&t.spot?"🎣":"💧";return ACTI[t.kind]||"✋";}
   function cleanLabel(l){return String(l||"").replace(/^E · /,"").replace(/^▶ /,"Go to ");}
   function bedSlot(){if(st.zone!=="woods")return null;for(var j=0;j<SLOTS.length;j++){var sl=SLOTS[j];if(!st.beds[j]&&Math.abs(sl[0]-pl.tx)<=1&&Math.abs(sl[1]-pl.ty)<=1)return{kind:"sign",x:sl[0],y:sl[1],label:"E · Build here"};}return null;}
   function cellTarget(x,y,facing){
@@ -1795,20 +1901,23 @@ function wfCreate(root){
       var tt=tileAt(x,y);
       if(tt===T.DOOR){var w=warpAt(x,y);if(w){var lk=doorLock(w);return{kind:"door",w:w,x:x,y:y,label:"▶ "+ZONES[w.to].n+(lk?" ("+lk+")":"")};}}
       if(tt===T.BLOCK)return{kind:"block",x:x,y:y,label:"A fallen giant pine blocks the pass"};
+      if(isPond(tt)){var fsp=spotAt(x,y);if(fsp)return{kind:"water",spot:fsp,x:x,y:y,label:rodTier()?"E · Fish at the ripples":"E · Drink"};}
       if(!facing)return null;
       var tk=treeKind(tt,st.zone);
       if(tk&&inBounds(x,y)){var ti=TREEINFO[tk],low=sk("wc")<ti.lv;
         return{kind:"tree",tk:tk,x:x,y:y,label:!axeTier()?ti.n+" (needs an axe)":low?ti.n+" (Woodcutting "+ti.lv+")":"E · Chop "+ti.n.toLowerCase()};}
-      if(tt===T.WATER||tt===T.POOL||tt===T.MARSH)return{kind:"water",x:x,y:y,label:rodTier()?"E · Fish":"E · Drink"};
+      if(tt===T.WATER||tt===T.POOL||tt===T.MARSH)return{kind:"water",x:x,y:y,label:"E · Drink"};
       return null;
   }
   function act(){
     if(dlg.open){advance();return;}if(modalOpen||warping)return;
     if(fishing){if(fishing.phase==="bite")reelIn();else floatText(fishing.x,fishing.y,"Not yet… wait for the splash","#ffffff");return;}
+    if(chopping)return;
     doAct(target());
   }
+  var spotHint=0;
   function doAct(tg){
-    if(!tg||dlg.open||modalOpen||warping)return;
+    if(!tg||dlg.open||modalOpen||warping)return;chopping=null;
     if(tg.kind==="spawn")inspect(tg.s);
     else if(tg.kind==="wren")wren();
     else if(tg.kind==="npc"){if(tg.n.id==="wren")wren();else talkNpc(tg.n);}
@@ -1825,12 +1934,13 @@ function wfCreate(root){
     else if(tg.kind==="tree")chopTree(tg.x,tg.y,tg.tk);
     else if(tg.kind==="block")say("",null,["A giant mountain pine has come down across the pass, roots and all. It's far too big to cut alone.","Old Hal might know how to shift it."]);
     else if(tg.kind==="house")say("",null,[["Nobody answers. A cat watches you from the window.","Someone inside calls out: \"Bram's at the outfitter's, if you're looking for him!\"","You hear a kettle whistling inside, but no one comes to the door."][(tg.x+tg.y)%3]]);
-    else if(tg.kind==="water"){if(rodTier()&&!tg.well)startFishing(tg.x,tg.y);else{st.energy=Math.min(100,st.energy+3);toast(darkZone()?"Ice-cold cave water. +3 energy":"Cool fresh water. +3 energy");}}
+    else if(tg.kind==="water"){if(rodTier()&&tg.spot)startFishing(tg.spot);else{st.energy=Math.min(100,st.energy+3);toast(darkZone()?"Ice-cold cave water. +3 energy":"Cool fresh water. +3 energy");
+      if(rodTier()&&!tg.well&&!spotHint&&FSPOTN[st.zone]){spotHint=1;toast("🎣 Fish only bite where the water ripples. Look for a fishing spot.");}}}
   }
 
   /* ----- modal panels (for lists: shop, build, crate, journal…) ----- */
   var openedAt=0;
-  function open(html,wire){openedAt=performance.now();if(dlg.open)dlgClose();body.innerHTML=html;modal.hidden=false;modalOpen=true;keys={};if(wire)wire(body);var box=body.parentNode;box.scrollTop=0;var f=body.querySelector(".btn.primary:not([disabled]),button:not([disabled])");if(f)f.focus({preventScroll:true});}
+  function open(html,wire){snd.sfx("tick");openedAt=performance.now();if(dlg.open)dlgClose();body.innerHTML=html;modal.hidden=false;modalOpen=true;keys={};if(wire)wire(body);var box=body.parentNode;box.scrollTop=0;var f=body.querySelector(".btn.primary:not([disabled]),button:not([disabled])");if(f)f.focus({preventScroll:true});}
   function close(){modal.hidden=true;modalOpen=false;body.innerHTML="";stage.focus({preventScroll:true});save();}
   document.getElementById("wfX").addEventListener("click",close);
   modal.addEventListener("click",function(e){if(e.target===modal&&performance.now()-openedAt>450)close();});
@@ -1846,7 +1956,7 @@ function wfCreate(root){
     doWarp(w);return true;}
   function warpOk(w){return !doorLock(w);}
   function banner(text){var b=document.getElementById("wfZoneBan");b.textContent=text;b.hidden=false;b.classList.remove("show");void b.offsetWidth;b.classList.add("show");clearTimeout(b._t);b._t=setTimeout(function(){b.hidden=true;},2600);}
-  function loadZone(){var z=ZONES[st.zone];WW=z.w;WH=z.h;map=ZD[st.zone].map;[groundA,groundB,objs].forEach(function(c){c.width=WW*PX*Q;c.height=WH*PX*Q;});dirty=true;fishing=null;}
+  function loadZone(){var z=ZONES[st.zone];WW=z.w;WH=z.h;map=ZD[st.zone].map;[groundA,groundB,objs].forEach(function(c){c.width=WW*PX*Q;c.height=WH*PX*Q;});dirty=true;fishing=null;chopping=null;}
   var ZINTRO={cave:["Your lantern throws long shadows across the walls. Water drips somewhere in the dark.","On the roots ahead, a faint green glow. Foxfire."],
     depths:["You climb down and down. The air turns warm and wet, and everything glows faint green.","Somewhere ahead, someone is humming to keep their spirits up."],
     marsh:["The boardwalk creaks underfoot. Frogs go quiet, then start up again.","Willows trail their branches in the shallows, and reeds rustle all around."],
@@ -1854,7 +1964,7 @@ function wfCreate(root){
     ridge:["You haul yourself over the lip of the rock face, breathing hard.","The air is thin and cold, and it smells of pine resin. The whole valley spreads out below."],
     village:["Stone houses with red and blue roofs huddle around a little square. Chimney smoke, a well, a cat on a wall.","A sign over the biggest door says: Bram's Mountain Outfitters."],
     tarn:["The world goes white and silent. A frozen-edged lake lies under the peaks, dark and deep.","Something big just turned under the water."]};
-  function doWarp(w){warping=true;keys={};var f=document.getElementById("wfFade");f.style.opacity="1";
+  function doWarp(w){warping=true;snd.sfx("door");keys={};var f=document.getElementById("wfFade");f.style.opacity="1";
     setTimeout(function(){st.zone=w.to;loadZone();pl.tx=w.dx;pl.ty=w.dy;pl.px=w.dx*TS;pl.py=w.dy*TS;pl.moving=false;st.dir=w.dir;
       f.style.opacity="0";banner(ZONES[w.to].n);warping=false;
       if(w.to!=="woods"&&!st.visited[w.to]){st.visited[w.to]=1;gainXP(50,"discovered "+ZONES[w.to].n,"forage");
@@ -1891,11 +2001,11 @@ function wfCreate(root){
       var fresh=s.idDay!==st.day;s.idDay=st.day;qEvent("id_"+s.sp);
       if(sp.cat==="toxic"){if(fresh)gainXP(18,"spotted a "+sp.n);qEvent("idToxic");
         say("",por,["You're right. It's a "+sp.n+".",note,"You wipe your hands on the grass and leave it exactly where it is."]);return;}
-      if(fresh)gainXP(10,"identified "+sp.n);
+      snd.sfx("good");if(fresh)gainXP(10,"identified "+sp.n);
       if(sp.knife&&!st.tools.knife){say("",por,["Yes: a "+sp.n+".",note,"It's fixed fast to the wood. You'd need a foraging knife to cut it free. Wren sells one."]);return;}
       say("",por,["Yes: a "+sp.n+".",note],function(){ask("",por,clusterLine(clusterSize(s))+" Pick "+(clusterSize(s)===1?"it":"them")+"?",[{t:pickLabel(s),f:function(){pick(s);}},{t:"Leave it for now"}]);});
       return;}
-    if(sp.cat==="toxic"){say("",por,["You reach for it, thinking it's a "+g.n+"... and stop.",tr.stem+" "+tr.under,"That's no "+g.n+". It's a "+sp.n+". "+note,"Your heart's pounding. That's exactly how people get poisoned."]);return;}
+    if(sp.cat==="toxic"){say("",por,["You reach for it, thinking it's a "+g.n+"... and stop.",tr.stem+" "+tr.under,"That's no "+g.n+". It's a "+sp.n+". "+note,(snd.sfx("bad"),"Your heart's pounding")+". That's exactly how people get poisoned."]);return;}
     st.energy=Math.max(0,st.energy-6);
     if(g.cat==="toxic"){say("",por,["You think it's a "+g.n+" and back away... but something nags at you.","Looking closer, it's actually a harmless "+sp.n+". "+note,"Better too careful than not careful enough."]);return;}
     s.up=0;s.back=st.day+1;
@@ -1915,7 +2025,7 @@ function wfCreate(root){
     st.inv[s.sp]=(st.inv[s.sp]||0)+took;st.energy=Math.max(0,st.energy-1);
     if(took<n){s.n=n-took;}else{s.n=0;s.up=0;s.back=st.day+1+Math.floor(Math.random()*2);}
     gainXP(3*took);
-    toast(took===1?"Picked: "+sp.n:"Picked "+took+" "+sp.n+(took>=5?" — what a patch!":""));
+    snd.sfx("pick");toast(took===1?"Picked: "+sp.n:"Picked "+took+" "+sp.n+(took>=5?" — what a patch!":""));
     if(took<n)toast("Basket's full. "+clusterWord(n-took).charAt(0).toUpperCase()+clusterWord(n-took).slice(1)+" left here for later.","bad");
     if(sp.cat==="edible")qEvent("pickEdible",took);if(sp.cat==="medicinal")qEvent("pickMed",took);qEvent("pick_"+s.sp,took);
     save();
@@ -1923,56 +2033,94 @@ function wfCreate(root){
 
   /* ----- woodcutting ----- */
   function axeTier(){return st.tools.mtnaxe?3:st.tools.steelaxe?2:st.tools.axe?1:0;}
-  var chopCool=0;
+  /* one tap starts chopping; you keep swinging until the tree comes down or you walk away */
+  var chopping=null,treeLeft={};
+  function chopInt(){return [1.3,1.3,1.0,0.8][axeTier()];}
   function chopTree(x,y,tk){
     if(treeKind(tileAt(x,y),st.zone)!==tk)return;
     var ti=TREEINFO[tk];
     if(!axeTier()){say("",null,[tk==="dead"?"A fallen log, soft with moss. With an axe you could split it for firewood and building.":"A tall "+ti.n.toLowerCase()+". With an axe, you could fell it for logs. Wren sells axes."]);return;}
     if(sk("wc")<ti.lv){say("",null,["You size up the "+ti.n.toLowerCase()+". The wood's too tough for you yet. You'll need Woodcutting "+ti.lv+"."]);return;}
-    var now=performance.now();if(now<chopCool)return;chopCool=now+420;
     if(st.energy<1){toast("Too tired to chop. Eat something or sleep.","bad");return;}
-    for(var k=0;k<6;k++)chips.push({x:x*PX+8,y:y*PX+8,vx:(Math.random()-0.5)*1.6,vy:-Math.random()*1.2,col:["#c89058","#f0d0a0","#8a5a30"][k%3],t0:now});
+    var key=st.zone+":"+x+","+y;
+    if(treeLeft[key]==null)treeLeft[key]=tk==="dead"?2+Math.floor(Math.random()*3):2+Math.floor(Math.random()*9);
+    fishing=null;keys={};
+    chopping={x:x,y:y,tk:tk,key:key,t:chopInt()*0.6,hitT:0};
+  }
+  function chopTick(dt){if(!chopping)return;var c=chopping;
+    if(treeKind(tileAt(c.x,c.y),st.zone)!==c.tk){chopping=null;return;}
+    c.t+=dt;if(c.t<chopInt())return;c.t=0;
+    if(st.energy<1){toast("Too tired to chop. Eat something or sleep.","bad");chopping=null;return;}
+    var now=performance.now(),ti=TREEINFO[c.tk];c.hitT=now;
+    for(var k=0;k<6;k++)chips.push({x:c.x*PX+8,y:c.y*PX+8,vx:(Math.random()-0.5)*1.6,vy:-Math.random()*1.2,col:["#c89058","#f0d0a0","#8a5a30"][k%3],t0:now});
     var chance=Math.max(0.3,Math.min(0.95,0.55+(sk("wc")-ti.lv)*0.025+[0,0,0.15,0.3][axeTier()]));
-    if(tk==="dead")chance=1;
-    if(Math.random()>chance){floatText(x,y,"thunk","#f0e0c0");return;}
-    st.mat[ti.log]=(st.mat[ti.log]||0)+ti.give;st.logsCut+=ti.give;st.energy=Math.max(0,st.energy-(axeTier()>=2?0.5:1));
-    floatText(x,y,"+"+ti.give+" "+MATN[ti.log].toLowerCase().replace(" logs"," log"),"#ffe08a");
+    if(c.tk==="dead")chance=1;
+    if(Math.random()>chance){snd.sfx("thunk");floatText(c.x,c.y,"thunk","#f0e0c0");return;}
+    st.mat[ti.log]=(st.mat[ti.log]||0)+1;st.logsCut++;st.energy=Math.max(0,st.energy-(axeTier()>=2?0.5:1));
+    snd.sfx("chop");floatText(c.x,c.y,"+1 "+MATN[ti.log].toLowerCase().replace(" logs"," log"),"#ffe08a");
     gainXP(ti.xp,null,"wc");
-    qEvent("chop_"+tk,ti.give);qSet("logs",st.logsCut);
-    if(tk==="dead"||Math.random()<ti.fell){st.felled[st.zone+":"+x+","+y]=st.day+ti.regrow;dirtyTiles.push([x,y]);if(tk!=="dead")setTimeout(function(){floatText(x,y-0.6,"Timber!","#ffffff");},150);}
-    save();
+    qEvent("chop_"+c.tk,1);qSet("logs",st.logsCut);
+    treeLeft[c.key]--;
+    if(treeLeft[c.key]<=0){snd.sfx("timber");delete treeLeft[c.key];st.felled[c.key]=st.day+ti.regrow;dirtyTiles.push([c.x,c.y]);
+      var cx=c.x,cy=c.y;setTimeout(function(){floatText(cx,cy-0.6,c.tk==="dead"?"Split!":"Timber!","#ffffff");},150);
+      chopping=null;save();}
   }
 
-  /* ----- fishing ----- */
+  /* ----- fishing: fish only bite at rippling spots, and the spots wander ----- */
   function rodTier(){return st.tools.deeprod?3:st.tools.flyrod?2:st.tools.rod?1:0;}
   function fishHere(){var z=st.zone,L=sk("fish"),r=rodTier();return Object.keys(FISH).filter(function(k){var f=FISH[k];return f.where.indexOf(z)>=0&&f.lv<=L&&f.rod<=r;});}
-  function startFishing(x,y){
+  var FSPOTN={woods:3,lake:5,marsh:4,cave:2,depths:3,tarn:3},fspots={};
+  function isPond(t){return t===T.WATER||t===T.POOL;}
+  function spotCands(){var out=[];
+    for(var y=1;y<WH-1;y++)for(var x=1;x<WW-1;x++){if(!isPond(tileAt(x,y))||structAt(x,y))continue;
+      if([[1,0],[-1,0],[0,1],[0,-1]].some(function(d){var xx=x+d[0],yy=y+d[1];return !isPond(tileAt(xx,yy))&&!blocked(xx,yy);}))out.push([x,y]);}
+    return out;}
+  function placeSpot(Z,s){
+    function taken(q){return Z.list.some(function(o){return o!==s&&Math.abs(o.x-q[0])+Math.abs(o.y-q[1])<4;});}
+    var pool=s?Z.c.filter(function(q){var d=Math.abs(q[0]-s.x)+Math.abs(q[1]-s.y);return d>=2&&d<=10&&!taken(q);}):[];
+    if(!pool.length)pool=Z.c.filter(function(q){return !taken(q);});if(!pool.length)pool=Z.c;
+    var q=pool[Math.floor(Math.random()*pool.length)];if(!s){s={};Z.list.push(s);}
+    s.x=q[0];s.y=q[1];s.born=performance.now();s.life=45000+Math.random()*90000;s.seed=Math.random()*10;return s;}
+  function spotsHere(){var z=st.zone;if(!FSPOTN[z])return [];
+    if(!fspots[z]){var Z=fspots[z]={c:spotCands(),list:[]},n=Math.min(FSPOTN[z],Math.floor(Z.c.length/3));for(var i=0;i<n;i++)placeSpot(Z,null);}
+    return fspots[z].list;}
+  function spotAt(x,y){var L=spotsHere();for(var i=0;i<L.length;i++)if(L[i].x===x&&L[i].y===y)return L[i];return null;}
+  function spotTick(){var Z=fspots[st.zone];if(!Z)return;var now=performance.now();Z.list.forEach(function(s){if(now-s.born>s.life)placeSpot(Z,s);});}
+  function startFishing(spot,again){var x=spot.x,y=spot.y;
     if(!(st.mat.worms>0)){say("",null,["You've got no bait. Wren and Rue both sell worms."]);return;}
     var avail=Object.keys(FISH).filter(function(k){return FISH[k].where.indexOf(st.zone)>=0;});
     if(!avail.length){say("",null,["Nothing seems to live in this water."]);return;}
     if(!fishHere().length){var lo=avail.map(function(k){return FISH[k];}).sort(function(a,b){return a.lv-b.lv;})[0];
       say("",null,["You watch the water for a while. The fish here are too wily for you yet.","The easiest catch here needs Fishing "+lo.lv+(lo.rod>rodTier()?" and a "+["","fishing rod","fly rod","deep-water rod"][lo.rod]:"")+"."]);return;}
+    if(invCount(st)>=st.cap){say("",null,["Your basket is full. Sell, cook or ship some before you fish."]);return;}
     if(st.energy<1){toast("Too tired to fish.","bad");return;}
-    st.energy-=1;keys={};
-    fishing={x:x,y:y,phase:"wait",t:0,bite:2+Math.random()*3.5,win:1.0+sk("fish")*0.02+(rodTier()>=2?0.25:0)};
-    floatText(x,y,"Cast!","#ffffff");
+    var dx=x-pl.tx,dy=y-pl.ty;if(Math.abs(dx)>=Math.abs(dy)&&dx)st.dir=dx>0?"right":"left";else if(dy)st.dir=dy>0?"down":"up";
+    st.energy-=1;keys={};chopping=null;
+    fishing={x:x,y:y,spot:spot,phase:"wait",t:0,bite:(again?2.5:2)+Math.random()*3.5,win:1.0+sk("fish")*0.02+(rodTier()>=2?0.25:0)};
+    snd.sfx("cast");floatText(x,y,again?"Recast":"Cast!","#ffffff");
   }
-  function reelIn(){var f=fishing;fishing=null;
-    var opts=fishHere(),L=sk("fish");if(!opts.length)return;
+  /* after each catch or miss you cast again by yourself, while the spot stays put */
+  function recast(f){if(!f||f.stop||!f.spot||f.spot.x!==f.x||f.spot.y!==f.y)return;
+    if(!(st.mat.worms>0)||invCount(st)>=st.cap||st.energy<1)return;startFishing(f.spot,true);}
+  function reelIn(){var f=fishing;fishing=null;landFish(f);recast(f);}
+  function landFish(f){
+    var opts=fishHere(),L=sk("fish");if(!opts.length){f.stop=1;return;}
     var weights=opts.map(function(k){return 1+Math.max(0,(L-FISH[k].lv))*0.15+(FISH[k].lv<=L?FISH[k].lv*0.04:0);});
     var tot=weights.reduce(function(a,b){return a+b;},0),r=Math.random()*tot,k=opts[0];for(var i=0;i<opts.length;i++){r-=weights[i];if(r<=0){k=opts[i];break;}}
     var fi=FISH[k],hold=Math.min(0.97,0.62+(L-fi.lv)*0.03+(st.tools.tacklebox?0.15:0));
-    if(Math.random()>hold){floatText(f.x,f.y,"It slipped off!","#ffb0a0");return;}
-    if(invCount(st)>=st.cap){floatText(f.x,f.y,"Basket full!","#ffb0a0");toast("You caught a "+fi.n.toLowerCase()+" but your basket is full, so you let it go.","bad");return;}
+    if(Math.random()>hold){snd.sfx("miss");floatText(f.x,f.y,"It slipped off!","#ffb0a0");return;}
+    if(invCount(st)>=st.cap){f.stop=1;floatText(f.x,f.y,"Basket full!","#ffb0a0");toast("You caught a "+fi.n.toLowerCase()+" but your basket is full, so you let it go.","bad");return;}
     st.inv[k]=(st.inv[k]||0)+1;st.mat.worms=Math.max(0,st.mat.worms-1);var first=!st.caught[k];st.caught[k]=(st.caught[k]||0)+1;
     floatText(f.x,f.y,"+1 "+fi.n,"#bfe8ff");gainXP(fi.xp,first?"first "+fi.n.toLowerCase()+"!":null,"fish");
-    qEvent("catch");qSet("fishkinds",Object.keys(st.caught).length);
+    snd.sfx("catch");qEvent("catch");qSet("fishkinds",Object.keys(st.caught).length);
     if(st.mat.worms===0)toast("That was your last worm.","bad");
+    else if(invCount(st)>=st.cap)toast("Your basket is full. Time to sell or cook.","bad");
     save();
   }
-  function fishTick(dt){if(!fishing)return;fishing.t+=dt;
-    if(fishing.phase==="wait"&&fishing.t>=fishing.bite){fishing.phase="bite";fishing.t=0;try{if(navigator.vibrate)navigator.vibrate(120);}catch(e){}}
-    else if(fishing.phase==="bite"&&fishing.t>=fishing.win){floatText(fishing.x,fishing.y,"It got away","#ffb0a0");fishing=null;}}
+  function fishTick(dt){if(!fishing)return;fishing.t+=dt;var f=fishing;
+    if(f.spot&&(f.spot.x!==f.x||f.spot.y!==f.y)){fishing=null;snd.sfx("miss");floatText(f.x,f.y,"The fish moved on","#bfe8ff");toast("The fish have moved on. Look for the ripples nearby.");return;}
+    if(f.phase==="wait"&&f.t>=f.bite){f.phase="bite";f.t=0;snd.sfx("bite");try{if(navigator.vibrate)navigator.vibrate(120);}catch(e){}}
+    else if(f.phase==="bite"&&f.t>=f.win){snd.sfx("miss");floatText(f.x,f.y,"It got away","#ffb0a0");fishing=null;recast(f);}}
 
   /* ----- chests, pages, lookout ----- */
   function openChest(c){
@@ -2062,13 +2210,13 @@ function wfCreate(root){
     var n=2;WOODORDER.forEach(function(k){var u=Math.min(n,st.mat[k]||0);st.mat[k]-=u;n-=u;});
     st.fires[st.zone+":"+x+","+y]=nowMin()+6*60;
     for(var k=0;k<10;k++)chips.push({x:x*PX+8,y:y*PX+8,vx:(Math.random()-0.5)*1.4,vy:-Math.random()*1.6,col:["#ffd060","#f88820","#fff4b0"][k%3],t0:performance.now()});
-    floatText(x,y,"Fire's lit!","#ffd060");gainXP(10,"lit a fire","wc");save();}
+    snd.sfx("fire");floatText(x,y,"Fire's lit!","#ffd060");gainXP(10,"lit a fire","wc");save();}
   function fireMenu(pit){
     var items=Object.keys(st.inv).filter(function(k){return st.inv[k]>0;});
     var mult=st.tools.copperpot?1.6:st.tools.pot?1.25:1;
     var html='<span class="kicker">'+(pit?"Fire ring · burns for about "+Math.max(1,Math.round(pitLeft(pit.x,pit.y)/60))+" more hour"+(Math.round(pitLeft(pit.x,pit.y)/60)===1?"":"s"):"Campfire")+'</span><h3>Cook or brew</h3><p>Edible mushrooms and fish make a meal; medicinal mushrooms make a restorative tea.'+(mult>1?" Your pot adds "+Math.round((mult-1)*100)+"% energy.":"")+'</p>'
       +(items.length?'<div class="wf-list">'+items.map(function(k){var sp=IT(k);return '<div class="wf-row"><span><b>'+esc(sp.n)+'</b> ×'+st.inv[k]+'</span><span class="muted">'+(sp.cat==="toxic"?"":"+"+Math.round(sp.food*mult)+" energy")+'</span>'+btn("eat:"+k,sp.cat==="medicinal"?"Brew tea":"Cook")+'</div>';}).join('')+'</div>':'<p class="muted">Your basket is empty. Go forage!</p>');
-    open(html,function(b){b.querySelectorAll('[data-a^="eat:"]').forEach(function(e){e.onclick=function(){var k=e.dataset.a.slice(4);st.inv[k]--;if(!st.inv[k])delete st.inv[k];var it=IT(k),g=Math.round(it.food*mult);st.energy=Math.min(100,st.energy+g);toast((it.cat==="medicinal"?"You brew "+it.n+" tea":"You cook the "+it.n.toLowerCase())+". +"+g+" energy");fireMenu();};});});
+    open(html,function(b){b.querySelectorAll('[data-a^="eat:"]').forEach(function(e){e.onclick=function(){var k=e.dataset.a.slice(4);st.inv[k]--;if(!st.inv[k])delete st.inv[k];var it=IT(k),g=Math.round(it.food*mult);st.energy=Math.min(100,st.energy+g);snd.sfx("eat");toast((it.cat==="medicinal"?"You brew "+it.n+" tea":"You cook the "+it.n.toLowerCase())+". +"+g+" energy");fireMenu();};});});
   }
 
   /* ----- sleep and the passing of days ----- */
@@ -2100,7 +2248,7 @@ function wfCreate(root){
       +{sun:"A clear, bright morning.",rain:"Rain is drumming on the roof. It'll water your beds for you, and tomorrow the mushrooms will be up everywhere.",fog:"Thick fog hangs between the trees.",snow:"Fresh snow fell overnight. It'll keep your beds damp."}[st.weather]
       +(wasWet?" After yesterday's rain, mushrooms have popped up all over.":""));
     save();
-    say("",null,morning,function(){notes.forEach(function(n){toast(n);});});
+    snd.sfx("morning");say("",null,morning,function(){notes.forEach(function(n){toast(n);});});
   }
 
   /* ----- beds ----- */
@@ -2189,7 +2337,7 @@ function wfCreate(root){
     open(html,function(b){b.querySelectorAll('[data-a^="b:"]').forEach(function(e){e.onclick=function(){build(e.dataset.a.slice(2));};});});
   }
   function build(id){
-    var bd=BUILDS[id];if(!haveAll(bd))return;
+    var bd=BUILDS[id];if(!haveAll(bd))return;snd.sfx("build");
     for(var k in bd.need){if(k==="wood")useWood(bd.need[k]);else st.mat[k]-=bd.need[k];}if(bd.coins)st.coins-=bd.coins;close();
     if(id==="leanto"){st.shelter="leanto";gainXP(30,"built a lean-to");gainXP(20,null,"wc");qEvent("build_leanto");say("",null,["You lash the poles together and lay the planks across. Not fancy, but it'll keep the rain off."]);}
     else if(id==="cabin"){st.shelter="cabin";gainXP(80,"built a cabin");qEvent("build_cabin");say("",null,["The last nail goes in. You step back and look at it: a real cabin, with a chimney and glass in the windows.","Blackpine Woods is home now."]);}
@@ -2226,7 +2374,7 @@ function wfCreate(root){
     open(html,function(b){b.querySelector('[data-a="back"]').onclick=function(){close();if(back)back();};
       b.querySelectorAll('[data-a^="p:"]').forEach(function(e){e.onclick=function(){var it=list.filter(function(s){return s.id===e.dataset.a.slice(2);})[0];if(st.coins<it.p)return;st.coins-=it.p;
         if(it.kind==="tool")st.tools[it.id]=1;else if(it.kind==="cap")st.cap=Math.max(st.cap,it.cap);else st.mat[it.id]=(st.mat[it.id]||0)+(it.qty||1);
-        toast("Bought: "+it.n,"coin");shopMenu(list,kicker,title,back);};});});
+        snd.sfx("coin");toast("Bought: "+it.n,"coin");shopMenu(list,kicker,title,back);};});});
   }
 
   /* ----- info panels ----- */
@@ -2266,12 +2414,13 @@ function wfCreate(root){
     var s=Math.max(6,Math.min(10,Math.floor(640/WW)));
     var here=st.pageSpots.filter(function(p){return p.zone===st.zone;}),got=here.filter(function(p){return st.pages.indexOf(p.id)>=0;}).length;
     open('<span class="kicker">Map</span><h3>'+esc(ZONES[st.zone].n)+'</h3><div class="wf-mapwrap"><canvas id="wfMapC" width="'+WW*s+'" height="'+WH*s+'" class="wf-map"></canvas></div>'
-      +'<p class="muted"><b style="color:#e02818">●</b> You &nbsp; <b style="color:#f0b020">◆</b> Ways out &nbsp; <b style="color:#a86828">■</b> Unopened chests &nbsp; <b style="color:#7a3aa8">●</b> People &nbsp; <b style="color:#3870d0">■</b> Shops &nbsp; <b style="color:#ff7a20">●</b> Fire rings</p>'
+      +'<p class="muted"><b style="color:#e02818">●</b> You &nbsp; <b style="color:#f0b020">◆</b> Ways out &nbsp; <b style="color:#a86828">■</b> Unopened chests &nbsp; <b style="color:#7a3aa8">●</b> People &nbsp; <b style="color:#3870d0">■</b> Shops &nbsp; <b style="color:#ff7a20">●</b> Fire rings &nbsp; <b style="color:#38c8f8">◎</b> Fishing spots (they move)</p>'
       +'<p class="muted">Lost pages found here: '+got+' of '+here.length+' · Total: '+st.pages.length+' of 12</p>'+mapLinks());
     var c=document.getElementById("wfMapC").getContext("2d");
     for(var y=0;y<WH;y++)for(var x=0;x<WW;x++){var t=tileAt(x,y);c.fillStyle=(t===T.STONE&&st.zone!=="ridge")?"#b0a890":(MAPCOL[t]||"#70c050");if(darkZone()&&t===T.ROCK)c.fillStyle="#8a6ad8";c.fillRect(x*s,y*s,s,s);}
     WARPS[st.zone].forEach(function(w){var lk=doorLock(w);c.fillStyle=lk?"#e05030":"#f0b020";c.strokeStyle="#ffffff";c.lineWidth=1.5;c.beginPath();c.moveTo(w.x*s+s/2,w.y*s-s);c.lineTo(w.x*s+s*2,w.y*s+s/2);c.lineTo(w.x*s+s/2,w.y*s+s*2);c.lineTo(w.x*s-s,w.y*s+s/2);c.closePath();c.fill();c.stroke();
       c.font="bold 11px Geist, sans-serif";c.fillStyle="#ffffff";c.strokeStyle="rgba(20,24,40,.9)";c.lineWidth=3;var nm=ZONES[w.to].n,tw=c.measureText(nm).width,tx=Math.max(2,Math.min(WW*s-tw-2,w.x*s-tw/2)),ty=w.y<WH/2?w.y*s+s*3+10:w.y*s-s*1.5;c.strokeText(nm,tx,ty);c.fillText(nm,tx,ty);});
+    spotsHere().forEach(function(fs){c.fillStyle="#38c8f8";c.strokeStyle="#ffffff";c.lineWidth=1.5;c.beginPath();c.arc(fs.x*s+s/2,fs.y*s+s/2,s*0.85,0,7);c.fill();c.stroke();});
     (ZD[st.zone].pits||[]).forEach(function(p){c.fillStyle=pitLit(p[0],p[1])?"#ff7a20":"#5a5048";c.beginPath();c.arc(p[0]*s+s/2,p[1]*s+s/2,s*0.8,0,7);c.fill();});
     ZD[st.zone].props.forEach(function(p){if(p.kind!=="well"){c.fillStyle=p.kind==="house"?"#8a7a6a":"#3870d0";c.fillRect(p.x*s,p.y*s,p.w*s,p.h*s);}});
     st.chestSpots.forEach(function(ch){if(ch.zone===st.zone&&st.chests.indexOf(ch.id)<0){c.fillStyle="#a86828";c.fillRect(ch.x*s,ch.y*s,s,s);}});
@@ -2284,7 +2433,7 @@ function wfCreate(root){
     open('<span class="kicker">'+(first?"Welcome to":"How to play")+'</span><h3>Blackpine Woods</h3>'
       +(first?'<p>You\'ve hiked into the woods with a backpack, a tent and 5 coins. Forage, chop and fish, trade with Old Wren, build a home, and help reunite the scattered Blackpine Foragers\' Club.</p>'+(hadOld?'<p class="muted">This is a brand-new, bigger world, so you\'re starting fresh.</p>':''):'')
       +'<div class="wf-sub">Controls</div><ul class="list"><li><b>Move:</b> arrow keys or WASD (on a phone, drag the joystick)</li><li><b>Interact / continue talking:</b> E, Space or Enter. Use the arrow keys to pick a choice.</li><li><b>Basket</b> I · <b>Journal</b> J · <b>Quests</b> Q · <b>Map</b> M · <b>Close</b> Esc</li></ul>'
-      +'<div class="wf-sub">Three skills</div><ul class="list"><li><b>🍄 Foraging:</b> examine a mushroom (cap, underneath, stem, smell), then name it. Get it right to pick it.</li><li><b>🪓 Woodcutting:</b> face a tree with an axe and press E to swing. Birch at level 1, oak at 5, willow at 12, pine at 16, mountain pine at 24.</li><li><b>🎣 Fishing:</b> face water with a rod and worms and press E to cast. When the float splashes and a <b>!</b> pops up, press E fast. Better fish need higher levels and better rods.</li></ul>'
+      +'<div class="wf-sub">Three skills</div><ul class="list"><li><b>🍄 Foraging:</b> examine a mushroom (cap, underneath, stem, smell), then name it. Get it right to pick it.</li><li><b>🪓 Woodcutting:</b> face a tree with an axe and press E once. You keep chopping by yourself until it comes down (2 to 10 logs a tree). Walk away any time to stop. Birch at level 1, oak at 5, willow at 12, pine at 16, mountain pine at 24.</li><li><b>🎣 Fishing:</b> fish only bite at <b>fishing spots</b>, where the water ripples and fish jump. They move every minute or two, like real shoals. Stand next to one with a rod and worms and press E. When the float splashes and a <b>!</b> pops up, press E fast. You recast by yourself; walk away to stop. Better fish need higher levels and better rods.</li></ul>'
       +'<div class="wf-sub">Getting around</div><ul class="list"><li>Ways out of each area glow gold and show their name. Red means something is still needed: a tool, a skill level, or a favour for someone.</li><li>The story is told through the people you meet. Press Q to see what to do next, and the map (M) to see the ways out.</li></ul>'
       +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Cook mushrooms and fish at your campfire, or drink water.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
       +'<div class="wf-acts">'+btn("go",first?"Start exploring":"Got it","primary")+'</div>',
@@ -2295,11 +2444,14 @@ function wfCreate(root){
     open('<span class="kicker">Game</span><h3>Save & settings</h3><p>'+(canStore?"Your game saves automatically in this browser (when you sleep, every 20 seconds, and after conversations).":"Your browser is blocking storage here, so progress can't be saved.")+'</p>'
       +(hasCloud?'<p class="muted">'+(cloudReady?"☁ Also saved to your Claude account, so it survives app restarts and works on your other devices.":"☁ Not connected to your Claude account right now, so this game is only saved on this device.")+'</p>':(canStore?'<p class="muted">Saved in this browser on this website. Clearing your browsing data erases it, so copy a save code now and then to keep a backup.</p>':''))
       +'<div class="wf-acts wrap">'+btn("save","Save now","primary",!canStore&&!cloudReady)+btn("new","Start a new game","danger")+'</div><div id="wfNew"></div>'
+      +'<div class="wf-sub">Sound</div><div class="wf-acts wrap">'+btn("mus",snd.music()?"♪ Music: on":"♪ Music: off")+btn("fx",snd.fx()?"🔊 Sound effects: on":"🔇 Sound effects: off")+'</div>'
       +'<div class="wf-sub">Move your game to another device or site</div><p>To carry on somewhere else, copy your save code here and load it there.</p>'
       +'<div class="wf-acts wrap">'+btn("copy","Copy save code","primary")+'</div><textarea id="wfSaveOut" class="wf-code" readonly hidden aria-label="Your save code"></textarea><p class="muted" id="wfCopyMsg"></p>'
       +'<label class="wf-sub" for="wfSaveIn">Load a save code</label><textarea id="wfSaveIn" class="wf-code" placeholder="Paste a save code here" aria-label="Paste a save code"></textarea>'
       +'<div class="wf-acts">'+btn("load","Load this save")+'</div><div id="wfLoadMsg"></div>',
       function(b){b.querySelector('[data-a="save"]').onclick=function(){save();pushCloud();toast("Game saved");close();};
+        b.querySelector('[data-a="mus"]').onclick=function(){snd.unlock();snd.setMusic(!snd.music());sndBtn();this.textContent=snd.music()?"♪ Music: on":"♪ Music: off";};
+        b.querySelector('[data-a="fx"]').onclick=function(){snd.unlock();snd.setSfx(!snd.fx());this.textContent=snd.fx()?"🔊 Sound effects: on":"🔇 Sound effects: off";snd.sfx("coin");};
         b.querySelector('[data-a="copy"]').onclick=function(){save();var code=wfEncodeSave(st),out=b.querySelector("#wfSaveOut"),msg=b.querySelector("#wfCopyMsg");out.value=code;out.hidden=false;
           function manual(){out.focus();out.select();msg.textContent="Your save code is selected above. Copy it (Ctrl+C or long-press), then paste it into the other site.";}
           try{navigator.clipboard.writeText(code).then(function(){msg.textContent="Copied! Open the game on the other site, choose ⚙ Game, and paste it into Load a save code.";},manual);}catch(e){manual();}};
@@ -2318,13 +2470,13 @@ function wfCreate(root){
   function heldDir(){if(keys.up)return"up";if(keys.down)return"down";if(keys.left)return"left";if(keys.right)return"right";return null;}
   function update(dt){
     if(modalOpen||dlg.open||warping)return;
-    st.min+=dt*3.2;fishTick(dt);
+    st.min+=dt*3.2;fishTick(dt);chopTick(dt);spotTick();
     var h=st.min/60;
     if(h>=26){newDay(true);return;}
     if(pl.moving){var tx=pl.tx*TS,ty=pl.ty*TS,sp=TS*8*dt;var dx=tx-pl.px,dy=ty-pl.py,dist=Math.hypot(dx,dy);
       if(dist<=sp){pl.px=tx;pl.py=ty;pl.moving=false;var w=warpAt(pl.tx,pl.ty);if(w&&warpOk(w)){doWarp(w);return;}}
       else{pl.px+=dx/dist*sp;pl.py+=dy/dist*sp;}pl.step+=dt*14;}
-    if(!pl.moving){var d=heldDir();if(d&&fishing){fishing=null;toast("You reel in your line.");}if(d){st.dir=d;var nx=pl.tx+DIRS[d][0],ny=pl.ty+DIRS[d][1];
+    if(!pl.moving){var d=heldDir();if(d&&fishing){fishing=null;toast("You reel in your line.");}if(d&&chopping)chopping=null;if(d){st.dir=d;var nx=pl.tx+DIRS[d][0],ny=pl.ty+DIRS[d][1];
       var wn=warpAt(nx,ny);if(wn&&!warpOk(wn)){keys={};tryDoor(wn);return;}
       if(!blocked(nx,ny)){pl.tx=nx;pl.ty=ny;pl.moving=true;var drain=0.08*(h>=22&&!darkZone()?2.5:1)*(st.tools.boots?0.5:1);st.energy=Math.max(0,st.energy-drain);
         if(st.energy<=0){newDay(true);}}}}
@@ -2366,7 +2518,7 @@ function wfCreate(root){
     if(e.code==="KeyE"||e.code==="Space"||e.code==="Enter"){if(!e.repeat)act();e.preventDefault();}
     else if(e.code==="KeyI"){invMenu();}else if(e.code==="KeyJ"){journalMenu();}else if(e.code==="KeyQ"){questsMenu();}else if(e.code==="KeyM"){mapMenu();}
   }
-  document.addEventListener("keydown",onKey);document.addEventListener("keyup",onKey);
+  document.addEventListener("keydown",onKey);document.addEventListener("keyup",onKey);document.addEventListener("pointerdown",snd.unlock);document.addEventListener("keydown",snd.unlock);
   function onBlur(){keys={};}
   window.addEventListener("blur",onBlur);
   (function(){
@@ -2394,8 +2546,10 @@ function wfCreate(root){
   })();
   document.getElementById("wfActs").addEventListener("pointerdown",function(e){var b=e.target.closest("[data-i]");if(!b)return;e.preventDefault();e.stopPropagation();runAct(actsList[+b.dataset.i]);});
   root.querySelector(".wf-bar2").addEventListener("click",function(e){var b=e.target.closest("[data-m]");if(!b)return;var m=b.dataset.m;
+    if(m==="sound"){snd.unlock();snd.setMusic(!snd.music());sndBtn();toast(snd.music()?"♪ Music on":"Music off");return;}
     if(dlg.open)dlgClose();if(modalOpen)close();
     if(m==="inv")invMenu();else if(m==="journal")journalMenu();else if(m==="quests")questsMenu();else if(m==="map")mapMenu();else if(m==="help")helpMenu(false);else gameMenu();});
+  function sndBtn(){var b=document.getElementById("wfSnd");if(b){b.textContent=snd.music()?"♪ Music":"♪ Off";b.setAttribute("aria-pressed",snd.music()?"true":"false");}}sndBtn();
   stage.addEventListener("pointerdown",function(){if(!modalOpen)stage.focus({preventScroll:true});});
   var ro=window.ResizeObserver?new ResizeObserver(function(){resize();}):null;if(ro)ro.observe(stage);else window.addEventListener("resize",resize);
 
@@ -2403,7 +2557,7 @@ function wfCreate(root){
   if(st.intro)helpMenu(true);
   if(!canStore)toast("Your browser is blocking storage, so this game can't be saved.","bad");
 
-  return {stop:function(){running=false;cancelAnimationFrame(raf);clearInterval(dlg.timer);save();document.removeEventListener("keydown",onKey);document.removeEventListener("keyup",onKey);window.removeEventListener("blur",onBlur);if(ro)ro.disconnect();WW=80;WH=56;}};
+  return {stop:function(){running=false;snd.stop();document.removeEventListener("pointerdown",snd.unlock);document.removeEventListener("keydown",snd.unlock);cancelAnimationFrame(raf);clearInterval(dlg.timer);save();document.removeEventListener("keydown",onKey);document.removeEventListener("keyup",onKey);window.removeEventListener("blur",onBlur);if(ro)ro.disconnect();WW=80;WH=56;}};
 }
 
 WF=wfCreate(document.getElementById("wfRoot"));
