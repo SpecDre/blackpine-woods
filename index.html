@@ -458,7 +458,7 @@ var SEASONAL={"morel":[0],"chanterelle":[1,2],"porcini":[1,2],"hedgehog":[1,2,3]
 function seasonOf(day){return Math.floor((day-1)/7)%4;}
 /* 0 spring, 1 summer, 2 autumn, 3 winter. "all" = perennial brackets and the like */
 var MSEASON={"button":[0,1,2],"oyster":"all","chanterelle":[1,2],"porcini":[1,2],"hedgehog":[1,2,3],"maitake":[2],"morel":[0],"turkey-tail":"all","chaga":"all","birch-polypore":"all",
-  "lions-mane":[1,2],"reishi":[0,1,2],"cordyceps":[0,1],"agarikon":"all","death-cap":[0,1,2],"fly-agaric":[1,2],"honey-fungus":"all","jack-o-lantern":"all","lobster":[1,2],"dryads-saddle":[0,1],
+  "lions-mane":[1,2,3],"reishi":[0,1,2],"cordyceps":[0,1],"agarikon":"all","death-cap":[0,1,2],"fly-agaric":[1,2],"honey-fungus":"all","jack-o-lantern":"all","lobster":[1,2],"dryads-saddle":[0,1],
   "shaggy-mane":[0,2],"matsutake":[1,2],"sculptured-puffball":[1,2],"gypsy":[1,2]};
 var MPEAK={"oyster":[2,3],"chanterelle":[1],"porcini":[2],"hedgehog":[2],"lions-mane":[2],"death-cap":[2],"fly-agaric":[2],"matsutake":[2],"turkey-tail":[2,3],"shaggy-mane":[2],"morel":[0]};
 /* quest mushrooms can still turn up, rarely, out of season, so a story never stalls for a month */
@@ -1115,7 +1115,7 @@ function wfCreate(root){
   function zonePool(z,hab){if(!ZSP)ZSP={};if(!ZSP[z]){var m={};ZD[z].spawns.forEach(function(s){var hb=HAB[s.sp]||"floor";(m[hb]=m[hb]||{})[s.sp]=((m[hb]||{})[s.sp]||0)+1;});ZSP[z]=m;}return ZSP[z][hab]||{};}
   /* pick what sprouts in a spot; share = how much of that habitat's usual crop is in season right now */
   function pickSpecies(z,hab,season){var pool=zonePool(z,hab),noSeason=!!ZONES[z].dark||z==="tarn",tot=0,base=0,list=[];
-    Object.keys(pool).forEach(function(sp){base+=pool[sp];var ss=MSEASON[sp],ok=noSeason||!ss||ss==="all"||ss.indexOf(season)>=0,w=pool[sp]*(ok?((MPEAK[sp]||[]).indexOf(season)>=0&&!noSeason?2:1):(MQUEST[sp]?0.2:0));if(w>0){list.push([sp,w]);tot+=w;}});
+    Object.keys(pool).forEach(function(sp){base+=pool[sp];var ss=MSEASON[sp],ok=noSeason||!ss||ss==="all"||ss.indexOf(season)>=0,w=pool[sp]*(ok?((MPEAK[sp]||[]).indexOf(season)>=0&&!noSeason?2:1):(MQUEST[sp]?0.5:0));if(w>0){list.push([sp,w]);tot+=w;}});
     if(!tot)return null;var r=Math.random()*tot,pick=list[list.length-1][0];for(var i=0;i<list.length;i++){r-=list[i][1];if(r<=0){pick=list[i][0];break;}}return [pick,Math.min(1,tot/base)];}
   /* every morning some finds rot away and empty spots may sprout; the two balance out at a level set by the season */
   function rollSpawns(wet,reseason){var season=seasonOf(st.day),ROT=0.25;
@@ -2021,7 +2021,7 @@ function wfCreate(root){
       ZD[Z].props.forEach(function(p){if(p.w>1)lights.push([(p.x+p.w/2)*PX-ox,(p.y+p.h)*PX-oy,44]);});
       if(fishing)lights.push([fishing.x*PX+8-ox,fishing.y*PX+8-oy,14]);spotsHere().forEach(function(s){lights.push([s.x*PX+8-ox,s.y*PX+8-oy,16]);});
       (ZD[Z].pits||[]).forEach(function(p){if(pitLit(p[0],p[1]))lights.push([p[0]*PX+8-ox,p[1]*PX+8-oy,56+(Math.floor(t/200)%2)*3]);});
-      if(DZ){glows.forEach(function(s){lights.push([s.x*PX+8-ox,s.y*PX+8-oy,18]);});WARPS[Z].forEach(function(w){lights.push([w.x*PX+8-ox,w.y*PX+8-oy,30]);});}
+      if(DZ){NPCS.forEach(function(n){if(n.zone===Z&&npcOn(n))lights.push([n.x*PX+8-ox,n.y*PX+4-oy,40]);});glows.forEach(function(s){lights.push([s.x*PX+8-ox,s.y*PX+8-oy,18]);});WARPS[Z].forEach(function(w){lights.push([w.x*PX+8-ox,w.y*PX+8-oy,30]);});}
       lights.forEach(function(L){var gr=nctx.createRadialGradient(L[0],L[1],0,L[0],L[1],L[2]);gr.addColorStop(0,"rgba(0,0,0,.95)");gr.addColorStop(0.45,"rgba(0,0,0,.75)");gr.addColorStop(1,"rgba(0,0,0,0)");nctx.fillStyle=gr;nctx.beginPath();nctx.arc(L[0],L[1],L[2],0,7);nctx.fill();});
       lctx.drawImage(nlow,0,0);
       var fpts=(ZD[Z].pits||[]).filter(function(p){return pitLit(p[0],p[1]);}).map(function(p){return [p[0],p[1]];});if(Z==="woods")fpts.push([FIRE.x,FIRE.y]);
