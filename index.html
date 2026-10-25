@@ -82,6 +82,7 @@ em{font-style:italic}
 .wf-stage{position:relative;width:100%;height:min(68vh,640px);min-height:340px;border-radius:var(--r-lg);overflow:hidden;background:#244b33;border:1px solid var(--line);box-shadow:var(--shadow);touch-action:none;outline:none;user-select:none;-webkit-user-select:none}
 .wf-stage:focus-visible{box-shadow:0 0 0 3px var(--accent)}
 .wf-stage canvas{display:block;image-rendering:auto}
+.wf-lv{pointer-events:auto;cursor:pointer}
 .wf-hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:10px;pointer-events:none;color:#f6f3ea;font-family:var(--f-mono);font-size:.78rem}
 .wf-hl,.wf-hr{display:flex;flex-direction:column;gap:6px;background:rgba(12,16,13,.62);backdrop-filter:blur(6px);border-radius:12px;padding:8px 11px;min-width:0}
 .wf-hr{align-items:flex-end}
@@ -261,6 +262,7 @@ em{font-style:italic}
 .wf-quest:not(.on){display:none!important}
 .wf-quest.on{animation:wfin .3s ease both}
 .wf-lv #wfLv span{opacity:.55;margin-right:3px;font-variant-numeric:tabular-nums}.wf-lv #wfLv span.on{opacity:1;font-weight:700}
+.wf-box .wf-row.lock{opacity:.5}.wf-box .wf-row .lvtag{display:inline-block;min-width:3.4em;font-weight:700;color:#c83828}
 .wf-box .wf-row .wf-pix{width:22px;height:22px;vertical-align:-6px;margin-right:6px}
 .wf-app .wf-map{max-width:100%;height:auto}
 
@@ -336,6 +338,14 @@ em{font-style:italic}
 }
 .wf-box .wf-code{display:block;width:100%;height:84px;margin:8px 0;font-family:var(--f-mono);font-size:.72rem;line-height:1.35;color:var(--gb-ink);background:#fff;border:2px solid var(--gb-line);border-radius:9px;padding:8px;resize:vertical;word-break:break-all}
 .wf-box label.wf-sub{display:block}
+@media (pointer:coarse),(max-width:720px){.wf-hud .wf-hl{flex:0 0 auto}.wf-hud .wf-clock{font-size:.72rem;letter-spacing:0}}
+/* HUD: see-through, so the world shows behind it */
+.wf-hl,.wf-hr,.wf-quest,.wf-toast{background:rgba(248,248,240,.62);border-color:rgba(56,72,120,.7);box-shadow:inset 0 0 0 2px rgba(168,184,224,.4),0 3px 0 rgba(0,0,0,.12);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.wf-toast.bad{background:rgba(255,240,236,.82)}.wf-toast.lvl{background:rgba(255,246,216,.86)}
+.wf-act{background:rgba(248,248,240,.66);border-color:rgba(56,72,120,.75);box-shadow:inset 0 0 0 2px rgba(168,184,224,.4),0 3px 0 rgba(0,0,0,.12);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.wf-act.first{background:rgba(255,246,208,.78)}.wf-act.dim{opacity:.85}
+.wf-bar,.wf-xp{opacity:.9}
+.wf-a{opacity:.82}.wf-joy{opacity:.75}.wf-joy.on,.wf-a:active{opacity:1}
 .wf-cloud{font-size:.8em;opacity:.35;transition:opacity .3s}.wf-cloud[data-s="saved"]{opacity:1;color:#2f8a4a}.wf-cloud[data-s="error"]{opacity:1;color:#c02818}
 [hidden]{display:none!important}
 /* ---------- standalone full-screen layout ---------- */
@@ -1767,9 +1777,14 @@ function wfCreate(root){
 
   function resize(){var r=stage.getBoundingClientRect();cw=Math.max(240,Math.round(r.width));ch=Math.max(220,Math.round(r.height));
     SC=cw>=620?3:2;lw=Math.ceil(cw/SC);lh=Math.ceil(ch/SC);low.width=lw*Q;low.height=lh*Q;nlow.width=lw;nlow.height=lh;
-    can.width=lw*SC;can.height=lh*SC;can.style.width=(lw*SC)+"px";can.style.height=(lh*SC)+"px";}
+    DPR=Math.min(3,window.devicePixelRatio||1);can.width=Math.round(lw*SC*DPR);can.height=Math.round(lh*SC*DPR);can.style.width=(lw*SC)+"px";can.style.height=(lh*SC)+"px";}
   function shadow(X,Y,w){lctx.fillStyle="rgba(14,30,16,.30)";lctx.beginPath();lctx.ellipse(X+8,Y+15,w/2+0.5,1.8,0,0,7);lctx.fill();lctx.fillStyle="rgba(14,30,16,.18)";lctx.beginPath();lctx.ellipse(X+8,Y+15,w/2+1.8,2.6,0,0,7);lctx.fill();}
-  var VIG=null;
+  var VIG=null,DPR=1,hiQ=[];
+  /* trees vary from about 86% to 114% of full size, always the same for a given spot */
+  function isTreeT(t){return t===T.OAK||t===T.PINE||t===T.BIRCH||t===T.WILLOW;}
+  function treeScale(x,y){return isTreeT(tileAt(x,y))?0.86+hsh(x*7+3,y*13+5)*0.28:1;}
+  function drawObj(o,X,Y,s){var img=o[0],w=img.width/Q,hh=img.height/Q;if(s===1){D(img,X+o[1],Y+o[2]);return;}
+    var bx=X+o[1]+w/2,by=Y+o[2]+hh,W=Math.round(w*s*Q)/Q,H=Math.round(hh*s*Q)/Q;lctx.drawImage(img,Math.round((bx-W/2)*Q)/Q,Math.round((by-H)*Q)/Q,W,H);}
   function objSpr(t){var sp=sprSeason(gpal().season);
     if(t===T.OAK)return [sp.oak,-1,-7];if(t===T.PINE)return [sp.pine,-1,-7];if(t===T.BIRCH)return [sp.birch,-1,-7];if(t===T.WILLOW)return [sp.willow,-1,-7];
     if(t===T.LOG)return [SPR.log,0,0];if(t===T.STUMP)return [SPR.stump,0,0];if(t===T.ROCK)return [darkZone()?SPR.crystal:SPR.rock,0,0];
@@ -1826,7 +1841,7 @@ function wfCreate(root){
     /* wood chips */
     chips=chips.filter(function(c){return t-c.t0<500;});chips.forEach(function(c){var k=(t-c.t0)/500;lctx.fillStyle=c.col;lctx.fillRect(c.x-ox+c.vx*k*10,c.y-oy+c.vy*k*10+k*k*8,1,1);});
   }
-  function drawOverlay(t,ox,oy){
+  function drawOverlay(t,ox,oy){hiQ=[];
     /* doors: a pulsing beacon and a name tag */
     WARPS[st.zone].forEach(function(w){var X=w.x*PX+8-ox,Y=w.y*PX+8-oy;if(X<-60||Y<-30||X>lw+60||Y>lh+30)return;
       var lock=doorLock(w),pulse=0.5+0.5*Math.sin(t/380);
@@ -1840,17 +1855,28 @@ function wfCreate(root){
       if(dir==="up"){lctx.moveTo(ax,ay-4.5);lctx.lineTo(ax+5,ay+1.5);lctx.lineTo(ax-5,ay+1.5);}else if(dir==="down"){lctx.moveTo(ax,ay+3);lctx.lineTo(ax+5,ay-3);lctx.lineTo(ax-5,ay-3);}
       else if(dir==="left"){lctx.moveTo(ax-4.5,ay);lctx.lineTo(ax+1.5,ay-5);lctx.lineTo(ax+1.5,ay+5);}else{lctx.moveTo(ax+4.5,ay);lctx.lineTo(ax-1.5,ay-5);lctx.lineTo(ax-1.5,ay+5);}
       lctx.closePath();lctx.fill();lctx.stroke();
-      var name=(lock?"🔒 ":"→ ")+ZONES[w.to].n;lctx.font="800 6.5px Geist, system-ui, sans-serif";var tw=lctx.measureText(name).width+8,ty=ay-14;
-      var tx=Math.max(2-ox*0,Math.min(lw-tw-2,X-tw/2));if(ty<14)ty=Y+12;
-      lctx.fillStyle=lock?"rgba(255,236,230,.96)":"rgba(255,246,208,.97)";lctx.strokeStyle=lock?"#a02818":"#283048";lctx.lineWidth=1;rrect(tx,ty,tw,10,2.5);lctx.fill();lctx.stroke();
-      lctx.fillStyle=lock?"#a02818":"#283048";lctx.textBaseline="middle";lctx.fillText(name,tx+4,ty+5.4);
-      if(lock){var sub=lock;lctx.font="700 5px Geist, system-ui, sans-serif";var sw=lctx.measureText(sub).width+6;var sx=Math.max(2,Math.min(lw-sw-2,X-sw/2));lctx.fillStyle="rgba(255,240,236,.95)";rrect(sx,ty+11,sw,8,2);lctx.fill();lctx.fillStyle="#a02818";lctx.fillText(sub,sx+3,ty+15.2);}});
+      hiQ.push({k:"tag",x:X,y:Y-14,dy:Y,name:ZONES[w.to].n,lock:lock});});
     /* floating text */
     var now=performance.now();floaters=floaters.filter(function(f){return now-f.t0<1300;});
-    floaters.forEach(function(f){var k=(now-f.t0)/1300;lctx.font="700 5px Geist, system-ui, sans-serif";lctx.textAlign="center";lctx.textBaseline="middle";
-      var X=f.x-ox,Y=f.y-oy-6-k*10;lctx.globalAlpha=1-k*k;lctx.lineWidth=1.4;lctx.strokeStyle="rgba(20,24,40,.85)";lctx.strokeText(f.txt,X,Y);lctx.fillStyle=f.col;lctx.fillText(f.txt,X,Y);lctx.globalAlpha=1;lctx.textAlign="left";});
-    if(fishing&&fishing.phase==="bite"){var X2=fishing.x*PX+8-ox,Y2=fishing.y*PX-oy-6,sc=1+Math.sin(t/70)*0.12;lctx.save();lctx.translate(X2,Y2-6);lctx.scale(sc,sc);lctx.fillStyle="#ffd848";lctx.strokeStyle="#283048";lctx.lineWidth=1;rrect(-6,-7,12,13,3);lctx.fill();lctx.stroke();lctx.fillStyle="#c02818";lctx.font="900 11px Geist, system-ui, sans-serif";lctx.textAlign="center";lctx.textBaseline="middle";lctx.fillText("!",0,0);lctx.restore();lctx.textAlign="left";}
+    floaters.forEach(function(f){var k=(now-f.t0)/1300;hiQ.push({k:"float",x:f.x-ox,y:f.y-oy-6-k*10,txt:f.txt,col:f.col,a:1-k*k});});
+    if(fishing&&fishing.phase==="bite")hiQ.push({k:"bite",x:fishing.x*PX+8-ox,y:fishing.y*PX-oy-12-(fishing.y<pl.ty?6:0),sc:1+Math.sin(t/70)*0.1});
   }
+  /* words drawn at screen resolution, in the same font and style as the menus */
+  function rr(g,x,y,w,hh,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+hh,r);g.arcTo(x+w,y+hh,x,y+hh,r);g.arcTo(x,y+hh,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+  function drawHi(){var g=ctx,S=SC,W=lw*SC,F="Geist, 'Segoe UI', system-ui, sans-serif";g.save();g.setTransform(DPR,0,0,DPR,0,0);g.textBaseline="middle";g.lineJoin="round";
+    hiQ.forEach(function(q){
+      if(q.k==="tag"){g.font="700 13px "+F;var pre=q.lock?"🔒 ":"▶ ",pw=g.measureText(pre).width,tw=Math.ceil(pw+g.measureText(q.name).width)+22,th=26,cx=q.x*S;
+        var top=(q.y-6)*S-th;if(top<58)top=(q.dy+12)*S;var left=Math.round(Math.max(4,Math.min(W-tw-4,cx-tw/2)));top=Math.round(top);
+        g.fillStyle="rgba(0,0,0,.15)";rr(g,left,top+3,tw,th,9);g.fill();
+        g.fillStyle=q.lock?"rgba(255,240,236,.86)":"rgba(248,248,240,.8)";rr(g,left,top,tw,th,9);g.fill();g.lineWidth=3;g.strokeStyle=q.lock?"#a02818":"#384878";g.stroke();
+        g.lineWidth=1.5;g.strokeStyle=q.lock?"rgba(232,160,140,.9)":"#a8b8e0";rr(g,left+3.5,top+3.5,tw-7,th-7,6);g.stroke();
+        g.textAlign="left";g.fillStyle=q.lock?"#a02818":"#c83828";g.fillText(pre,left+11,top+th/2+1);g.fillStyle=q.lock?"#a02818":"#283048";g.fillText(q.name,left+11+pw,top+th/2+1);
+        if(q.lock){g.font="600 11.5px "+F;var sw=Math.ceil(g.measureText(q.lock).width)+16,sl=Math.round(Math.max(4,Math.min(W-sw-4,cx-sw/2)));
+          g.fillStyle="#fff0ec";rr(g,sl,top+th+5,sw,19,7);g.fill();g.lineWidth=1.5;g.strokeStyle="#a02818";g.stroke();g.fillStyle="#a02818";g.fillText(q.lock,sl+8,top+th+15);}}
+      else if(q.k==="float"){g.globalAlpha=Math.max(0,q.a);g.font="700 13px "+F;g.textAlign="center";g.lineWidth=4;g.strokeStyle="rgba(20,24,40,.85)";g.strokeText(q.txt,q.x*S,q.y*S);g.fillStyle=q.col;g.fillText(q.txt,q.x*S,q.y*S);g.globalAlpha=1;}
+      else if(q.k==="bite"){g.save();g.translate(q.x*S,q.y*S);g.scale(q.sc,q.sc);g.fillStyle="rgba(0,0,0,.25)";rr(g,-13,-12,26,30,8);g.fill();g.fillStyle="#ffd848";g.strokeStyle="#283048";g.lineWidth=3;rr(g,-13,-15,26,30,8);g.fill();g.stroke();
+        g.fillStyle="#c02818";g.font="900 21px "+F;g.textAlign="center";g.fillText("!",0,1);g.restore();}});
+    g.restore();}
   var actsKey="",actsList=[];
   function updateActs(){var bar=document.getElementById("wfActs"),btn=document.querySelector("#wfPad .wf-a");if(!bar)return;
     var list,key;
@@ -1879,7 +1905,7 @@ function wfCreate(root){
     function inView(x,y){return x>=x0&&x<=x1&&y>=y0&&y<=y1;}
     var E=[],glows=[];
     for(var oyy=Math.max(0,y0);oyy<=Math.min(WH-1,y1+1);oyy++)for(var oxx=Math.max(0,x0);oxx<=Math.min(WW-1,x1);oxx++){var os=objSpr(tileAt(oxx,oyy));
-      if(os)(function(o,xx,yy){E.push([yy-0.02,function(){var sh=shakeAt(xx,yy,t);D(o[0],xx*PX-ox+o[1]+sh,yy*PX-oy+o[2]);}]);})(os,oxx,oyy);}
+      if(os)(function(o,xx,yy){var ts=treeScale(xx,yy);E.push([yy-0.02,function(){var sh=shakeAt(xx,yy,t);drawObj(o,xx*PX-ox+sh,yy*PX-oy,ts);}]);})(os,oxx,oyy);}
     spawnsHere().forEach(function(s){if(visible(s)&&inView(s.x,s.y)){if(WSP[s.sp].glow)glows.push(s);E.push([s.y,function(){var X=s.x*PX-ox,Y=s.y*PX-oy;shadow(X,Y,10);D(mush(s.sp),X,Y+mushDrop(s.sp));
       if((Math.floor(t/350)+s.id)%6===0){var sx=X+12,sy=Y+2;P(lctx,sx,sy-1,"#ffffff");P(lctx,sx-1,sy,"#ffffff");P(lctx,sx+1,sy,"#ffffff");P(lctx,sx,sy+1,"#ffffff");P(lctx,sx,sy,"#fff8a0");}}]);}});
     st.pageSpots.forEach(function(p){if(p.zone===Z&&st.pages.indexOf(p.id)<0&&inView(p.x,p.y))E.push([p.y,function(){var X=p.x*PX-ox,Y=p.y*PX-oy,bob=Math.floor(t/400)%2;shadow(X,Y,8);D(BLD.page,X+3,Y+4-bob*0.5);
@@ -1915,7 +1941,7 @@ function wfCreate(root){
     fallers.forEach(function(f){E.push([f.y-0.02,function(){var k=(t-f.t0)/1000,u=Math.min(1,k/0.75),ang=f.dir*u*u*Math.PI/2*0.92,al=k<0.9?1:Math.max(0,1-(k-0.9)/0.5);
       if(u>=1&&!f.dust){f.dust=1;for(var i=0;i<14;i++)addPart({x:f.x*PX+8+f.dir*(3+i*1.3),y:f.y*PX+15,vx:(Math.random()-0.5)*16,vy:-3-Math.random()*7,g:0,life:900,col:"rgba(225,215,195,.85)",sz:2});
         for(var j=0;j<6;j++)addPart({x:f.x*PX+8+f.dir*(8+j*2),y:f.y*PX+10,vx:(Math.random()-0.5)*20,vy:-10-Math.random()*10,g:30,life:1400,col:leafCol(),sz:1,sway:3});}
-      lctx.save();lctx.globalAlpha=al;lctx.translate(f.x*PX-ox+8,f.y*PX-oy+16);lctx.rotate(ang);lctx.drawImage(f.img,f.ox-8,f.oy-16,f.img.width/Q,f.img.height/Q);lctx.restore();}]);});
+      lctx.save();lctx.globalAlpha=al;lctx.translate(f.x*PX-ox+8,f.y*PX-oy+16);lctx.rotate(ang);var fw=f.img.width/Q,fh=f.img.height/Q,fs=f.s||1;lctx.drawImage(f.img,(f.ox+fw/2-8)-fw*fs/2,(f.oy+fh-16)-fh*fs,fw*fs,fh*fs);lctx.restore();}]);});
     if(fishing)E.push([fishing.y+0.5,function(){drawCast(t,ox,oy);}]);
     E.sort(function(a,b){return a[0]-b[0];}).forEach(function(e){e[1]();});
     lctx.drawImage(objs,ox*Q,oy*Q,lw*Q,lh*Q,0,0,lw,lh);
@@ -1968,7 +1994,7 @@ function wfCreate(root){
     flyers.forEach(function(f){var k=(t-f.t0)/650,e=1-(1-k)*(1-k),hx=cx-ox+8,hy=cy-oy-6,x0=f.x-ox,y0=f.y-oy,X=x0+(hx-x0)*e,Y=y0+(hy-y0)*e-Math.sin(k*Math.PI)*12,w=14*(1-k*0.55);
       lctx.globalAlpha=k>0.8?(1-k)/0.2:1;lctx.drawImage(f.img,X-w/2,Y-w/2,w,w);lctx.globalAlpha=1;});
     drawOverlay(t,ox,oy);
-    ctx.imageSmoothingEnabled=false;ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(low,0,0,lw*SC,lh*SC);
+    ctx.imageSmoothingEnabled=false;ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(low,0,0,can.width,can.height);drawHi();
     var tgt=(modalOpen||dlg.open)?null:(fishing?{x:fishing.x,y:fishing.y,label:fishing.phase==="bite"?"E · REEL IN NOW!":"Waiting for a bite… (move to stop)"}:target());var pr=document.getElementById("wfPrompt");pr.classList.toggle("bite",!!(fishing&&fishing.phase==="bite"));stage.classList.toggle("bite",!!(fishing&&fishing.phase==="bite"));updateActs();tgt=null;
     if(tgt){pr.hidden=false;pr.textContent=tgt.label;var sx3=(tgt.x*PX-ox)*SC,sy4=(tgt.y*PX-oy)*SC;
       pr.style.left=Math.max(8,Math.min(cw-190,sx3-30))+"px";pr.style.top=(fishing?Math.min(ch-60,sy4+30):Math.max(64,sy4-34))+"px";}else pr.hidden=true;
@@ -2234,7 +2260,7 @@ function wfCreate(root){
     gainXP(ti.xp,null,"wc");
     qEvent("chop_"+c.tk,1);qSet("logs",st.logsCut);
     treeLeft[c.key]--;
-    if(treeLeft[c.key]<=0){snd.sfx("timber");var fos=objSpr(tileAt(c.x,c.y));if(fos&&c.tk!=="dead")fallers.push({img:fos[0],ox:fos[1],oy:fos[2],x:c.x,y:c.y,dir:c.x>=pl.tx?1:-1,t0:performance.now()});else for(var sp2=0;sp2<14;sp2++)addPart({x:c.x*PX+8,y:c.y*PX+10,vx:(Math.random()-0.5)*50,vy:-20-Math.random()*25,g:140,life:700,col:["#c89058","#f0d0a0","#8a5a30"][sp2%3],sz:1.5});delete treeLeft[c.key];st.felled[c.key]=st.day+ti.regrow;dirtyTiles.push([c.x,c.y]);
+    if(treeLeft[c.key]<=0){snd.sfx("timber");var fos=objSpr(tileAt(c.x,c.y));if(fos&&c.tk!=="dead")fallers.push({img:fos[0],ox:fos[1],oy:fos[2],x:c.x,y:c.y,s:treeScale(c.x,c.y),dir:c.x>=pl.tx?1:-1,t0:performance.now()});else for(var sp2=0;sp2<14;sp2++)addPart({x:c.x*PX+8,y:c.y*PX+10,vx:(Math.random()-0.5)*50,vy:-20-Math.random()*25,g:140,life:700,col:["#c89058","#f0d0a0","#8a5a30"][sp2%3],sz:1.5});delete treeLeft[c.key];st.felled[c.key]=st.day+ti.regrow;dirtyTiles.push([c.x,c.y]);
       var cx=c.x,cy=c.y;setTimeout(function(){floatText(cx,cy-0.6,c.tk==="dead"?"Split!":"Timber!","#ffffff");},150);
       chopping=null;save();}
   }
@@ -2639,13 +2665,31 @@ function wfCreate(root){
     open('<span class="kicker">Day '+st.day+' · '+SEASONS[seasonOf(st.day)]+'</span><h3>Your pack</h3>'
       +'<div class="wf-sub">Skills</div><div class="wf-list">'+Object.keys(SKILLN).map(function(k){var l=sk(k),x=st.skills[k]||0,lo=xpAt(l),hi=xpAt(l+1);
         return '<div class="wf-row"><span><b>'+SKILLI[k]+' '+SKILLN[k]+'</b> · level '+l+'</span><span class="muted">'+(l>=MAXL?"max level":(hi-x)+" XP to level "+(l+1))+'</span></div>';}).join('')+'</div>'
+      +'<div class="wf-acts">'+btn("skills","📈 All levels and unlocks","primary")+'</div>'
       +'<div class="wf-sub">Basket '+invCount(st)+' / '+st.cap+'</div>'+(items.length?'<div class="wf-chips">'+items.map(function(k){return '<span class="chip">'+icon(k)+esc(IT(k).n)+' ×'+st.inv[k]+'</span>';}).join('')+'</div>':'<p class="muted">Empty.</p>')
       +(st.inv["fresh-water"]>0?'<div class="wf-list"><div class="wf-row"><span>'+icon("fresh-water")+'<b>Fresh water</b> ×'+st.inv["fresh-water"]+'</span><span class="muted">+'+WATER["fresh-water"].food+' energy</span>'+btn("drink","Drink")+'</div></div>':'')
       +(st.inv["raw-water"]>0?'<p class="muted">Raw water needs boiling at a fire before you can drink it.</p>':'')
       +'<div class="wf-sub">Logs and materials</div>'+(mats.length?'<div class="wf-chips">'+mats.map(function(k){return '<span class="chip">'+(LOGV[k]!=null?icon(k):"")+esc(MATN[k])+' ×'+st.mat[k]+'</span>';}).join('')+'</div>':'<p class="muted">None yet.</p>')
       +'<div class="wf-sub">Tools</div>'+(tools.length?'<div class="wf-chips">'+tools.map(function(k){return '<span class="chip moss">'+esc(TOOLN[k])+'</span>';}).join('')+'</div>':'<p class="muted">Just your boots and a backpack.</p>')
-      +'<p class="muted" style="margin-top:12px">'+st.coins+' coins · '+st.logsCut+' logs chopped · '+Object.keys(st.caught).length+'/'+Object.keys(FISH).length+' kinds of fish · '+st.pages.length+'/12 pages · '+st.chests.length+'/'+st.chestSpots.length+' chests</p>',function(b){var dr=b.querySelector('[data-a="drink"]');if(dr)dr.onclick=function(){useFresh();invMenu();};});
+      +'<p class="muted" style="margin-top:12px">'+st.coins+' coins · '+st.logsCut+' logs chopped · '+Object.keys(st.caught).length+'/'+Object.keys(FISH).length+' kinds of fish · '+st.pages.length+'/12 pages · '+st.chests.length+'/'+st.chestSpots.length+' chests</p>',function(b){var dr=b.querySelector('[data-a="drink"]');if(dr)dr.onclick=function(){useFresh();invMenu();};b.querySelector('[data-a="skills"]').onclick=function(){skillsMenu();};});
   }
+  /* every level gate in the game, built from the data so it never goes stale */
+  function skillUnlocks(sk2){var out=[],shops=[[SHOP,"Wren"],[RUE_SHOP,"Rue"],[BRAM_SHOP,"Bram"]],seen={};
+    shops.forEach(function(S){S[0].forEach(function(it){var lv2=it.req&&it.req[sk2];if(lv2==null||seen[it.id])return;seen[it.id]=1;out.push([lv2,"Buy "+it.n+" ("+S[1]+", "+it.p+" coins)"]);});});
+    if(sk2==="forage"){Object.keys(BUILDS).forEach(function(b){out.push([BUILDS[b].lv,"Build "+BUILDS[b].n]);});
+      SIDE.forEach(function(j){if(j.lv>1)out.push([j.lv,"Side job: "+j.n]);});}
+    if(sk2==="wc")Object.keys(TREEINFO).forEach(function(k){out.push([TREEINFO[k].lv,"Chop "+TREEINFO[k].n.toLowerCase()+" ("+MATN[TREEINFO[k].log].toLowerCase()+", "+TREEINFO[k].xp+" XP each)"]);});
+    if(sk2==="fish")Object.keys(FISH).forEach(function(k){var f=FISH[k];out.push([f.lv,"Catch "+f.n.toLowerCase()+" ("+["","rod","fly rod","deep-water rod"][f.rod]+", "+f.where.map(function(z){return ZONES[z].n;}).join(" / ")+")"]);});
+    Object.keys(WARPS).forEach(function(z){WARPS[z].forEach(function(w){if(w.skill&&w.skill[sk2])out.push([w.skill[sk2],"Enter "+ZONES[w.to].n]);});});
+    return out.sort(function(a,b){return a[0]-b[0];});}
+  function skillsMenu(sel){sel=sel||lastSkill||"forage";
+    var l=sk(sel),x=st.skills[sel]||0,nx=xpAt(l+1),list=skillUnlocks(sel),done=list.filter(function(r){return r[0]<=l;}).length;
+    var html='<span class="kicker">Skills · max level '+MAXL+'</span><h3>'+SKILLI[sel]+' '+SKILLN[sel]+'</h3>'
+      +'<div class="wf-acts wrap">'+Object.keys(SKILLN).map(function(k){return btn("sk:"+k,SKILLI[k]+" "+SKILLN[k]+" "+sk(k),k===sel?"primary":"");}).join('')+'</div>'
+      +'<p><b>Level '+l+' of '+MAXL+'</b> · '+x+' XP'+(l>=MAXL?' · maxed out!':' · '+(nx-x)+' XP to level '+(l+1))+'. Level '+MAXL+' takes '+xpAt(MAXL)+' XP.</p>'
+      +'<p class="muted">You\'ve unlocked '+done+' of '+list.length+' things below.'+(sel==="wc"?" Better axes also chop faster: steel axe swings about 30% quicker, the mountain axe about 60%.":"")+(sel==="fish"?" A tackle box stops fish slipping the hook.":"")+'</p>'
+      +'<div class="wf-list">'+list.map(function(r){var ok=r[0]<=l;return '<div class="wf-row'+(ok?'':' lock')+'"><span><span class="lvtag">Lv '+r[0]+'</span>'+esc(r[1])+'</span><span class="muted">'+(ok?'✓':'🔒')+'</span></div>';}).join('')+'</div>';
+    open(html,function(b){b.querySelectorAll('[data-a^="sk:"]').forEach(function(e){e.onclick=function(){skillsMenu(e.dataset.a.slice(3));};});});}
   function journalMenu(){
     var found=WILD.filter(function(k){return st.journal[k];}).length;
     open('<span class="kicker">Field journal</span><h3>'+found+' of '+WILD.length+' species identified</h3><p class="muted">Identify a species correctly twice and you\'ll recognise it on sight.</p><div class="wf-jgrid">'
@@ -2690,7 +2734,7 @@ function wfCreate(root){
       +'<div class="wf-sub">Controls</div><ul class="list"><li><b>Move:</b> arrow keys or WASD (on a phone, drag the joystick)</li><li><b>Interact / continue talking:</b> E, Space or Enter. Use the arrow keys to pick a choice.</li><li><b>Basket</b> I · <b>Journal</b> J · <b>Quests</b> Q · <b>Map</b> M · <b>Close</b> Esc</li></ul>'
       +'<div class="wf-sub">Three skills</div><ul class="list"><li><b>🍄 Foraging:</b> examine a mushroom (cap, underneath, stem, smell), then name it. Get it right to pick it.</li><li><b>🪓 Woodcutting:</b> face a tree with an axe and press E once. You keep chopping by yourself until it comes down (2 to 10 logs a tree). Walk away any time to stop. Birch at level 1, oak at 5, willow at 12, pine at 16, mountain pine at 24.</li><li><b>🎣 Fishing:</b> fish only bite at <b>fishing spots</b>, where the water ripples and fish jump. They move every minute or two, like real shoals. Stand next to one with a rod and worms and press E. Each spot holds different fish: shallows, trout riffles, weed beds, drop-offs, deep holes and more. Once you start, you fish by yourself, hooking bites and recasting, until the spot moves, your basket fills, you run out of worms or you walk away. Better fish need higher levels and better rods.</li></ul>'
       +'<div class="wf-sub">Getting around</div><ul class="list"><li>Ways out of each area glow gold and show their name. Red means something is still needed: a tool, a skill level, or a favour for someone.</li><li>The story is told through the people you meet. Press Q to see what to do next, and the map (M) to see the ways out.</li></ul>'
-      +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Get it back by eating (cook mushrooms and fish at your campfire or a fire ring) and drinking. Collect raw water from streams and ponds, boil it at a fire to make fresh water, then drink it from your basket any time. The village well is clean enough to drink straight away. Sleeping restores energy overnight.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Basket full? Build a <b>storage chest</b> from the sign at camp and keep extra mushrooms, fish and water there. Old Wren and Bram can open it for you too. Upgrade it to an iron-bound chest (100 items) and then a root cellar (250). Bigger bags are sold at the shops as you level up.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
+      +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Get it back by eating (cook mushrooms and fish at your campfire or a fire ring) and drinking. Collect raw water from streams and ponds, boil it at a fire to make fresh water, then drink it from your basket any time. The village well is clean enough to drink straight away. Sleeping restores energy overnight.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Basket full? Build a <b>storage chest</b> from the sign at camp and keep extra mushrooms, fish and water there. Old Wren and Bram can open it for you too. Upgrade it to an iron-bound chest (100 items) and then a root cellar (250). Bigger bags are sold at the shops as you level up.</li><li>Tap the skill levels at the top right (or <b>📈 All levels and unlocks</b> in your Basket) to see every level up to '+MAXL+' and what each one unlocks.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
       +'<div class="wf-acts">'+btn("go",first?"Start exploring":"Got it","primary")+'</div>',
       function(b){b.querySelector('[data-a="go"]').onclick=function(){st.intro=0;close();flashQuest();};});
   }
@@ -2739,7 +2783,7 @@ function wfCreate(root){
   var nightWarned=0;
   function hud(){
     var s=seasonOf(st.day);
-    document.getElementById("wfClock").textContent="Day "+st.day+" · "+SEASONS[s].slice(0,3)+" "+(darkZone()?"🕯":WICON[st.weather]||"")+" "+clock();
+    document.getElementById("wfClock").textContent="Day "+st.day+" · "+SEASONS[s]+" "+(darkZone()?"🕯":WICON[st.weather]||"")+" "+clock();
     var en=document.getElementById("wfEn");en.style.width=Math.max(0,st.energy)+"%";en.className=st.energy<25?"low":"";
     document.getElementById("wfCoins").textContent="🪙 "+st.coins;
     var ls=lastSkill,l=sk(ls),lo=xpAt(l),hi=xpAt(l+1);document.getElementById("wfLv").innerHTML=Object.keys(SKILLN).map(function(k){return '<span class="'+(k===ls?"on":"")+'">'+SKILLI[k]+' '+sk(k)+'</span>';}).join(" ");
@@ -2805,6 +2849,7 @@ function wfCreate(root){
     if(dlg.open)dlgClose();if(modalOpen)close();
     if(m==="inv")invMenu();else if(m==="journal")journalMenu();else if(m==="quests")questsMenu();else if(m==="map")mapMenu();else if(m==="help")helpMenu(false);else gameMenu();});
   function sndBtn(){var b=document.getElementById("wfSnd");if(b){b.textContent=snd.music()?"♪ Music":"♪ Off";b.setAttribute("aria-pressed",snd.music()?"true":"false");}}sndBtn();
+  root.querySelector(".wf-lv").addEventListener("click",function(e){e.stopPropagation();if(dlg.open)dlgClose();skillsMenu();});
   stage.addEventListener("pointerdown",function(){if(!modalOpen)stage.focus({preventScroll:true});});
   var ro=window.ResizeObserver?new ResizeObserver(function(){resize();}):null;if(ro)ro.observe(stage);else window.addEventListener("resize",resize);
 
