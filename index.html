@@ -427,6 +427,10 @@ var WSP={
  "gypsy":{n:"Gypsy mushroom",cat:"edible",val:9,food:14,cap:"#c8a868",where:"near the ridge pines",key:"Tan, wrinkled cap with a ring on the stem (Cortinarius caperatus).",nophoto:1},
  "shiitake":{n:"Shiitake",cat:"edible",val:8,food:15,cap:"#7a4e2d",where:"on your log stack",key:"Brown cap with pale flecks, grown on oak logs.",farm:1}
 };
+var WATER={
+ "raw-water":{n:"Raw water",cat:"water",val:0,food:0,key:"Straight from a stream or pond. Boil it at a fire before you drink it."},
+ "fresh-water":{n:"Fresh water",cat:"water",val:1,food:8,key:"Boiled clean. Drink it any time for energy."}
+};
 var WILD=Object.keys(WSP).filter(function(k){return !WSP[k].farm;});
 var LOOKALIKE={"jack-o-lantern":["chanterelle","honey-fungus"],"chanterelle":["jack-o-lantern"],"button":["death-cap"],"death-cap":["button","shaggy-mane"],"shaggy-mane":["button"],"honey-fungus":["jack-o-lantern"],"sculptured-puffball":["button"],"gypsy":["death-cap"]};
 var SEASONS=["Spring","Summer","Autumn","Winter"], WICON={sun:"☀",rain:"🌧",fog:"🌫",snow:"❄"};
@@ -950,6 +954,8 @@ function wfAudio(){
     eat:function(){var t=A.ctx.currentTime;for(var i=0;i<3;i++)noise({f:1800,q:1.5,v:0.14,d:0.05,t:t+i*0.11});},
     good:function(){notes([76,81],"triangle",0.14,0.09,0.16);},
     bad:function(){notes([58,57],"square",0.06,0.14,0.22);},
+    splash:function(){noise({f:1600,f2:600,q:1.2,v:0.18,d:0.22});tone({f:520,f2:220,w:"sine",v:0.14,d:0.12});},
+    drink:function(){var t=A.ctx.currentTime;for(var i=0;i<3;i++)tone({f:260-i*20,f2:180-i*20,w:"sine",v:0.22,d:0.09,t:t+i*0.16});},
     morning:function(){notes([67,71,74,79],"triangle",0.12,0.12,0.3);}
   };
   function sfx(name){if(!A.sfx||!A.ctx||A.ctx.state!=="running"||!SFX[name])return;var now=performance.now();if(A.last[name]&&now-A.last[name]<(name==="blip"?45:70))return;A.last[name]=now;try{SFX[name]();}catch(e){}}
@@ -1044,7 +1050,7 @@ function wfCreate(root){
   var modalOpen=false, cw=0, ch=0;
 
   /* ----- helpers ----- */
-  function IT(k){return WSP[k]||FISH[k]||null;}
+  function IT(k){return WSP[k]||FISH[k]||WATER[k]||null;}
   function isFish(k){return !!FISH[k];}
   function darkZone(z){return !!ZONES[z||st.zone].dark;}
   function spawnsHere(){return st.zones[st.zone].spawns;}
@@ -1479,6 +1485,17 @@ function wfCreate(root){
     if(k==="catfish"){line(x,ex+3,cy+1,ex+7,cy+4,"#3a342c",1);line(x,ex+3,cy,ex+7,cy-3,"#3a342c",1);}
     if(eel)for(var g=0;g<6;g++)P(x,Math.floor(x0+4+g*4),cy,"#b8fff0");
     outline(c,0.35);FSPR[k]=c;return c;}
+  var WSPR={};
+  function waterSpr(k){if(WSPR[k])return WSPR[k];var c=mkc(32,32),x=c.getContext("2d"),fresh=k==="fresh-water";
+    var liq=fresh?ramp("#0a3a7a","#3a9ae8","#d8f4ff"):ramp("#2a2a10","#7a7a3a","#c8c890");
+    for(var y=12;y<29;y++){var hw=y<15?4+(y-12)*1.6:9;for(var i=Math.ceil(16-hw);i<Math.floor(16+hw);i++){var u=(i+.5-(16-hw))/(2*hw);P(x,i,y,tone(liq,0.2+(1-Math.abs(u-0.3)*1.5)*0.7-(y>26?0.1:0)));}}
+    for(var y2=5;y2<12;y2++)for(var i2=13;i2<19;i2++)P(x,i2,y2,tone(RP.stone,0.55+(i2<15?0.25:0)));
+    for(var i3=12;i3<20;i3++){P(x,i3,4,"#7a4a22");P(x,i3,3,"#a8703c");}
+    for(var y3=15;y3<26;y3+=1)P(x,11,y3,"rgba(255,255,255,.55)");
+    if(!fresh)for(var k2=0;k2<10;k2++)P(x,Math.floor(10+hsh(k2,7)*12),Math.floor(16+hsh(7,k2)*10),"#4a3a18");
+    else{P(x,13,17,"#ffffff");P(x,14,18,"#ffffff");}
+    outline(c,0.38);WSPR[k]=c;return c;}
+  function itemSpr(k){return FISH[k]?fishSpr(k):WATER[k]?waterSpr(k):mush(k);}
   var LSPR={};
   function logSpr(k){if(LSPR[k])return LSPR[k];var c=mkc(32,32),x=c.getContext("2d");
     var bark={deadwood:ramp("#2a1c10","#6a5038","#a08868"),birch:RP.white,oak:RP.bark,pine:ramp("#24140a","#7a4a24","#c88a4a"),willow:ramp("#1e160c","#5a4428","#a88a5c"),mpine:ramp("#1a0e06","#6a3a1a","#b07040")}[k]||RP.bark;
@@ -1785,7 +1802,7 @@ function wfCreate(root){
       E.push([SHELTER.y,function(){var X=SHELTER.x*PX-ox,Y=SHELTER.y*PX-oy;if(st.shelter==="cabin")D(BLD.cabin,X,Y-PX);else D(st.shelter==="leanto"?BLD.leanto:BLD.tent,X,Y);}]);
       E.push([FIRE.y,function(){D(Math.floor(t/180)%2?BLD.fire1:BLD.fire0,FIRE.x*PX-ox,FIRE.y*PX-oy);}]);
       E.push([SIGN.y,function(){D(BLD.sign,SIGN.x*PX-ox,SIGN.y*PX-oy);}]);
-      E.push([CRATE.y,function(){var X=CRATE.x*PX-ox,Y=CRATE.y*PX-oy;shadow(X,Y,14);Object.keys(st.crate).filter(function(k){return st.crate[k]>0;}).slice(0,3).forEach(function(k,i){lctx.drawImage(mush(k),X+1+i*4,Y-2,8,8);});D(BLD.crate,X,Y);}]);
+      E.push([CRATE.y,function(){var X=CRATE.x*PX-ox,Y=CRATE.y*PX-oy;shadow(X,Y,14);Object.keys(st.crate).filter(function(k){return st.crate[k]>0;}).slice(0,3).forEach(function(k,i){lctx.drawImage(itemSpr(k),X+1+i*4,Y-2,8,8);});D(BLD.crate,X,Y);}]);
       SLOTS.forEach(function(sl,i){var b=st.beds[i];E.push([sl[1],function(){var X=sl[0]*PX-ox,Y=sl[1]*PX-oy;
         if(!b){lctx.fillStyle="rgba(255,255,255,.4)";for(var k=1;k<15;k+=2){lctx.fillRect(X+k,Y+2,1,0.5);lctx.fillRect(X+k,Y+13.5,1,0.5);lctx.fillRect(X+1,Y+k,0.5,1);lctx.fillRect(X+14.5,Y+k,0.5,1);}return;}
         drawBed(b,X,Y,t);}]);});
@@ -1890,8 +1907,8 @@ function wfCreate(root){
     var out=[],seen={};cells.forEach(function(c){var t=cellTarget(c[0],c[1],c[2]);if(!t)return;var k=t.kind+":"+(t.n?t.n.id:t.x+","+t.y);if(t.kind==="wren")k="wren";if(seen[k])return;seen[k]=1;out.push(t);});
     var b=bedSlot();if(b&&!seen.sign)out.push(b);
     return out.slice(0,3);}
-  var ACTI={pit:"🔥",wren:"💬",npc:"💬",shelter:"🛏",fire:"🔥",sign:"🔨",crate:"📦",chest:"🗝",lookout:"🔭",bed:"🌱",spawn:"🔍",page:"📄",door:"🚪",block:"🪵",tree:"🪓",water:"🎣",house:"🚪"};
-  function actIcon(t){if(!t)return "✋";if(t.kind==="water")return rodTier()&&t.spot?"🎣":"💧";return ACTI[t.kind]||"✋";}
+  var ACTI={pit:"🔥",wren:"💬",npc:"💬",shelter:"🛏",fire:"🔥",well:"💧",sign:"🔨",crate:"📦",chest:"🗝",lookout:"🔭",bed:"🌱",spawn:"🔍",page:"📄",door:"🚪",block:"🪵",tree:"🪓",water:"🎣",house:"🚪"};
+  function actIcon(t){if(!t)return "✋";if(t.kind==="water")return t.spot&&rodTier()?"🎣":"💧";return ACTI[t.kind]||"✋";}
   function cleanLabel(l){return String(l||"").replace(/^E · /,"").replace(/^▶ /,"Go to ");}
   function bedSlot(){if(st.zone!=="woods")return null;for(var j=0;j<SLOTS.length;j++){var sl=SLOTS[j];if(!st.beds[j]&&Math.abs(sl[0]-pl.tx)<=1&&Math.abs(sl[1]-pl.ty)<=1)return{kind:"sign",x:sl[0],y:sl[1],label:"E · Build here"};}return null;}
   function cellTarget(x,y,facing){
@@ -1899,7 +1916,7 @@ function wfCreate(root){
       if(s==="hut")return{kind:"wren",x:WREN.x,y:WREN.y,label:"E · Talk to Old Wren"};
       if(s==="npc"){var n=npcAt(x,y);return{kind:"npc",n:n,x:x,y:y,label:"E · Talk to "+NPC_INFO[n.id].name};}
       if(s==="prop"){var pr=propAt(x,y);if(pr.kind==="rue"||pr.kind==="bram"){var who=pr.kind;return{kind:"npc",n:NPCS.filter(function(q){return q.id===who&&q.zone===st.zone;})[0],x:x,y:y,label:"E · "+(who==="rue"?"Rue's bait shack":"Bram's outfitters")};}
-        if(pr.kind==="well")return{kind:"water",x:x,y:y,label:"E · Drink from the well",well:1};
+        if(pr.kind==="well")return{kind:"well",x:x,y:y,label:"E · Look into the well"};
         if(pr.kind==="house")return{kind:"house",x:x,y:y,label:"E · Knock"};}
       if(s==="shelter")return{kind:"shelter",x:SHELTER.x,y:SHELTER.y,label:"E · Sleep"};
       if(s==="pit"){var lit=pitLit(x,y);return{kind:"pit",x:x,y:y,lit:lit,label:lit?"E · Cook at the fire":"E · Light a fire"};}
@@ -1914,12 +1931,12 @@ function wfCreate(root){
       var tt=tileAt(x,y);
       if(tt===T.DOOR){var w=warpAt(x,y);if(w){var lk=doorLock(w);return{kind:"door",w:w,x:x,y:y,label:"▶ "+ZONES[w.to].n+(lk?" ("+lk+")":"")};}}
       if(tt===T.BLOCK)return{kind:"block",x:x,y:y,label:"A fallen giant pine blocks the pass"};
-      if(isPond(tt)){var fsp=spotAt(x,y);if(fsp)return{kind:"water",spot:fsp,x:x,y:y,label:rodTier()?"E · Fish at the ripples":"E · Drink"};}
+      if(isPond(tt)){var fsp=spotAt(x,y);if(fsp)return{kind:"water",spot:fsp,x:x,y:y,label:rodTier()?"E · Fish at the ripples":"E · Collect water"};}
       if(!facing)return null;
       var tk=treeKind(tt,st.zone);
       if(tk&&inBounds(x,y)){var ti=TREEINFO[tk],low=sk("wc")<ti.lv;
         return{kind:"tree",tk:tk,x:x,y:y,label:!axeTier()?ti.n+" (needs an axe)":low?ti.n+" (Woodcutting "+ti.lv+")":"E · Chop "+ti.n.toLowerCase()};}
-      if(tt===T.WATER||tt===T.POOL||tt===T.MARSH)return{kind:"water",x:x,y:y,label:"E · Drink"};
+      if(tt===T.WATER||tt===T.POOL||tt===T.MARSH)return{kind:"water",x:x,y:y,label:"E · Collect water"};
       return null;
   }
   function act(){
@@ -1928,7 +1945,20 @@ function wfCreate(root){
     if(chopping)return;
     doAct(target());
   }
-  var spotHint=0;
+    var waterHint=0,collectCool=0;
+  function collectWater(tg){var now=performance.now();if(now<collectCool)return;collectCool=now+300;
+    if(invCount(st)>=st.cap){toast("Your basket is full.","bad");return;}
+    st.inv["raw-water"]=(st.inv["raw-water"]||0)+1;snd.sfx("splash");floatText(tg.x,tg.y,"+1 raw water","#bfe8ff");
+    if(!waterHint){waterHint=1;toast("💧 Raw water isn't safe to drink. Boil it at a campfire or fire ring to make fresh water.");}
+    if(tg.spot&&!rodTier()&&waterHint<2){waterHint=2;toast("🎣 Fish are jumping here. With a rod and worms from Wren you could catch them.");}
+    save();}
+  function drinkWater(src){var g=WATER["fresh-water"].food;st.energy=Math.min(100,st.energy+g);snd.sfx("drink");toast((src==="well"?"Cold, clean well water.":"You drink some fresh water.")+" +"+g+" energy");}
+  function wellMenu(){
+    ask("",null,"The village well. Cold, clean water, drawn up in a dented bucket.",[
+      {t:"Drink (+"+WATER["fresh-water"].food+" energy)",f:function(){drinkWater("well");save();}},
+      {t:"Fill up with fresh water",f:function(){var room=Math.max(0,st.cap-invCount(st));if(!room){say("",null,["Your basket is full."]);return;}
+        var n=Math.min(room,3);st.inv["fresh-water"]=(st.inv["fresh-water"]||0)+n;snd.sfx("splash");toast("+"+n+" fresh water");save();}},
+      {t:"Leave it"}]);}
   function doAct(tg){
     if(!tg||dlg.open||modalOpen||warping)return;chopping=null;
     if(tg.kind==="spawn")inspect(tg.s);
@@ -1947,8 +1977,8 @@ function wfCreate(root){
     else if(tg.kind==="tree")chopTree(tg.x,tg.y,tg.tk);
     else if(tg.kind==="block")say("",null,["A giant mountain pine has come down across the pass, roots and all. It's far too big to cut alone.","Old Hal might know how to shift it."]);
     else if(tg.kind==="house")say("",null,[["Nobody answers. A cat watches you from the window.","Someone inside calls out: \"Bram's at the outfitter's, if you're looking for him!\"","You hear a kettle whistling inside, but no one comes to the door."][(tg.x+tg.y)%3]]);
-    else if(tg.kind==="water"){if(rodTier()&&tg.spot)startFishing(tg.spot);else{st.energy=Math.min(100,st.energy+3);toast(darkZone()?"Ice-cold cave water. +3 energy":"Cool fresh water. +3 energy");
-      if(rodTier()&&!tg.well&&!spotHint&&FSPOTN[st.zone]){spotHint=1;toast("🎣 Fish only bite where the water ripples. Look for a fishing spot.");}}}
+    else if(tg.kind==="water"){if(rodTier()&&tg.spot)startFishing(tg.spot);else collectWater(tg);}
+    else if(tg.kind==="well")wellMenu();
   }
 
   /* ----- modal panels (for lists: shop, build, crate, journal…) ----- */
@@ -2232,9 +2262,15 @@ function wfCreate(root){
   function fireMenu(pit){
     var items=Object.keys(st.inv).filter(function(k){return st.inv[k]>0;});
     var mult=st.tools.copperpot?1.6:st.tools.pot?1.25:1;
-    var html='<span class="kicker">'+(pit?"Fire ring · burns for about "+Math.max(1,Math.round(pitLeft(pit.x,pit.y)/60))+" more hour"+(Math.round(pitLeft(pit.x,pit.y)/60)===1?"":"s"):"Campfire")+'</span><h3>Cook or brew</h3><p>Edible mushrooms and fish make a meal; medicinal mushrooms make a restorative tea.'+(mult>1?" Your pot adds "+Math.round((mult-1)*100)+"% energy.":"")+'</p>'
-      +(items.length?'<div class="wf-list">'+items.map(function(k){var sp=IT(k);return '<div class="wf-row"><span><b>'+esc(sp.n)+'</b> ×'+st.inv[k]+'</span><span class="muted">'+(sp.cat==="toxic"?"":"+"+Math.round(sp.food*mult)+" energy")+'</span>'+btn("eat:"+k,sp.cat==="medicinal"?"Brew tea":"Cook")+'</div>';}).join('')+'</div>':'<p class="muted">Your basket is empty. Go forage!</p>');
-    open(html,function(b){b.querySelectorAll('[data-a^="eat:"]').forEach(function(e){e.onclick=function(){var k=e.dataset.a.slice(4);st.inv[k]--;if(!st.inv[k])delete st.inv[k];var it=IT(k),g=Math.round(it.food*mult);st.energy=Math.min(100,st.energy+g);snd.sfx("eat");toast((it.cat==="medicinal"?"You brew "+it.n+" tea":"You cook the "+it.n.toLowerCase())+". +"+g+" energy");fireMenu();};});});
+    var html='<span class="kicker">'+(pit?"Fire ring · burns for about "+Math.max(1,Math.round(pitLeft(pit.x,pit.y)/60))+" more hour"+(Math.round(pitLeft(pit.x,pit.y)/60)===1?"":"s"):"Campfire")+'</span><h3>Cook or brew</h3><p>Edible mushrooms and fish make a meal; medicinal mushrooms make a restorative tea. Boil raw water to make it safe to drink.'+(mult>1?" Your pot adds "+Math.round((mult-1)*100)+"% energy.":"")+'</p>'
+      +(items.length?'<div class="wf-list">'+items.map(function(k){var sp=IT(k);
+        if(k==="raw-water")return '<div class="wf-row"><span>'+icon(k)+'<b>'+esc(sp.n)+'</b> ×'+st.inv[k]+'</span><span class="muted">makes fresh water</span>'+btn("boil:1","Boil 1")+(st.inv[k]>1?btn("boil:all","Boil all"):"")+'</div>';
+        if(k==="fresh-water")return '<div class="wf-row"><span>'+icon(k)+'<b>'+esc(sp.n)+'</b> ×'+st.inv[k]+'</span><span class="muted">+'+sp.food+' energy</span>'+btn("drink","Drink")+'</div>';
+        return '<div class="wf-row"><span>'+icon(k)+'<b>'+esc(sp.n)+'</b> ×'+st.inv[k]+'</span><span class="muted">'+(sp.cat==="toxic"?"":"+"+Math.round(sp.food*mult)+" energy")+'</span>'+btn("eat:"+k,sp.cat==="medicinal"?"Brew tea":"Cook")+'</div>';}).join('')+'</div>':'<p class="muted">Your basket is empty. Go forage!</p>');
+    open(html,function(b){b.querySelectorAll('[data-a^="eat:"]').forEach(function(e){e.onclick=function(){var k=e.dataset.a.slice(4);st.inv[k]--;if(!st.inv[k])delete st.inv[k];var it=IT(k),g=Math.round(it.food*mult);st.energy=Math.min(100,st.energy+g);snd.sfx("eat");toast((it.cat==="medicinal"?"You brew "+it.n+" tea":"You cook the "+it.n.toLowerCase())+". +"+g+" energy");fireMenu(pit);};});
+      b.querySelectorAll('[data-a^="boil:"]').forEach(function(e){e.onclick=function(){var n=e.dataset.a==="boil:all"?st.inv["raw-water"]:1;st.inv["raw-water"]-=n;if(!st.inv["raw-water"])delete st.inv["raw-water"];
+        st.inv["fresh-water"]=(st.inv["fresh-water"]||0)+n;snd.sfx("fire");toast("You boil "+(n===1?"the water":n+" lots of water")+". It's safe to drink now.");fireMenu(pit);};});
+      var dr=b.querySelector('[data-a="drink"]');if(dr)dr.onclick=function(){useFresh();fireMenu(pit);};});
   }
 
   /* ----- sleep and the passing of days ----- */
@@ -2368,7 +2404,7 @@ function wfCreate(root){
   var SELLRATE={wren:1,rue:1.15,bram:1.15};
   function sellMenu(owner,back){
     var rate=SELLRATE[owner]*(owner==="wren"&&st.shelter==="cabin"?1.1:1);
-    var items=Object.keys(st.inv).filter(function(k){var it=IT(k);if(!it||st.inv[k]<=0||it.cat==="toxic")return false;return owner==="rue"?isFish(k):true;});
+    var items=Object.keys(st.inv).filter(function(k){var it=IT(k);if(!it||st.inv[k]<=0||it.cat==="toxic"||!it.val)return false;return owner==="rue"?isFish(k):true;});
     var logs=owner==="rue"?[]:Object.keys(LOGV).filter(function(k){return st.mat[k]>0;});
     function pr(k){return Math.max(1,Math.round((LOGV[k]!=null&&!IT(k)?LOGV[k]:IT(k).val)*rate));}
     var who={wren:"Old Wren buys",rue:"Rue buys fish",bram:"Bram buys"}[owner];
@@ -2396,7 +2432,8 @@ function wfCreate(root){
   }
 
   /* ----- info panels ----- */
-  var ICONC={};function icon(k){if(!ICONC[k])ICONC[k]=(FISH[k]?fishSpr(k):LOGV[k]!=null&&!WSP[k]?logSpr(k):mush(k)).toDataURL();return '<img class="wf-pix" src="'+ICONC[k]+'" alt="">';}
+  var ICONC={};function icon(k){if(!ICONC[k])ICONC[k]=(LOGV[k]!=null&&!IT(k)?logSpr(k):itemSpr(k)).toDataURL();return '<img class="wf-pix" src="'+ICONC[k]+'" alt="">';}
+  function useFresh(){if(!(st.inv["fresh-water"]>0))return;st.inv["fresh-water"]--;if(!st.inv["fresh-water"])delete st.inv["fresh-water"];drinkWater();save();}
   function invMenu(){
     var items=Object.keys(st.inv).filter(function(k){return st.inv[k]>0;});
     var mats=Object.keys(st.mat).filter(function(k){return st.mat[k]>0;});
@@ -2405,9 +2442,11 @@ function wfCreate(root){
       +'<div class="wf-sub">Skills</div><div class="wf-list">'+Object.keys(SKILLN).map(function(k){var l=sk(k),x=st.skills[k]||0,lo=xpAt(l),hi=xpAt(l+1);
         return '<div class="wf-row"><span><b>'+SKILLI[k]+' '+SKILLN[k]+'</b> · level '+l+'</span><span class="muted">'+(l>=MAXL?"max level":(hi-x)+" XP to level "+(l+1))+'</span></div>';}).join('')+'</div>'
       +'<div class="wf-sub">Basket '+invCount(st)+' / '+st.cap+'</div>'+(items.length?'<div class="wf-chips">'+items.map(function(k){return '<span class="chip">'+icon(k)+esc(IT(k).n)+' ×'+st.inv[k]+'</span>';}).join('')+'</div>':'<p class="muted">Empty.</p>')
+      +(st.inv["fresh-water"]>0?'<div class="wf-list"><div class="wf-row"><span>'+icon("fresh-water")+'<b>Fresh water</b> ×'+st.inv["fresh-water"]+'</span><span class="muted">+'+WATER["fresh-water"].food+' energy</span>'+btn("drink","Drink")+'</div></div>':'')
+      +(st.inv["raw-water"]>0?'<p class="muted">Raw water needs boiling at a fire before you can drink it.</p>':'')
       +'<div class="wf-sub">Logs and materials</div>'+(mats.length?'<div class="wf-chips">'+mats.map(function(k){return '<span class="chip">'+(LOGV[k]!=null?icon(k):"")+esc(MATN[k])+' ×'+st.mat[k]+'</span>';}).join('')+'</div>':'<p class="muted">None yet.</p>')
       +'<div class="wf-sub">Tools</div>'+(tools.length?'<div class="wf-chips">'+tools.map(function(k){return '<span class="chip moss">'+esc(TOOLN[k])+'</span>';}).join('')+'</div>':'<p class="muted">Just your boots and a backpack.</p>')
-      +'<p class="muted" style="margin-top:12px">'+st.coins+' coins · '+st.logsCut+' logs chopped · '+Object.keys(st.caught).length+'/11 kinds of fish · '+st.pages.length+'/12 pages · '+st.chests.length+'/'+st.chestSpots.length+' chests</p>');
+      +'<p class="muted" style="margin-top:12px">'+st.coins+' coins · '+st.logsCut+' logs chopped · '+Object.keys(st.caught).length+'/11 kinds of fish · '+st.pages.length+'/12 pages · '+st.chests.length+'/'+st.chestSpots.length+' chests</p>',function(b){var dr=b.querySelector('[data-a="drink"]');if(dr)dr.onclick=function(){useFresh();invMenu();};});
   }
   function journalMenu(){
     var found=WILD.filter(function(k){return st.journal[k];}).length;
@@ -2453,7 +2492,7 @@ function wfCreate(root){
       +'<div class="wf-sub">Controls</div><ul class="list"><li><b>Move:</b> arrow keys or WASD (on a phone, drag the joystick)</li><li><b>Interact / continue talking:</b> E, Space or Enter. Use the arrow keys to pick a choice.</li><li><b>Basket</b> I · <b>Journal</b> J · <b>Quests</b> Q · <b>Map</b> M · <b>Close</b> Esc</li></ul>'
       +'<div class="wf-sub">Three skills</div><ul class="list"><li><b>🍄 Foraging:</b> examine a mushroom (cap, underneath, stem, smell), then name it. Get it right to pick it.</li><li><b>🪓 Woodcutting:</b> face a tree with an axe and press E once. You keep chopping by yourself until it comes down (2 to 10 logs a tree). Walk away any time to stop. Birch at level 1, oak at 5, willow at 12, pine at 16, mountain pine at 24.</li><li><b>🎣 Fishing:</b> fish only bite at <b>fishing spots</b>, where the water ripples and fish jump. They move every minute or two, like real shoals. Stand next to one with a rod and worms and press E. When the float splashes and a <b>!</b> pops up, press E fast. You recast by yourself; walk away to stop. Better fish need higher levels and better rods.</li></ul>'
       +'<div class="wf-sub">Getting around</div><ul class="list"><li>Ways out of each area glow gold and show their name. Red means something is still needed: a tool, a skill level, or a favour for someone.</li><li>The story is told through the people you meet. Press Q to see what to do next, and the map (M) to see the ways out.</li></ul>'
-      +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Cook mushrooms and fish at your campfire, or drink water.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
+      +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Get it back by eating (cook mushrooms and fish at your campfire or a fire ring) and drinking. Collect raw water from streams and ponds, boil it at a fire to make fresh water, then drink it from your basket any time. The village well is clean enough to drink straight away. Sleeping restores energy overnight.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
       +'<div class="wf-acts">'+btn("go",first?"Start exploring":"Got it","primary")+'</div>',
       function(b){b.querySelector('[data-a="go"]').onclick=function(){st.intro=0;close();flashQuest();};});
   }
