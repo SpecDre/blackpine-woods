@@ -7,7 +7,7 @@
 <meta name="description" content="A pixel-art mushroom foraging adventure. Examine and identify wild mushrooms, trade with Old Wren, build a cabin, grow your own, and explore a glowing cave, a misty marsh and a high mountain ridge.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&family=Pixelify+Sans:wght@400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap">
 <style>
 /* Layout: app shell — sticky sidebar nav (top pill bar on phones), bento home, card decks, slide-over detail drawer */
 :root{
@@ -333,14 +333,14 @@ figure.ph figcaption b{color:var(--ink);font-weight:600}
 
 /* ---------- game: handheld pixel style (a deliberate single look, same in light and dark) ---------- */
 .wf-stage canvas{image-rendering:pixelated;image-rendering:crisp-edges}
-.wf-stage{--gb-ink:#283048;--gb-line:#384878;--gb-soft:#a8b8e0;--gb-paper:#f8f8f0;--gb-pix:"Pixelify Sans","Geist Mono",ui-monospace,monospace;border:4px solid #283048;border-radius:14px}
+.wf-stage{--gb-ink:#283048;--gb-line:#384878;--gb-soft:#a8b8e0;--gb-paper:#f8f8f0;--gb-pix:"Geist","Segoe UI",system-ui,sans-serif;border:4px solid #283048;border-radius:14px}
 .wf-hud{font-family:var(--gb-pix);font-size:.86rem}
 .wf-hl,.wf-hr,.wf-quest,.wf-toast,.wf-prompt{background:var(--gb-paper);color:var(--gb-ink);backdrop-filter:none;border:3px solid var(--gb-line);box-shadow:inset 0 0 0 2px var(--gb-soft),0 3px 0 rgba(0,0,0,.25);border-radius:10px}
 .wf-clock{font-size:.92rem;font-weight:600;letter-spacing:.02em}
 .wf-bar{background:#384048;border:2px solid var(--gb-ink);height:12px;border-radius:6px;width:150px}
 .wf-bar span{background:#58d080}
 .wf-bar span.low{background:#f85838}
-.wf-bar b{color:#fff;font-family:var(--gb-pix);font-size:.6rem;line-height:9px;padding-left:4px;text-shadow:1px 1px 0 #283048}
+.wf-bar b{color:#fff;font-family:var(--gb-pix);font-size:.66rem;font-weight:700;line-height:9px;padding-left:4px;text-shadow:1px 1px 0 #283048}
 .wf-coins{font-weight:700}
 .wf-xp{background:#384048;border:2px solid var(--gb-ink);height:8px;border-radius:4px}
 .wf-xp span{background:#58b8f8}
@@ -357,7 +357,7 @@ figure.ph figcaption b{color:var(--ink);font-weight:600}
 .wf-modal{background:rgba(16,20,40,.45)}
 .wf-box{background:var(--gb-paper);color:var(--gb-ink);border:4px solid var(--gb-line);box-shadow:inset 0 0 0 3px var(--gb-soft),0 12px 40px rgba(0,0,0,.4);border-radius:14px}
 .wf-box h3{font-family:var(--gb-pix);font-weight:700;letter-spacing:0;color:var(--gb-ink)}
-.wf-box .kicker{color:#c83828;font-family:var(--gb-pix);letter-spacing:.06em}
+.wf-box .kicker{color:#c83828;font-family:var(--gb-pix);letter-spacing:.08em;font-weight:700}
 .wf-box p,.wf-box li,.wf-box .list li{color:#485070}
 .wf-box .muted,.wf-box span.muted{color:#7a82a0}
 .wf-box b,.wf-box strong{color:var(--gb-ink)}
@@ -365,6 +365,7 @@ figure.ph figcaption b{color:var(--ink);font-weight:600}
 .wf-box .btn{background:#ffffff;color:var(--gb-ink);border:2px solid var(--gb-line);font-family:var(--gb-pix);font-weight:600;border-radius:9px;box-shadow:0 2px 0 var(--gb-line)}
 .wf-box .btn:hover:not(:disabled){background:#eef2fc}
 .wf-box .btn.primary{background:#f8d048;color:#283048;border-color:#283048}
+.wf-box .btn{font-variant-numeric:tabular-nums;letter-spacing:0}
 .wf-box .btn.danger{background:#fff;color:#c02818;border-color:#c02818;box-shadow:0 2px 0 #c02818}
 .wf-x{background:#fff;border:2px solid var(--gb-line);color:var(--gb-ink);font-family:var(--gb-pix)}
 .wf-box .opt{background:#fff;color:var(--gb-ink);border:2px solid var(--gb-line);font-family:var(--gb-pix);font-size:.92rem;box-shadow:0 2px 0 var(--gb-line)}
@@ -480,7 +481,7 @@ footer.foot p{max-width:80ch}
 html,body{background:var(--bg)}
 body{margin:0}
 .bp-page{max-width:1180px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
-.bp-head h1{font-family:"Pixelify Sans",var(--f-display);font-size:clamp(2.2rem,6vw,3.4rem);font-weight:700;letter-spacing:-.01em;margin:4px 0 6px}
+.bp-head h1{font-family:var(--f-display);font-size:clamp(2.2rem,6vw,3.4rem);font-weight:700;letter-spacing:-.01em;margin:4px 0 6px}
 .bp-head p{color:var(--ink-2);max-width:68ch;margin:0;font-size:1.02rem}
 .bp-foot{border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:.82rem;max-width:80ch}
 .bp-foot p{margin:0 0 .5em}
@@ -1519,7 +1520,7 @@ function wfCreate(root){
     var worth=inCrate.reduce(function(a,k){return a+st.crate[k]*priceOf(k);},0);
     var html='<span class="kicker">Your camp</span><h3>Shipping crate</h3><p>Wren\'s cart collects this every night and pays full price while you sleep. Farm harvests land here when your basket is full.</p>'
       +'<div class="wf-sub">In the crate'+(inCrate.length?' · worth '+worth+' coins tonight':'')+'</div>'
-      +(inCrate.length?'<div class="wf-list">'+inCrate.map(function(k){return '<div class="wf-row"><span><b>'+esc(WSP[k].n)+'</b> ×'+st.crate[k]+'</span><span class="muted">'+priceOf(k)+'¢ each</span>'+btn("t:"+k,"Take 1")+'</div>';}).join('')+'</div>':'<p class="muted">Empty.</p>')
+      +(inCrate.length?'<div class="wf-list">'+inCrate.map(function(k){return '<div class="wf-row"><span><b>'+esc(WSP[k].n)+'</b> ×'+st.crate[k]+'</span><span class="muted">'+priceOf(k)+' coins each</span>'+btn("t:"+k,"Take 1")+'</div>';}).join('')+'</div>':'<p class="muted">Empty.</p>')
       +'<div class="wf-sub">In your basket ('+invCount(st)+'/'+st.cap+')</div>'
       +(basket.length?'<div class="wf-list">'+basket.map(function(k){return '<div class="wf-row"><span><b>'+esc(WSP[k].n)+'</b> ×'+st.inv[k]+'</span>'+btn("s:"+k,"Ship all")+'</div>';}).join('')+'</div>':'<p class="muted">Empty.</p>')
       +'<div class="wf-acts">'+(basket.length?btn("all","Ship whole basket","primary"):"")+btn("x","Close")+'</div>';
@@ -1559,7 +1560,7 @@ function wfCreate(root){
   function sellMenu(){
     var items=Object.keys(st.inv).filter(function(k){return st.inv[k]>0&&WSP[k].cat!=="toxic";});
     var html='<span class="kicker">Old Wren buys</span><h3>Sell</h3><p>'+(st.shelter==="cabin"?"Regulars get 10% extra. ":"")+'You have '+st.coins+' coins.</p>'
-      +(items.length?'<div class="wf-list">'+items.map(function(k){return '<div class="wf-row"><span><b>'+esc(WSP[k].n)+'</b> ×'+st.inv[k]+'</span><span class="muted">'+priceOf(k)+'¢ each</span>'+btn("s1:"+k,"Sell 1")+btn("sa:"+k,"Sell all")+'</div>';}).join('')+'</div>':'<p class="muted">Nothing to sell yet.</p>')
+      +(items.length?'<div class="wf-list">'+items.map(function(k){return '<div class="wf-row"><span><b>'+esc(WSP[k].n)+'</b> ×'+st.inv[k]+'</span><span class="muted">'+priceOf(k)+' coins each</span>'+btn("s1:"+k,"Sell 1")+btn("sa:"+k,"Sell all")+'</div>';}).join('')+'</div>':'<p class="muted">Nothing to sell yet.</p>')
       +'<div class="wf-acts">'+btn("back","← Back to Wren")+'</div>';
     open(html,function(b){b.querySelector('[data-a="back"]').onclick=function(){close();wren();};
       b.querySelectorAll('[data-a^="s1:"],[data-a^="sa:"]').forEach(function(e){e.onclick=function(){var all=e.dataset.a.charAt(1)==="a",k=e.dataset.a.slice(3),n=all?st.inv[k]:1;st.inv[k]-=n;if(!st.inv[k])delete st.inv[k];var c=n*priceOf(k);addCoins(c);st.sold+=n;gainXP(n);toast("Sold "+n+" "+WSP[k].n+" for "+c+" coins","coin");qEvent("sold",n);sellMenu();};});});
@@ -1569,7 +1570,7 @@ function wfCreate(root){
       +SHOP.map(function(it){
         var owned=(it.kind==="tool"&&st.tools[it.id])||(it.kind==="cap"&&st.cap>=it.cap);
         var locked=lv()<it.lv,poor=st.coins<it.p;
-        var label=owned?"Owned":locked?"Level "+it.lv:it.p+"¢";
+        var label=owned?"Owned":locked?"Level "+it.lv:"Buy · "+it.p+" coins";
         var have=it.kind==="mat"?' <span class="muted">(have '+(st.mat[it.id]||0)+')</span>':"";
         return '<div class="wf-row col"><div><b>'+esc(it.n)+'</b>'+have+'<span class="muted"> · '+esc(it.d)+'</span></div>'+btn("p:"+it.id,label,!owned&&!locked&&!poor?"primary":"",owned||locked||poor)+'</div>';}).join('')
       +'</div><div class="wf-acts">'+btn("back","← Back to Wren")+'</div>';
