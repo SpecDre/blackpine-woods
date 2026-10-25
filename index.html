@@ -464,7 +464,17 @@ var FISH={
  "pike":{n:"Northern pike",lv:20,rod:2,val:18,food:22,xp:80,where:["marsh","lake"],col:"#6a8a48",key:"Long and toothy, green with rows of pale bean-shaped spots."},
  "glow-eel":{n:"Glow eel",lv:22,rod:3,val:24,food:20,xp:95,where:["depths"],col:"#58d8b0",key:"A slender eel whose skin pulses with faint green light."},
  "char":{n:"Arctic char",lv:24,rod:3,val:22,food:24,xp:105,where:["tarn"],col:"#d86040",key:"Dark back, fiery orange belly and white-edged fins. Lives in ice-cold water."},
- "golden-trout":{n:"Golden trout",lv:28,rod:3,val:45,food:30,xp:140,where:["tarn"],col:"#f0b830",key:"Gold flanks, a red stripe and dark spots near the tail. Only in the highest lakes."}
+ "golden-trout":{n:"Golden trout",lv:28,rod:3,val:45,food:30,xp:140,where:["tarn"],col:"#f0b830",key:"Gold flanks, a red stripe and dark spots near the tail. Only in the highest lakes."},
+ "sunfish":{n:"Pumpkinseed sunfish",lv:2,rod:1,val:2,food:6,xp:13,where:["woods","lake"],col:"#e0a040",key:"A round little panfish, orange-bellied with blue-green squiggles on its cheeks."},
+ "bullhead":{n:"Brown bullhead",lv:6,rod:1,val:4,food:10,xp:26,where:["marsh"],col:"#6a5a3a",key:"A small, whiskered catfish cousin that grunts when you land it."},
+ "carp":{n:"Common carp",lv:9,rod:1,val:6,food:14,xp:34,where:["marsh"],col:"#b89040",key:"Big bronze scales and a sucking mouth that roots through the mud."},
+ "walleye":{n:"Walleye",lv:12,rod:1,val:10,food:16,xp:42,where:["lake"],col:"#b8a050",key:"Olive-gold, with big glassy eyes that shine in low light. Feeds at dusk."},
+ "cave-sculpin":{n:"Cave sculpin",lv:12,rod:1,val:11,food:12,xp:44,where:["cave","depths"],col:"#c8b8b0",key:"A pale, big-headed bottom fish that has lived in the dark so long its colour has faded."},
+ "lake-trout":{n:"Lake trout",lv:18,rod:2,val:15,food:20,xp:68,where:["lake"],col:"#6a7a6a",key:"Grey-green and covered in pale spots, with a deeply forked tail. Likes cold, deep water."},
+ "bowfin":{n:"Bowfin",lv:18,rod:2,val:15,food:20,xp:70,where:["marsh"],col:"#4a5a30",key:"A living fossil with a long back fin and a dark eyespot near the tail. It can gulp air."},
+ "cutthroat":{n:"Cutthroat trout",lv:20,rod:2,val:18,food:22,xp:84,where:["tarn"],col:"#a87850",key:"Named for the red slash under its jaw. Spotted from head to tail."},
+ "whitefish":{n:"Lake whitefish",lv:22,rod:2,val:16,food:22,xp:90,where:["tarn"],col:"#d8dce0",key:"Silvery, with a small mouth and a hump behind its head. Schools in cold, clear water."},
+ "sturgeon":{n:"Lake sturgeon",lv:26,rod:3,val:40,food:30,xp:130,where:["lake"],col:"#7a7a70",key:"An ancient, armour-plated giant with whiskers under its snout. They can live a hundred years."}
 };
 /* ---------- trees for woodcutting ---------- */
 function treeKind(t,zone){if(t===T.LOG)return"dead";if(t===T.BIRCH)return"birch";if(t===T.OAK)return"oak";if(t===T.WILLOW)return"willow";
@@ -560,7 +570,7 @@ var SIDE=[
  {id:"cabin",n:"Cabin fever",d:"Build a cabin at camp: 20 wood, 10 planks, 4 nails and 40 coins (needs the lean-to first).",goal:"build_cabin",need:1,lv:8,rw:{xp:{forage:150,wc:120},coins:20}},
  {id:"grower",n:"Master grower",d:"Harvest 20 cultivated mushrooms from your beds and logs.",goal:"harvestTotal",need:20,lv:6,rw:{xp:{forage:300},coins:50}},
  {id:"pages",n:"Lost pages",d:"Find all 12 lost journal pages hidden across every area. The map (M) shows how many are left where you are.",goal:"pages",need:12,lv:1,rw:{xp:{forage:300},coins:120}},
- {id:"angler",n:"Angler's log",d:"Catch one of every kind of fish (11 in all).",goal:"fishkinds",need:11,lv:1,rw:{xp:{fish:500},coins:200}},
+ {id:"angler",n:"Angler's log",d:"Catch one of every kind of fish (21 in all).",goal:"fishkinds",need:21,lv:1,rw:{xp:{fish:500},coins:200}},
  {id:"lumber",n:"Lumberjack",d:"Chop 60 logs of any kind.",goal:"logs",need:60,lv:1,rw:{xp:{wc:400},coins:100}}
 ];
 
@@ -624,6 +634,13 @@ function wfGenCave(){
   var c=caveCarve(44,34,5150,[22,30],1500,[[6,5]]),m=c.m;
   m[30][22]=T.CFLOOR;m[31][22]=T.CFLOOR;m[32][22]=T.DOOR;m[5][6]=T.CFLOOR;m[4][6]=T.DOOR;
   caveDeadEnds(m,c.r,function(x,y){return (x===22&&y>=27)||(Math.abs(x-6)<=1&&y<=6);},0.35);
+  /* water-filled alcoves in the walls, for fishing; only wall squares change, so paths and finds stay put */
+  var pr=wfRng(5152),got=[],tries=0;
+  while(got.length<5&&tries++<6000){var x=2+Math.floor(pr()*40),y=2+Math.floor(pr()*30);if(m[y][x]!==T.CWALL)continue;
+    var fl=[[1,0],[-1,0],[0,1],[0,-1]].filter(function(d){return m[y+d[1]][x+d[0]]===T.CFLOOR;}).length;if(fl!==1)continue;
+    if(Math.abs(x-22)+Math.abs(y-31)<8||Math.abs(x-6)+Math.abs(y-4)<6)continue;
+    if(got.some(function(g){return Math.abs(g[0]-x)+Math.abs(g[1]-y)<8;}))continue;
+    m[y][x]=T.POOL;got.push([x,y]);}
   return m;
 }
 function wfGenDepths(){
@@ -858,7 +875,7 @@ var NPC_TALK={
   later:["Fish are biting. Or they were five minutes ago."],
   ask:"Need something?",
   topics:[
-   {t:"Fishing tips",lines:["Watch the float. When it dips and the water splashes, reel in right away. Wait too long and it's gone.","The better you get, the longer you'll have to react, and the bigger the fish that'll take your hook."]},
+   {t:"Fishing tips",lines:["Every spot holds its own fish. Weed beds for bass and pike, the drop-off for trout and walleye, and the deep hole if you're after a sturgeon.","The better you get, the longer you'll have to react, and the bigger the fish that'll take your hook."]},
    {t:"What's in the lake?",lines:["Perch and brook trout in the shallows. Rainbow trout further out. Bass and pike if you've got a fly rod.","Golden trout only live way up in the mountains, in the tarns."]}
   ],
   bye:"Tight lines!"},
@@ -1721,12 +1738,23 @@ function wfCreate(root){
       for(var fm=0;fm<7;fm++){var fa=fm/7*6.28+t/900+s.seed,fr=2.5+Math.sin(t/170+fm*1.7)*1.2;lctx.fillStyle="rgba(255,255,255,.85)";lctx.fillRect(Math.round(X+Math.cos(fa)*fr*1.6),Math.round(Y+Math.sin(fa)*fr*0.7),1,1);}
       for(var b=0;b<5;b++){var bk=((t/650)+b*0.23+s.seed)%1,bx=X+Math.sin(s.seed*3+b*2.1)*4.5,by=Y+1-bk*5;lctx.fillStyle="rgba(240,252,255,"+(0.95*(1-bk)).toFixed(3)+")";lctx.fillRect(Math.round(bx),Math.round(by),1.3,1.3);}
       var lp=((t/2400)+s.seed)%1;if(lp<0.24){var u=lp/0.24,dr=Math.floor(t/2400+s.seed)%2?1:-1,fx=X-dr*5+dr*u*10,fy=Y-1-Math.sin(u*Math.PI)*7;
-        lctx.save();lctx.translate(fx,fy);lctx.scale(dr,1);lctx.rotate((u-0.5)*2);lctx.fillStyle="#d8e4ec";lctx.fillRect(-2.5,-1,5,2);lctx.fillStyle="#9ab0c0";lctx.fillRect(-2.5,0,5,1);lctx.fillRect(-4,-1.5,1.5,3);lctx.fillStyle="#202830";lctx.fillRect(1.5,-0.6,0.7,0.7);lctx.restore();
+        lctx.save();lctx.translate(fx,fy);lctx.scale(dr,1);lctx.rotate((u-0.5)*2);var fk=s.kind?s.kind.fish[Math.floor(t/2400+s.seed)%s.kind.fish.length]:null,fcol=fk?FISH[fk].col:"#d8e4ec";lctx.fillStyle=mix(fcol,"#ffffff",0.25);lctx.fillRect(-2.5,-1,5,2);lctx.fillStyle=mix(fcol,"#000000",0.3);lctx.fillRect(-2.5,0,5,1);lctx.fillRect(-4,-1.5,1.5,3);lctx.fillStyle="#202830";lctx.fillRect(1.5,-0.6,0.7,0.7);lctx.restore();
         if(u<0.18||u>0.82){var sx=u<0.5?X-dr*5:X+dr*5;lctx.fillStyle="rgba(255,255,255,.9)";for(var dd=0;dd<4;dd++)lctx.fillRect(sx-2+dd*1.3,Y-1-((dd%2)?2:1),1,1);}}
       lctx.restore();}
+  /* the rod you're holding: hand position and tip for each facing; the tip twitches on a bite */
+  function rodPts(X,Y,t){var b=fishing&&fishing.phase==="bite"?Math.sin(t/40)*1.5+1.5:0,d=st.dir;
+    if(d==="up")return [X+11,Y+10,X+14,Y-8+b];if(d==="right")return [X+12,Y+11,X+25,Y+1+b];if(d==="left")return [X+4,Y+11,X-9,Y+1+b];return [X+11,Y+11,X+18,Y+19+b*0.5];}
+  function drawRod(X,Y,t){var r=rodPts(X,Y,t),tier=rodTier(),col=["#8a5a2a","#8a5a2a","#2a6a4a","#283048"][tier],dx=r[2]-r[0],dy=r[3]-r[1];
+    lctx.save();lctx.lineCap="round";
+    lctx.strokeStyle="rgba(20,16,12,.55)";lctx.lineWidth=1.9;lctx.beginPath();lctx.moveTo(r[0],r[1]);lctx.lineTo(r[2],r[3]);lctx.stroke();
+    lctx.strokeStyle=col;lctx.lineWidth=1.1;lctx.beginPath();lctx.moveTo(r[0],r[1]);lctx.lineTo(r[2],r[3]);lctx.stroke();
+    lctx.strokeStyle="#4a2a12";lctx.lineWidth=1.8;lctx.beginPath();lctx.moveTo(r[0]-dx*0.12,r[1]-dy*0.12);lctx.lineTo(r[0]+dx*0.22,r[1]+dy*0.22);lctx.stroke();
+    if(tier>=3){lctx.fillStyle="#e0b030";[0.45,0.65,0.85].forEach(function(k){lctx.fillRect(r[0]+dx*k-0.5,r[1]+dy*k-0.5,1,1);});}
+    lctx.fillStyle="#b8c0cc";lctx.beginPath();lctx.arc(r[0]+dx*0.16,r[1]+dy*0.16+1.2,1.3,0,7);lctx.fill();lctx.fillStyle="#5a6270";lctx.fillRect(r[0]+dx*0.16-0.3,r[1]+dy*0.16+0.9,0.6,0.6);
+    lctx.restore();}
   function drawCast(t,ox,oy){if(!fishing)return;var X=fishing.x*PX+8-ox,Y=fishing.y*PX+8-oy-(fishing.y<pl.ty?6:0),bite=fishing.phase==="bite",bob=bite?Math.sin(t/35)*2+2:Math.sin(t/300)*0.8;
-      var hx=Math.round(pl.px/TS*PX-ox)+8,hy=Math.round(pl.py/TS*PX-oy)+2;
-      lctx.strokeStyle="rgba(250,250,250,.85)";lctx.lineWidth=0.6;lctx.beginPath();lctx.moveTo(hx+(st.dir==="left"?-6:st.dir==="right"?6:3),hy-6);lctx.quadraticCurveTo((hx+X)/2,Math.min(hy,Y)-10,X,Y-1+bob);lctx.stroke();
+      var rp=rodPts(Math.round((pl.px/TS*PX-ox)*Q)/Q,Math.round((pl.py/TS*PX-oy)*Q)/Q-2,t);
+      lctx.strokeStyle="rgba(250,250,250,.85)";lctx.lineWidth=0.6;lctx.beginPath();lctx.moveTo(rp[2],rp[3]);lctx.quadraticCurveTo((rp[2]+X)/2,Math.min(rp[3],Y)-6,X,Y-1+bob);lctx.stroke();
       for(var r=0;r<2;r++){var k=((t/900)+r*0.5)%1;lctx.strokeStyle="rgba(255,255,255,"+(0.5*(1-k))+")";lctx.lineWidth=0.6;lctx.beginPath();lctx.ellipse(X,Y+2,3+k*7,1.2+k*2.6,0,0,7);lctx.stroke();}
       lctx.fillStyle="#ffffff";lctx.beginPath();lctx.arc(X,Y+bob,2.6,0,Math.PI);lctx.fill();
       lctx.fillStyle="#e83828";lctx.beginPath();lctx.arc(X,Y+bob,2.6,Math.PI,0);lctx.fill();
@@ -1766,7 +1794,7 @@ function wfCreate(root){
     var list,key;
     if(dlg.open&&btn){var k2=dlg.opts&&!dlg.typing?"✔":"▶";if(btn.textContent!==k2){btn.textContent=k2;btn.classList.remove("idle");}actsKey=null;if(!bar.hidden){bar.hidden=true;bar.innerHTML="";actsList=[];}return;}
     if(modalOpen||warping){list=[];}
-    else if(fishing){list=fishing.phase==="bite"?[{kind:"reel",label:"Reel in now!",icon:"🎣",hot:1}]:[{kind:"wait",label:"Waiting for a bite…",icon:"🎣",dim:1},{kind:"stop",label:"Stop fishing",icon:"✖"}];}
+    else if(fishing){list=[{kind:"wait",label:fishing.phase==="bite"?"Hooked one!":"Fishing the "+(fishing.spot&&fishing.spot.kind?fishing.spot.kind.n:"water")+"…",icon:"🎣",dim:1},{kind:"stop",label:"Stop fishing",icon:"✖"}];}
     else if(chopping){list=[{kind:"wait",label:(chopping.tk==="dead"?"Splitting the log…":"Chopping the "+TREEINFO[chopping.tk].n.toLowerCase()+"…"),icon:"🪓",dim:1},{kind:"stopchop",label:"Stop",icon:"✖"}];}
     else list=targets().map(function(t){return {t:t,label:cleanLabel(t.label),icon:actIcon(t)};}).filter(function(a){return a.label;});
     key=list.map(function(a){return a.icon+a.label;}).join("|");
@@ -1813,7 +1841,9 @@ function wfCreate(root){
     E.push([pl.py/TS+0.01,function(){var X=Math.round((cx-ox)*Q)/Q,Y=Math.round((cy-oy)*Q)/Q-2;var f=pl.moving?[1,0,2,0][Math.floor(pl.step/2.2)%4]:0;shadow(X,Y+2,10);
       if(pl.moving&&!DZ&&st.weather!=="rain"){var ph=pl.step%4.4,dxs=st.dir==="left"?11:st.dir==="right"?3:7,dys=st.dir==="up"?17:15,dc=st.weather==="snow"||seasonOf(st.day)===3?"rgba(255,255,255,":"rgba(230,210,160,";
         lctx.fillStyle=dc+(0.7-ph*0.15)+")";lctx.fillRect(X+dxs-Math.floor(ph),Y+dys-Math.floor(ph/2),1,1);lctx.fillRect(X+dxs+2+Math.floor(ph/2),Y+dys-Math.floor(ph/3),1,1);}
+      if(fishing&&st.dir==="up")drawRod(X,Y,t);
       D(HERO[st.dir+f],X,Y-4);
+      if(fishing&&st.dir!=="up")drawRod(X,Y,t);
       if(chopping){var ph=chopping.t/chopInt(),sw=ph<0.2?0.7-ph/0.2*2:ph<0.82?-1.3-Math.sin(ph*9)*0.05:-1.3+(ph-0.82)/0.18*2,sd=st.dir==="left"?-1:1;
         lctx.save();lctx.translate(X+(st.dir==="left"?4:st.dir==="right"?12:11),Y+9);lctx.scale(sd,1);lctx.rotate(sw);
         lctx.fillStyle="#6a4020";lctx.fillRect(-0.6,-8,1.3,9);lctx.fillStyle="#d8dee6";lctx.fillRect(0.3,-9,3.2,2.8);lctx.fillStyle="#7a8490";lctx.fillRect(3,-9,0.7,2.8);lctx.restore();}}]);
@@ -1935,7 +1965,7 @@ function wfCreate(root){
       var tt=tileAt(x,y);
       if(tt===T.DOOR){var w=warpAt(x,y);if(w){var lk=doorLock(w);return{kind:"door",w:w,x:x,y:y,label:"▶ "+ZONES[w.to].n+(lk?" ("+lk+")":"")};}}
       if(tt===T.BLOCK)return{kind:"block",x:x,y:y,label:"A fallen giant pine blocks the pass"};
-      if(isPond(tt)){var fsp=spotAt(x,y);if(fsp)return{kind:"water",spot:fsp,x:x,y:y,label:rodTier()?"E · Fish at the ripples":"E · Collect water"};}
+      if(isPond(tt)){var fsp=spotAt(x,y);if(fsp)return{kind:"water",spot:fsp,x:x,y:y,label:rodTier()?"E · Fish the "+fsp.kind.n:"E · Collect water"};}
       if(!facing)return null;
       var tk=treeKind(tt,st.zone);
       if(tk&&inBounds(x,y)){var ti=TREEINFO[tk],low=sk("wc")<ti.lv;
@@ -1945,7 +1975,7 @@ function wfCreate(root){
   }
   function act(){
     if(dlg.open){advance();return;}if(modalOpen||warping)return;
-    if(fishing){if(fishing.phase==="bite")reelIn();else floatText(fishing.x,fishing.y,"Not yet… wait for the splash","#ffffff");return;}
+    if(fishing)return;
     if(chopping)return;
     doAct(target());
   }
@@ -2120,8 +2150,16 @@ function wfCreate(root){
 
   /* ----- fishing: fish only bite at rippling spots, and the spots wander ----- */
   function rodTier(){return st.tools.deeprod?3:st.tools.flyrod?2:st.tools.rod?1:0;}
-  function fishHere(){var z=st.zone,L=sk("fish"),r=rodTier();return Object.keys(FISH).filter(function(k){var f=FISH[k];return f.where.indexOf(z)>=0&&f.lv<=L&&f.rod<=r;});}
-  var FSPOTN={woods:3,lake:5,marsh:4,cave:2,depths:3,tarn:3},fspots={};
+  function fishHere(spot){var L=sk("fish"),r=rodTier(),list=spot&&spot.kind?spot.kind.fish:Object.keys(FISH).filter(function(k){return FISH[k].where.indexOf(st.zone)>=0;});return list.filter(function(k){var f=FISH[k];return f.lv<=L&&f.rod<=r;});}
+  var FSPOTN={woods:5,lake:8,marsh:6,cave:3,depths:4,tarn:5},fspots={};
+  var SPOTK={
+    woods:[{n:"shallows",fish:["minnow","sunfish","perch"]},{n:"trout riffle",fish:["brook-trout","perch"]}],
+    lake:[{n:"weed bed",fish:["sunfish","perch","bass","pike"]},{n:"drop-off",fish:["rainbow-trout","walleye","lake-trout"]},{n:"deep hole",fish:["lake-trout","pike","sturgeon"]}],
+    marsh:[{n:"reedy channel",fish:["bullhead","carp","catfish"]},{n:"dark pool",fish:["catfish","bowfin","pike"]}],
+    cave:[{n:"cave pool",fish:["cavefish","cave-sculpin"]}],
+    depths:[{n:"glowing pool",fish:["cavefish","cave-sculpin","glow-eel"]}],
+    tarn:[{n:"icy shallows",fish:["cutthroat","whitefish","char"]},{n:"deep cold water",fish:["char","whitefish","golden-trout"]}]
+  };
   function isPond(t){return t===T.WATER||t===T.POOL;}
   function spotCands(){var out=[];
     for(var y=1;y<WH-1;y++)for(var x=1;x<WW-1;x++){if(!isPond(tileAt(x,y))||structAt(x,y))continue;
@@ -2131,19 +2169,19 @@ function wfCreate(root){
     function taken(q){return Z.list.some(function(o){return o!==s&&Math.abs(o.x-q[0])+Math.abs(o.y-q[1])<4;});}
     var pool=s?Z.c.filter(function(q){var d=Math.abs(q[0]-s.x)+Math.abs(q[1]-s.y);return d>=2&&d<=10&&!taken(q);}):[];
     if(!pool.length)pool=Z.c.filter(function(q){return !taken(q);});if(!pool.length)pool=Z.c;
-    var q=pool[Math.floor(Math.random()*pool.length)];if(!s){s={};Z.list.push(s);}
+    var q=pool[Math.floor(Math.random()*pool.length)];if(!s){s={kind:Z.kinds[Z.list.length%Z.kinds.length]};Z.list.push(s);}
     s.x=q[0];s.y=q[1];s.born=performance.now();s.life=45000+Math.random()*90000;s.seed=Math.random()*10;return s;}
   function spotsHere(){var z=st.zone;if(!FSPOTN[z])return [];
-    if(!fspots[z]){var Z=fspots[z]={c:spotCands(),list:[]},n=Math.min(FSPOTN[z],Math.floor(Z.c.length/3));for(var i=0;i<n;i++)placeSpot(Z,null);}
+    if(!fspots[z]){var Z=fspots[z]={c:spotCands(),list:[],kinds:SPOTK[z]},n=Z.c.length?Math.min(FSPOTN[z],Math.max(1,Math.floor(Z.c.length/3))):0;for(var i=0;i<n;i++)placeSpot(Z,null);}
     return fspots[z].list;}
   function spotAt(x,y){var L=spotsHere();for(var i=0;i<L.length;i++)if(L[i].x===x&&L[i].y===y)return L[i];return null;}
   function spotTick(){var Z=fspots[st.zone];if(!Z)return;var now=performance.now();Z.list.forEach(function(s){if(now-s.born>s.life)placeSpot(Z,s);});}
   function startFishing(spot,again){var x=spot.x,y=spot.y;
     if(!(st.mat.worms>0)){say("",null,["You've got no bait. Wren and Rue both sell worms."]);return;}
-    var avail=Object.keys(FISH).filter(function(k){return FISH[k].where.indexOf(st.zone)>=0;});
+    var avail=spot.kind?spot.kind.fish:[];
     if(!avail.length){say("",null,["Nothing seems to live in this water."]);return;}
-    if(!fishHere().length){var lo=avail.map(function(k){return FISH[k];}).sort(function(a,b){return a.lv-b.lv;})[0];
-      say("",null,["You watch the water for a while. The fish here are too wily for you yet.","The easiest catch here needs Fishing "+lo.lv+(lo.rod>rodTier()?" and a "+["","fishing rod","fly rod","deep-water rod"][lo.rod]:"")+"."]);return;}
+    if(!fishHere(spot).length){var lo=avail.map(function(k){return FISH[k];}).sort(function(a,b){return a.lv-b.lv;})[0];
+      say("",null,["You watch the "+spot.kind.n+" for a while. The fish here are too wily for you yet.","The easiest catch here needs Fishing "+lo.lv+(lo.rod>rodTier()?" and a "+["","fishing rod","fly rod","deep-water rod"][lo.rod]:"")+"."]);return;}
     if(invCount(st)>=st.cap){say("",null,["Your basket is full. Sell, cook or ship some before you fish."]);return;}
     if(st.energy<1){toast("Too tired to fish.","bad");return;}
     var dx=x-pl.tx,dy=y-pl.ty;if(Math.abs(dx)>=Math.abs(dy)&&dx)st.dir=dx>0?"right":"left";else if(dy)st.dir=dy>0?"down":"up";
@@ -2156,7 +2194,7 @@ function wfCreate(root){
     if(!(st.mat.worms>0)||invCount(st)>=st.cap||st.energy<1)return;startFishing(f.spot,true);}
   function reelIn(){var f=fishing;fishing=null;landFish(f);recast(f);}
   function landFish(f){
-    var opts=fishHere(),L=sk("fish");if(!opts.length){f.stop=1;return;}
+    var opts=fishHere(f.spot),L=sk("fish");if(!opts.length){f.stop=1;return;}
     var weights=opts.map(function(k){return 1+Math.max(0,(L-FISH[k].lv))*0.15+(FISH[k].lv<=L?FISH[k].lv*0.04:0);});
     var tot=weights.reduce(function(a,b){return a+b;},0),r=Math.random()*tot,k=opts[0];for(var i=0;i<opts.length;i++){r-=weights[i];if(r<=0){k=opts[i];break;}}
     var fi=FISH[k],hold=Math.min(0.97,0.62+(L-fi.lv)*0.03+(st.tools.tacklebox?0.15:0));
@@ -2171,8 +2209,8 @@ function wfCreate(root){
   }
   function fishTick(dt){if(!fishing)return;fishing.t+=dt;var f=fishing;
     if(f.spot&&(f.spot.x!==f.x||f.spot.y!==f.y)){fishing=null;snd.sfx("miss");floatText(f.x,f.y,"The fish moved on","#bfe8ff");toast("The fish have moved on. Look for the ripples nearby.");return;}
-    if(f.phase==="wait"&&f.t>=f.bite){f.phase="bite";f.t=0;snd.sfx("bite");try{if(navigator.vibrate)navigator.vibrate(120);}catch(e){}}
-    else if(f.phase==="bite"&&f.t>=f.win){snd.sfx("miss");floatText(f.x,f.y,"It got away","#ffb0a0");fishing=null;recast(f);}}
+    if(f.phase==="wait"&&f.t>=f.bite){f.phase="bite";f.t=0;snd.sfx("bite");}
+    else if(f.phase==="bite"&&f.t>=0.7){fishing=null;landFish(f);recast(f);}}
 
   /* ----- chests, pages, lookout ----- */
   function openChest(c){
@@ -2450,7 +2488,7 @@ function wfCreate(root){
       +(st.inv["raw-water"]>0?'<p class="muted">Raw water needs boiling at a fire before you can drink it.</p>':'')
       +'<div class="wf-sub">Logs and materials</div>'+(mats.length?'<div class="wf-chips">'+mats.map(function(k){return '<span class="chip">'+(LOGV[k]!=null?icon(k):"")+esc(MATN[k])+' ×'+st.mat[k]+'</span>';}).join('')+'</div>':'<p class="muted">None yet.</p>')
       +'<div class="wf-sub">Tools</div>'+(tools.length?'<div class="wf-chips">'+tools.map(function(k){return '<span class="chip moss">'+esc(TOOLN[k])+'</span>';}).join('')+'</div>':'<p class="muted">Just your boots and a backpack.</p>')
-      +'<p class="muted" style="margin-top:12px">'+st.coins+' coins · '+st.logsCut+' logs chopped · '+Object.keys(st.caught).length+'/11 kinds of fish · '+st.pages.length+'/12 pages · '+st.chests.length+'/'+st.chestSpots.length+' chests</p>',function(b){var dr=b.querySelector('[data-a="drink"]');if(dr)dr.onclick=function(){useFresh();invMenu();};});
+      +'<p class="muted" style="margin-top:12px">'+st.coins+' coins · '+st.logsCut+' logs chopped · '+Object.keys(st.caught).length+'/'+Object.keys(FISH).length+' kinds of fish · '+st.pages.length+'/12 pages · '+st.chests.length+'/'+st.chestSpots.length+' chests</p>',function(b){var dr=b.querySelector('[data-a="drink"]');if(dr)dr.onclick=function(){useFresh();invMenu();};});
   }
   function journalMenu(){
     var found=WILD.filter(function(k){return st.journal[k];}).length;
@@ -2458,7 +2496,7 @@ function wfCreate(root){
       +WILD.map(function(k){var sp=WSP[k],n=st.journal[k]||0,tr=WTRAIT[k];
         if(!n)return '<div class="wf-j unk"><b>??? Unknown</b><span>Look '+esc(sp.where)+'.</span></div>';
         return '<div class="wf-j"><div class="wf-jh">'+icon(k)+'<b>'+esc(sp.n)+'</b></div><span class="chip '+(sp.cat==="toxic"?"amber":sp.cat==="medicinal"?"gold":"moss")+'">'+sp.cat+'</span><span><b>Cap:</b> '+esc(tr.cap)+'</span><span><b>Underneath:</b> '+esc(tr.under)+'</span><span><b>Stem:</b> '+esc(tr.stem)+'</span><span><b>Smell:</b> '+esc(tr.smell)+'</span>'+(n>=2?'<span class="muted">✓ Known on sight</span>':'<span class="muted">Seen once</span>')+'</div>';}).join('')+'</div>'
-      +'<div class="wf-sub">Fish ('+Object.keys(st.caught).length+' of 11)</div><div class="wf-jgrid">'+Object.keys(FISH).map(function(k){var f=FISH[k],n=st.caught[k]||0;
+      +'<div class="wf-sub">Fish ('+Object.keys(st.caught).length+' of '+Object.keys(FISH).length+')</div><div class="wf-jgrid">'+Object.keys(FISH).map(function(k){var f=FISH[k],n=st.caught[k]||0;
         if(!n)return '<div class="wf-j unk"><b>??? Unknown fish</b><span>Fishing '+f.lv+' · '+f.where.map(function(z){return ZONES[z].n;}).join(", ")+'</span></div>';
         return '<div class="wf-j"><div class="wf-jh">'+icon(k)+'<b>'+esc(f.n)+'</b></div><span>'+esc(f.key)+'</span><span class="muted">Caught '+n+' · '+f.where.map(function(z){return ZONES[z].n;}).join(", ")+'</span></div>';}).join('')+'</div>');
   }
@@ -2494,7 +2532,7 @@ function wfCreate(root){
     open('<span class="kicker">'+(first?"Welcome to":"How to play")+'</span><h3>Blackpine Woods</h3>'
       +(first?'<p>You\'ve hiked into the woods with a backpack, a tent and 5 coins. Forage, chop and fish, trade with Old Wren, build a home, and help reunite the scattered Blackpine Foragers\' Club.</p>'+(hadOld?'<p class="muted">This is a brand-new, bigger world, so you\'re starting fresh.</p>':''):'')
       +'<div class="wf-sub">Controls</div><ul class="list"><li><b>Move:</b> arrow keys or WASD (on a phone, drag the joystick)</li><li><b>Interact / continue talking:</b> E, Space or Enter. Use the arrow keys to pick a choice.</li><li><b>Basket</b> I · <b>Journal</b> J · <b>Quests</b> Q · <b>Map</b> M · <b>Close</b> Esc</li></ul>'
-      +'<div class="wf-sub">Three skills</div><ul class="list"><li><b>🍄 Foraging:</b> examine a mushroom (cap, underneath, stem, smell), then name it. Get it right to pick it.</li><li><b>🪓 Woodcutting:</b> face a tree with an axe and press E once. You keep chopping by yourself until it comes down (2 to 10 logs a tree). Walk away any time to stop. Birch at level 1, oak at 5, willow at 12, pine at 16, mountain pine at 24.</li><li><b>🎣 Fishing:</b> fish only bite at <b>fishing spots</b>, where the water ripples and fish jump. They move every minute or two, like real shoals. Stand next to one with a rod and worms and press E. When the float splashes and a <b>!</b> pops up, press E fast. You recast by yourself; walk away to stop. Better fish need higher levels and better rods.</li></ul>'
+      +'<div class="wf-sub">Three skills</div><ul class="list"><li><b>🍄 Foraging:</b> examine a mushroom (cap, underneath, stem, smell), then name it. Get it right to pick it.</li><li><b>🪓 Woodcutting:</b> face a tree with an axe and press E once. You keep chopping by yourself until it comes down (2 to 10 logs a tree). Walk away any time to stop. Birch at level 1, oak at 5, willow at 12, pine at 16, mountain pine at 24.</li><li><b>🎣 Fishing:</b> fish only bite at <b>fishing spots</b>, where the water ripples and fish jump. They move every minute or two, like real shoals. Stand next to one with a rod and worms and press E. Each spot holds different fish: shallows, trout riffles, weed beds, drop-offs, deep holes and more. Once you start, you fish by yourself, hooking bites and recasting, until the spot moves, your basket fills, you run out of worms or you walk away. Better fish need higher levels and better rods.</li></ul>'
       +'<div class="wf-sub">Getting around</div><ul class="list"><li>Ways out of each area glow gold and show their name. Red means something is still needed: a tool, a skill level, or a favour for someone.</li><li>The story is told through the people you meet. Press Q to see what to do next, and the map (M) to see the ways out.</li></ul>'
       +'<div class="wf-sub">Surviving</div><ul class="list"><li>Walking and work use energy. Get it back by eating (cook mushrooms and fish at your campfire or a fire ring) and drinking. Collect raw water from streams and ponds, boil it at a fire to make fresh water, then drink it from your basket any time. The village well is clean enough to drink straight away. Sleeping restores energy overnight.</li><li>Stone fire rings are scattered around every area. With a tinderbox from Wren and 2 logs, light one and cook right there. It burns for about 6 hours.</li><li>Sleep at your shelter after 6 pm. Stay out past 2 am or hit zero energy and you collapse.</li><li>Seasons change every 7 days. Rain waters your beds, and mushrooms pop up the morning after.</li></ul>'
       +'<div class="wf-acts">'+btn("go",first?"Start exploring":"Got it","primary")+'</div>',
