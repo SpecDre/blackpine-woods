@@ -1953,7 +1953,12 @@ function wfCreate(root){
 
   /* ----- modal panels (for lists: shop, build, crate, journal…) ----- */
   var openedAt=0;
-  function open(html,wire){snd.sfx("tick");openedAt=performance.now();if(dlg.open)dlgClose();body.innerHTML=html;modal.hidden=false;modalOpen=true;keys={};if(wire)wire(body);var box=body.parentNode;box.scrollTop=0;var f=body.querySelector(".btn.primary:not([disabled]),button:not([disabled])");if(f)f.focus({preventScroll:true});}
+  /* when the same panel redraws (after buying, selling, cooking…) keep your scroll position and the button you pressed */
+  var openKey="";
+  function open(html,wire){snd.sfx("tick");openedAt=performance.now();if(dlg.open)dlgClose();
+    var box=body.parentNode,k=html.slice(0,html.indexOf("</h3>")+1),same=modalOpen&&k===openKey,top=same?box.scrollTop:0,ae=document.activeElement,was=same&&ae&&body.contains(ae)?ae.getAttribute("data-a"):null;openKey=k;
+    body.innerHTML=html;modal.hidden=false;modalOpen=true;keys={};if(wire)wire(body);box.scrollTop=top;
+    var f=(was&&body.querySelector('[data-a="'+was+'"]:not([disabled])'))||(same?null:body.querySelector(".btn.primary:not([disabled]),button:not([disabled])"));if(f)f.focus({preventScroll:true});}
   function close(){modal.hidden=true;modalOpen=false;body.innerHTML="";stage.focus({preventScroll:true});save();}
   document.getElementById("wfX").addEventListener("click",close);
   modal.addEventListener("click",function(e){if(e.target===modal&&performance.now()-openedAt>450)close();});
